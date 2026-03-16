@@ -256,9 +256,9 @@ export default function Hero() {
 
     const glowShadow = g > 0.01
       ? [
-          `0 0 ${60 * g}px rgba(194, 224, 58, ${0.7 * Math.min(1, g)})`,
-          `0 0 ${150 * g}px rgba(194, 224, 58, ${0.4 * Math.min(1, g)})`,
-          `0 0 ${280 * g}px rgba(194, 224, 58, ${0.2 * Math.min(1, g)})`,
+          `0 0 ${60 * g}px rgba(77, 143, 168, ${0.7 * Math.min(1, g)})`,
+          `0 0 ${150 * g}px rgba(77, 143, 168, ${0.4 * Math.min(1, g)})`,
+          `0 0 ${280 * g}px rgba(77, 143, 168, ${0.2 * Math.min(1, g)})`,
         ].join(", ")
       : "none";
 
@@ -326,7 +326,7 @@ export default function Hero() {
       </div>
 
       {/* Ambient glow */}
-      <div className="absolute top-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-lime/[0.06] blur-[100px] pointer-events-none" />
+      <div className="absolute top-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-lime/[0.08] blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[15%] left-[8%] w-[350px] h-[350px] rounded-full bg-dark-300/[0.08] blur-[80px] pointer-events-none" />
 
       {/* Clarity bloom — background glow that swells behind text */}
@@ -337,7 +337,7 @@ export default function Hero() {
             width: `${500 * frame.glowIntensity}px`,
             height: `${250 * frame.glowIntensity}px`,
             transform: "translate(-50%, -50%)",
-            background: `radial-gradient(ellipse, rgba(194, 224, 58, ${0.14 * Math.min(1, frame.glowIntensity)}) 0%, transparent 70%)`,
+            background: `radial-gradient(ellipse, rgba(77, 143, 168, ${0.14 * Math.min(1, frame.glowIntensity)}) 0%, transparent 70%)`,
             filter: `blur(${50 * frame.glowIntensity}px)`,
           }}
         />

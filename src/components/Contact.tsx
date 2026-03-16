@@ -11,7 +11,7 @@ export default function Contact() {
     <section
       id="contact"
       ref={ref}
-      className="py-32 md:py-40 px-6 bg-dark-800/50 border-t border-dark-700/50"
+      className="py-32 md:py-40 px-6 bg-dark-900/60 border-t border-dark-700/60"
     >
       <div
         className={`max-w-4xl mx-auto text-center transition-all duration-1000 ${
