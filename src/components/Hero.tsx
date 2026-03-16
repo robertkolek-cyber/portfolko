@@ -22,25 +22,25 @@ export default function Hero() {
   return (
     <section
       ref={containerRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden px-6"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden px-6 grid-bg"
     >
-      {/* Gradient orbs that follow mouse slightly */}
+      {/* Gradient orbs */}
       <div
         className="absolute w-[600px] h-[600px] rounded-full opacity-20 blur-3xl"
         style={{
           background:
-            "radial-gradient(circle, var(--color-accent-light) 0%, transparent 70%)",
-          top: "10%",
+            "radial-gradient(circle, var(--color-lime) 0%, transparent 70%)",
+          top: "5%",
           right: "10%",
           transform: "translate(var(--mouse-x, 0), var(--mouse-y, 0))",
           transition: "transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       />
       <div
-        className="absolute w-[400px] h-[400px] rounded-full opacity-15 blur-3xl"
+        className="absolute w-[400px] h-[400px] rounded-full opacity-10 blur-3xl"
         style={{
           background:
-            "radial-gradient(circle, var(--color-sand-400) 0%, transparent 70%)",
+            "radial-gradient(circle, var(--color-dark-300) 0%, transparent 70%)",
           bottom: "20%",
           left: "5%",
           transform:
@@ -50,27 +50,26 @@ export default function Hero() {
       />
 
       <div className="relative z-10 max-w-5xl mx-auto text-center">
-        <p className="animate-fade-up text-sm md:text-base tracking-[0.3em] uppercase text-sand-500 font-medium mb-6">
-          Designer &middot; Creative Director &middot; Problem Solver
+        <p className="animate-fade-up text-sm md:text-base tracking-[0.3em] uppercase text-slate-400 font-medium mb-6">
+          Designer &middot; Problem Solver &middot; Systems Thinker
         </p>
 
-        <h1 className="animate-fade-up delay-100 font-[family-name:var(--font-display)] text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.9] tracking-tight text-balance">
-          Crafting digital
+        <h1 className="animate-fade-up delay-100 font-[family-name:var(--font-display)] text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.9] tracking-tight text-balance font-bold">
+          I turn{" "}
+          <span className="text-lime italic">complexity</span>
           <br />
-          <span className="italic text-accent">experiences</span>
-          <br />
-          that resonate
+          into <span className="text-lime italic">clarity</span>
         </h1>
 
-        <p className="animate-fade-up delay-300 mt-8 md:mt-12 text-lg md:text-xl text-sand-600 max-w-2xl mx-auto leading-relaxed">
-          I design products and brands that connect with people on a deeper
-          level — blending strategy, aesthetics, and human-centered thinking.
+        <p className="animate-fade-up delay-300 mt-8 md:mt-12 text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          I design products and systems that make the complex feel simple —
+          blending strategy, structure, and human-centered thinking.
         </p>
 
         <div className="animate-fade-up delay-500 mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
             href="#work"
-            className="group inline-flex items-center gap-3 bg-sand-900 text-sand-50 px-8 py-4 rounded-full text-sm font-medium tracking-wide hover:bg-sand-800 transition-colors duration-300"
+            className="group inline-flex items-center gap-3 bg-lime text-dark-950 px-8 py-4 rounded-full text-sm font-semibold tracking-wide hover:bg-lime-light transition-colors duration-300"
           >
             View my work
             <svg
@@ -89,7 +88,7 @@ export default function Hero() {
           </a>
           <a
             href="#contact"
-            className="inline-flex items-center gap-2 text-sand-700 px-8 py-4 rounded-full text-sm font-medium tracking-wide border border-sand-300 hover:border-sand-500 hover:text-sand-900 transition-all duration-300"
+            className="inline-flex items-center gap-2 text-slate-300 px-8 py-4 rounded-full text-sm font-medium tracking-wide border border-dark-600 hover:border-lime/50 hover:text-lime transition-all duration-300"
           >
             Get in touch
           </a>
@@ -99,10 +98,10 @@ export default function Hero() {
       {/* Scroll indicator */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-fade-in delay-600">
         <div className="flex flex-col items-center gap-3">
-          <span className="text-xs tracking-widest uppercase text-sand-400">
+          <span className="text-xs tracking-widest uppercase text-slate-500">
             Scroll
           </span>
-          <div className="w-px h-12 bg-gradient-to-b from-sand-400 to-transparent" />
+          <div className="w-px h-12 bg-gradient-to-b from-lime/40 to-transparent" />
         </div>
       </div>
     </section>

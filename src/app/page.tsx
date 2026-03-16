@@ -22,13 +22,13 @@ function WorkSection() {
             inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
-          <p className="text-sm tracking-[0.3em] uppercase text-sand-400 font-medium mb-4">
+          <p className="text-sm tracking-[0.3em] uppercase text-slate-500 font-medium mb-4">
             Selected Work
           </p>
-          <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl lg:text-6xl leading-[1.1] text-sand-900">
+          <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl lg:text-6xl leading-[1.1] font-bold text-slate-100">
             Projects that
             <br />
-            <span className="italic text-accent">define</span> my craft.
+            <span className="italic text-lime">define</span> my craft.
           </h2>
         </div>
 

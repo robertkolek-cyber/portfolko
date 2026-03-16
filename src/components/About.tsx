@@ -20,21 +20,21 @@ export default function About() {
           }`}
         >
           <div>
-            <p className="text-sm tracking-[0.3em] uppercase text-sand-400 font-medium mb-4">
+            <p className="text-sm tracking-[0.3em] uppercase text-slate-500 font-medium mb-4">
               About
             </p>
-            <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl lg:text-6xl leading-[1.1] text-sand-900">
+            <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl lg:text-6xl leading-[1.1] font-bold text-slate-100">
               Design is how
               <br />
-              I <span className="italic text-accent">think</span>.
+              I <span className="text-lime italic">think</span>.
             </h2>
           </div>
 
-          <div className="space-y-6 text-sand-600 leading-relaxed text-lg">
+          <div className="space-y-6 text-slate-300 leading-relaxed text-lg">
             <p>
               I&apos;m a multidisciplinary designer with 8+ years of experience
-              crafting digital products, brand identities, and creative
-              experiences. I believe the best design emerges at the intersection
+              crafting digital products, design systems, and user experiences.
+              I believe the best design emerges at the intersection
               of empathy, strategy, and craft.
             </p>
             <p>
@@ -75,13 +75,13 @@ export default function About() {
               items: ["Design Thinking", "Workshop Facilitation", "User Testing", "Analytics"],
             },
           ].map((skill) => (
-            <div key={skill.label}>
-              <h3 className="font-medium text-sand-900 mb-3 text-sm tracking-wide uppercase">
+            <div key={skill.label} className="border-t border-dark-700 pt-6">
+              <h3 className="font-medium text-lime text-sm tracking-wide uppercase mb-4">
                 {skill.label}
               </h3>
               <ul className="space-y-2">
                 {skill.items.map((item) => (
-                  <li key={item} className="text-sand-500 text-sm">
+                  <li key={item} className="text-slate-400 text-sm">
                     {item}
                   </li>
                 ))}

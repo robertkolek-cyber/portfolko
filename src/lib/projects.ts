@@ -22,7 +22,7 @@ export const projects: Project[] = [
     tagline: "Reimagining digital banking for a new generation",
     category: "Product Design",
     year: "2025",
-    color: "#1a365d",
+    color: "#132e35",
     thumbnail: "",
     heroImage: "",
     overview:
@@ -42,7 +42,7 @@ export const projects: Project[] = [
     tagline: "Making sustainability tangible and actionable",
     category: "Brand & Product",
     year: "2025",
-    color: "#2d4a22",
+    color: "#1a3328",
     thumbnail: "",
     heroImage: "",
     overview:
@@ -62,7 +62,7 @@ export const projects: Project[] = [
     tagline: "Where sound meets visual expression",
     category: "Creative Direction",
     year: "2024",
-    color: "#4a1942",
+    color: "#1e2a3a",
     thumbnail: "",
     heroImage: "",
     overview:
@@ -82,7 +82,7 @@ export const projects: Project[] = [
     tagline: "Rethinking indoor navigation for complex spaces",
     category: "UX / Spatial Design",
     year: "2024",
-    color: "#1a1a2e",
+    color: "#162029",
     thumbnail: "",
     heroImage: "",
     overview:

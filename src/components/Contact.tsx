@@ -11,29 +11,29 @@ export default function Contact() {
     <section
       id="contact"
       ref={ref}
-      className="py-32 md:py-40 px-6 bg-sand-900 text-sand-100"
+      className="py-32 md:py-40 px-6 bg-dark-800/50 border-t border-dark-700/50"
     >
       <div
         className={`max-w-4xl mx-auto text-center transition-all duration-1000 ${
           inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         }`}
       >
-        <p className="text-sm tracking-[0.3em] uppercase text-sand-500 font-medium mb-6">
+        <p className="text-sm tracking-[0.3em] uppercase text-slate-500 font-medium mb-6">
           Get in touch
         </p>
-        <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-6xl lg:text-7xl leading-[1.1] mb-8">
+        <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-6xl lg:text-7xl leading-[1.1] font-bold mb-8">
           Let&apos;s create something
           <br />
-          <span className="italic text-accent-light">remarkable</span> together.
+          <span className="text-lime italic">remarkable</span> together.
         </h2>
-        <p className="text-sand-400 text-lg md:text-xl max-w-xl mx-auto leading-relaxed mb-12">
+        <p className="text-slate-400 text-lg md:text-xl max-w-xl mx-auto leading-relaxed mb-12">
           I&apos;m always open to new projects, collaborations, or just a good
           conversation about design. Drop me a line.
         </p>
 
         <a
           href="mailto:hello@robertkolek.com"
-          className="group inline-flex items-center gap-3 bg-sand-100 text-sand-900 px-10 py-5 rounded-full text-base font-medium tracking-wide hover:bg-white transition-colors duration-300"
+          className="group inline-flex items-center gap-3 bg-lime text-dark-950 px-10 py-5 rounded-full text-base font-semibold tracking-wide hover:bg-lime-light transition-colors duration-300 glow-lime"
         >
           hello@robertkolek.com
           <svg
@@ -61,7 +61,7 @@ export default function Contact() {
             <a
               key={link.label}
               href={link.href}
-              className="link-underline text-sm text-sand-400 hover:text-sand-200 transition-colors duration-300"
+              className="link-underline text-sm text-slate-500 hover:text-lime transition-colors duration-300"
             >
               {link.label}
             </a>

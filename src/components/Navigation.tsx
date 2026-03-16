@@ -17,7 +17,7 @@ export default function Navigation() {
     <nav
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
         scrolled
-          ? "bg-sand-50/80 backdrop-blur-xl shadow-sm"
+          ? "bg-dark-950/80 backdrop-blur-xl border-b border-dark-700/50"
           : "bg-transparent"
       }`}
     >
@@ -25,20 +25,20 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-20">
           <Link
             href="/"
-            className="font-[family-name:var(--font-display)] text-2xl tracking-tight"
+            className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-slate-100"
           >
-            Robert<span className="text-accent">.</span>
+            RK<span className="text-lime">.</span>
           </Link>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-10">
-            <a href="#work" className="link-underline text-sm tracking-wide uppercase font-medium text-sand-700 hover:text-sand-900 transition-colors">
+            <a href="#work" className="link-underline text-sm tracking-wide uppercase font-medium text-slate-400 hover:text-lime transition-colors">
               Work
             </a>
-            <a href="#about" className="link-underline text-sm tracking-wide uppercase font-medium text-sand-700 hover:text-sand-900 transition-colors">
+            <a href="#about" className="link-underline text-sm tracking-wide uppercase font-medium text-slate-400 hover:text-lime transition-colors">
               About
             </a>
-            <a href="#contact" className="link-underline text-sm tracking-wide uppercase font-medium text-sand-700 hover:text-sand-900 transition-colors">
+            <a href="#contact" className="link-underline text-sm tracking-wide uppercase font-medium text-slate-400 hover:text-lime transition-colors">
               Contact
             </a>
           </div>
@@ -50,17 +50,17 @@ export default function Navigation() {
             aria-label="Toggle menu"
           >
             <span
-              className={`block h-0.5 w-6 bg-sand-900 transition-all duration-300 ${
+              className={`block h-0.5 w-6 bg-slate-100 transition-all duration-300 ${
                 menuOpen ? "rotate-45 translate-y-2" : ""
               }`}
             />
             <span
-              className={`block h-0.5 w-6 bg-sand-900 transition-all duration-300 ${
+              className={`block h-0.5 w-6 bg-slate-100 transition-all duration-300 ${
                 menuOpen ? "opacity-0" : ""
               }`}
             />
             <span
-              className={`block h-0.5 w-6 bg-sand-900 transition-all duration-300 ${
+              className={`block h-0.5 w-6 bg-slate-100 transition-all duration-300 ${
                 menuOpen ? "-rotate-45 -translate-y-2" : ""
               }`}
             />
@@ -74,25 +74,25 @@ export default function Navigation() {
           menuOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="px-6 pb-8 pt-2 bg-sand-50/95 backdrop-blur-xl space-y-6">
+        <div className="px-6 pb-8 pt-2 bg-dark-950/95 backdrop-blur-xl space-y-6">
           <a
             href="#work"
             onClick={() => setMenuOpen(false)}
-            className="block text-lg font-medium text-sand-800"
+            className="block text-lg font-medium text-slate-200 hover:text-lime transition-colors"
           >
             Work
           </a>
           <a
             href="#about"
             onClick={() => setMenuOpen(false)}
-            className="block text-lg font-medium text-sand-800"
+            className="block text-lg font-medium text-slate-200 hover:text-lime transition-colors"
           >
             About
           </a>
           <a
             href="#contact"
             onClick={() => setMenuOpen(false)}
-            className="block text-lg font-medium text-sand-800"
+            className="block text-lg font-medium text-slate-200 hover:text-lime transition-colors"
           >
             Contact
           </a>
