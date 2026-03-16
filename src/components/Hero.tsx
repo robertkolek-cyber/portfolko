@@ -240,25 +240,55 @@ export default function Hero() {
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  // Scroll: zoom water in, fade text out — jumping-into-water effect
+  // Wheel hijack: page stays put, scrolling drives zoom — "jump into water"
   useEffect(() => {
-    const onScroll = () => {
-      const p = Math.min(1, window.scrollY / (window.innerHeight * 0.65));
+    let zoomTarget = 0;
+    let zoomCurrent = 0;
+    let zoomRaf = 0;
+    let released = false;
+
+    const animate = () => {
+      // Smooth lerp toward target
+      zoomCurrent += (zoomTarget - zoomCurrent) * 0.07;
+      const p = Math.min(1, Math.max(0, zoomCurrent));
 
       if (waterScrollRef.current) {
-        waterScrollRef.current.style.transform = `scale(${1 + p * 2.0})`;
+        waterScrollRef.current.style.transform = `scale(${1 + p * 2.4})`;
       }
       if (contentScrollRef.current) {
-        const op = Math.max(0, 1 - p * 2.5);
-        contentScrollRef.current.style.opacity = String(op);
+        contentScrollRef.current.style.opacity = String(Math.max(0, 1 - p * 2.5));
         contentScrollRef.current.style.transform = `translateY(${-p * 60}px)`;
       }
       if (scrollHintRef.current) {
         scrollHintRef.current.style.opacity = String(Math.max(0, 1 - p * 8));
       }
+
+      // Fully zoomed — release, scroll past hero
+      if (p > 0.97 && !released) {
+        released = true;
+        document.documentElement.style.overflow = "";
+        window.scrollTo({ top: window.innerHeight, behavior: "smooth" });
+      }
+
+      zoomRaf = requestAnimationFrame(animate);
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+
+    const onWheel = (e: WheelEvent) => {
+      if (released) return;
+      e.preventDefault();
+      zoomTarget = Math.min(1.2, Math.max(0, zoomTarget + e.deltaY * 0.002));
+    };
+
+    // Lock page scroll while the hero zoom is active
+    document.documentElement.style.overflow = "hidden";
+    zoomRaf = requestAnimationFrame(animate);
+    window.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => {
+      document.documentElement.style.overflow = "";
+      window.removeEventListener("wheel", onWheel);
+      cancelAnimationFrame(zoomRaf);
+    };
   }, []);
 
   // ── Render visible text with styling ──
