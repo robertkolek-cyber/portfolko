@@ -1,31 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  /* Light cloudy blue-gray palette — bg is light, text is dark */
-  --color-dark-950: #eef1f6;   /* main background */
-  --color-dark-900: #e3e8f0;
-  --color-dark-800: #d4dbe8;
-  --color-dark-700: #bec9d8;
-  --color-dark-600: #9aafc2;
-  --color-dark-500: #6d8ca4;
-  --color-dark-400: #4d6e86;
-  --color-dark-300: #335066;
-  --color-dark-200: #1e3448;
-  --color-dark-100: #0f2030;
-  --color-dark-50: #060f18;
+  /* Light lavender-white base — near-white bg, deep indigo text */
+  --color-dark-950: #f8f7ff;   /* main background — off-white lavender */
+  --color-dark-900: #ede9fe;
+  --color-dark-800: #ddd6fe;
+  --color-dark-700: #c4b5fd;
+  --color-dark-600: #a78bfa;
+  --color-dark-500: #8b5cf6;
+  --color-dark-400: #7c3aed;
+  --color-dark-300: #6d28d9;
+  --color-dark-200: #4c1d95;
+  --color-dark-100: #2e1065;
+  --color-dark-50:  #160a35;
 
-  /* Text scale — dark on light bg */
-  --color-slate-100: #0f1d2a;
-  --color-slate-200: #1e3044;
-  --color-slate-300: #3d566a;
-  --color-slate-400: #607c8e;
-  --color-slate-500: #8fa6b8;
+  /* Text scale — deep indigo on light bg */
+  --color-slate-100: #1e1b4b;
+  --color-slate-200: #312e81;
+  --color-slate-300: #4338ca;
+  --color-slate-400: #6366f1;
+  --color-slate-500: #818cf8;
 
-  /* Accent — muted steel/cerulean blue */
-  --color-lime: #4d8fa8;
-  --color-lime-light: #6aaec8;
-  --color-lime-dark: #357388;
-  --color-lime-dim: #2d6070;
+  /* Accent — indigo */
+  --color-lime:      #6366f1;
+  --color-lime-light: #818cf8;
+  --color-lime-dark:  #4f46e5;
+  --color-lime-dim:   #4338ca;
+
+  /* Pink accent */
+  --color-pink:      #ec4899;
+  --color-pink-light: #f472b6;
+  --color-pink-dim:  #db2777;
 
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
@@ -107,16 +112,16 @@
 
 /* Glow */
 .glow-lime {
-  box-shadow: 0 0 40px rgba(77, 143, 168, 0.15), 0 0 80px rgba(77, 143, 168, 0.07);
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.25), 0 0 80px rgba(99, 102, 241, 0.12);
 }
 .glow-lime-sm {
-  box-shadow: 0 0 20px rgba(77, 143, 168, 0.12);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
 }
 
 /* Grid background */
 .grid-bg {
   background-image:
-    linear-gradient(rgba(77, 143, 168, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(77, 143, 168, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px);
   background-size: 60px 60px;
 }

@@ -134,10 +134,11 @@ export default function WaterSurface({
             );
 
           const idx = (py * RES_W + px) * 4;
-          buf[idx] = 77;      // R — steel blue
-          buf[idx + 1] = 143; // G
-          buf[idx + 2] = 168; // B
-          buf[idx + 3] = Math.round(ringed * (0.18 + c * 0.12) * 255);
+          // Blend indigo → pink based on chaos level
+          buf[idx]     = Math.round(99  + (236 - 99)  * c * 0.6); // R
+          buf[idx + 1] = Math.round(102 + (72  - 102) * c * 0.6); // G
+          buf[idx + 2] = Math.round(241 + (153 - 241) * c * 0.6); // B
+          buf[idx + 3] = Math.round(ringed * (0.18 + c * 0.14) * 255);
         }
       }
 
