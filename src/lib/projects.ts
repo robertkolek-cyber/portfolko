@@ -1,0 +1,103 @@
+export interface Project {
+  slug: string;
+  title: string;
+  tagline: string;
+  category: string;
+  year: string;
+  color: string;
+  thumbnail: string;
+  heroImage: string;
+  overview: string;
+  challenge: string;
+  approach: string;
+  outcome: string;
+  tools: string[];
+  images: string[];
+}
+
+export const projects: Project[] = [
+  {
+    slug: "meridian-banking",
+    title: "Meridian",
+    tagline: "Reimagining digital banking for a new generation",
+    category: "Product Design",
+    year: "2025",
+    color: "#1a365d",
+    thumbnail: "",
+    heroImage: "",
+    overview:
+      "Meridian is a next-generation digital banking platform designed for millennials and Gen Z. The goal was to create an experience that feels less like a bank and more like a trusted financial companion.",
+    challenge:
+      "Traditional banking apps feel cold, transactional, and overwhelming. Young users wanted a platform that understood their financial goals, simplified complex concepts, and celebrated their progress.",
+    approach:
+      "I led the end-to-end design process — from user research and journey mapping to high-fidelity prototypes. We introduced a conversational UI layer, goal-based savings visualizations, and a warm, approachable visual language.",
+    outcome:
+      "The redesign led to a 47% increase in daily active users and a 62% improvement in task completion rates. The app received recognition at the European Design Awards.",
+    tools: ["Figma", "Protopie", "Maze", "Lottie"],
+    images: [],
+  },
+  {
+    slug: "terra-sustainability",
+    title: "Terra",
+    tagline: "Making sustainability tangible and actionable",
+    category: "Brand & Product",
+    year: "2025",
+    color: "#2d4a22",
+    thumbnail: "",
+    heroImage: "",
+    overview:
+      "Terra is a sustainability tracking platform that helps companies measure, visualize, and reduce their environmental impact through beautiful data storytelling.",
+    challenge:
+      "Environmental data is complex and often presented in ways that are either too simplified to be useful or too technical to be accessible. Companies needed a tool that told a compelling story with their data.",
+    approach:
+      "I designed an immersive data visualization system using organic shapes and nature-inspired gradients. Each metric was given a narrative context, transforming raw numbers into meaningful insights.",
+    outcome:
+      "Terra was adopted by over 200 companies in its first quarter. Users spent 3x more time engaging with sustainability reports compared to the previous system.",
+    tools: ["Figma", "D3.js", "After Effects", "Webflow"],
+    images: [],
+  },
+  {
+    slug: "sonor-music",
+    title: "Sonor",
+    tagline: "Where sound meets visual expression",
+    category: "Creative Direction",
+    year: "2024",
+    color: "#4a1942",
+    thumbnail: "",
+    heroImage: "",
+    overview:
+      "Sonor is an experimental music platform that generates unique visual identities for artists based on their sonic DNA — tempo, mood, instrumentation, and lyrical themes.",
+    challenge:
+      "Independent musicians struggle to create a cohesive visual brand. Album artwork, social media assets, and promotional materials often feel disconnected from their actual sound.",
+    approach:
+      "I developed a generative design system that translates audio features into visual parameters — color palettes, typography choices, layout compositions, and motion patterns. Each artist gets a living visual identity that evolves with their music.",
+    outcome:
+      "Over 5,000 artists generated visual identities in the beta period. The platform was featured in It's Nice That and Communication Arts.",
+    tools: ["Figma", "TouchDesigner", "Processing", "Cinema 4D"],
+    images: [],
+  },
+  {
+    slug: "atlas-wayfinding",
+    title: "Atlas",
+    tagline: "Rethinking indoor navigation for complex spaces",
+    category: "UX / Spatial Design",
+    year: "2024",
+    color: "#1a1a2e",
+    thumbnail: "",
+    heroImage: "",
+    overview:
+      "Atlas is an indoor wayfinding system for hospitals, airports, and large campuses. It combines physical signage design with a digital AR companion app.",
+    challenge:
+      "Large facilities are stressful to navigate, especially for first-time visitors. Existing wayfinding solutions relied on static maps that didn't account for real-time changes or accessibility needs.",
+    approach:
+      "I designed a modular signage system with clear typographic hierarchy and integrated QR entry points. The companion app uses AR overlays for step-by-step guidance, with accessibility modes for vision and mobility needs.",
+    outcome:
+      "Pilot deployment at two major hospitals reduced average wayfinding time by 38% and significantly improved patient satisfaction scores.",
+    tools: ["Figma", "Blender", "ARKit", "Illustrator"],
+    images: [],
+  },
+];
+
+export function getProject(slug: string): Project | undefined {
+  return projects.find((p) => p.slug === slug);
+}
