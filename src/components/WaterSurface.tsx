@@ -3,79 +3,41 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Water surface rendered as horizontal wave lines.
- * `chaos` 0–1 controls how many waves interfere:
- *   1 = many overlapping waves (complexity)
- *   0 = one gentle sine (clarity)
+ * Top-down water surface — circular ripples from wave sources.
+ * chaos=1: many sources interfering (complex, choppy)
+ * chaos=0: single source, clean expanding rings (clarity)
  */
 
-interface Wave {
+interface WaveSource {
+  // Normalised 0–1 coords
+  x: number;
+  y: number;
   frequency: number;
   amplitude: number;
   speed: number;
   phase: number;
-  direction: number; // angle offset for slight diagonal movement
 }
 
-// The waves that exist during chaos — all interfering
-const CHAOS_WAVES: Wave[] = [
-  { frequency: 0.008, amplitude: 18, speed: 0.9, phase: 0, direction: 0 },
-  { frequency: 0.012, amplitude: 14, speed: -1.3, phase: 1.2, direction: 0.3 },
-  { frequency: 0.02, amplitude: 10, speed: 1.7, phase: 2.8, direction: -0.2 },
-  { frequency: 0.006, amplitude: 22, speed: -0.6, phase: 0.5, direction: 0.15 },
-  { frequency: 0.025, amplitude: 7, speed: 2.2, phase: 4.1, direction: -0.4 },
-  { frequency: 0.015, amplitude: 12, speed: -1.0, phase: 3.3, direction: 0.25 },
-  { frequency: 0.035, amplitude: 5, speed: 2.8, phase: 1.7, direction: -0.1 },
-  { frequency: 0.009, amplitude: 16, speed: 0.7, phase: 5.0, direction: 0.35 },
-  { frequency: 0.045, amplitude: 3, speed: -3.2, phase: 2.1, direction: 0.1 },
-  { frequency: 0.018, amplitude: 9, speed: 1.5, phase: 0.8, direction: -0.3 },
+// Multiple interference sources — active at high chaos
+const CHAOS_SOURCES: WaveSource[] = [
+  { x: 0.15, y: 0.25, frequency: 0.045, amplitude: 1.0, speed: 1.8, phase: 0.0 },
+  { x: 0.75, y: 0.15, frequency: 0.038, amplitude: 0.9, speed: 2.1, phase: 1.3 },
+  { x: 0.55, y: 0.80, frequency: 0.052, amplitude: 0.85, speed: 1.5, phase: 2.7 },
+  { x: 0.20, y: 0.75, frequency: 0.030, amplitude: 0.95, speed: 2.4, phase: 0.8 },
+  { x: 0.85, y: 0.60, frequency: 0.060, amplitude: 0.7, speed: 1.2, phase: 3.5 },
+  { x: 0.45, y: 0.35, frequency: 0.042, amplitude: 0.8, speed: 2.8, phase: 4.2 },
+  { x: 0.10, y: 0.55, frequency: 0.035, amplitude: 0.75, speed: 1.6, phase: 5.1 },
+  { x: 0.90, y: 0.35, frequency: 0.055, amplitude: 0.65, speed: 2.0, phase: 2.1 },
 ];
 
-// The single calm wave
-const CALM_WAVE: Wave = {
-  frequency: 0.004,
-  amplitude: 12,
-  speed: 0.35,
-  phase: 0,
-  direction: 0,
+// The one calm source — centre of the canvas
+const CALM_SOURCE: WaveSource = {
+  x: 0.5, y: 0.5,
+  frequency: 0.028,
+  amplitude: 1.0,
+  speed: 0.8,
+  phase: 0.0,
 };
-
-function getWaveHeight(
-  x: number,
-  y: number,
-  t: number,
-  chaos: number
-): number {
-  // Single calm wave — always present
-  const calmH =
-    Math.sin(x * CALM_WAVE.frequency + t * CALM_WAVE.speed + CALM_WAVE.phase) *
-    CALM_WAVE.amplitude;
-
-  if (chaos < 0.01) return calmH;
-
-  // Chaos waves — each fades in/out based on chaos level
-  let chaosH = 0;
-  for (let i = 0; i < CHAOS_WAVES.length; i++) {
-    const w = CHAOS_WAVES[i];
-    // Stagger: earlier waves appear at lower chaos levels
-    const threshold = i / CHAOS_WAVES.length;
-    const waveIntensity = Math.max(
-      0,
-      Math.min(1, (chaos - threshold * 0.6) / 0.4)
-    );
-    if (waveIntensity < 0.01) continue;
-
-    const xOff = x * Math.cos(w.direction) + y * Math.sin(w.direction);
-    chaosH +=
-      Math.sin(xOff * w.frequency + t * w.speed + w.phase) *
-      w.amplitude *
-      waveIntensity;
-  }
-
-  // Blend: calm wave stays, chaos waves layer on top
-  // As chaos → 0, only the calm wave remains
-  return calmH * (1 - chaos * 0.3) + chaosH;
-}
 
 export default function WaterSurface({
   chaos,
@@ -95,113 +57,107 @@ export default function WaterSurface({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let w = 0;
-    let h = 0;
+    // Internal resolution — low enough to be fast, high enough to be smooth
+    const RES_W = 320;
+    const RES_H = 200;
+    canvas.width = RES_W;
+    canvas.height = RES_H;
+    ctx.imageSmoothingEnabled = true;
 
-    const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      w = rect.width;
-      h = rect.height;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
+    const imageData = ctx.createImageData(RES_W, RES_H);
+    const buf = imageData.data;
 
     let time = 0;
 
     const draw = () => {
       time += 0.016;
       const c = chaosRef.current;
-      ctx.clearRect(0, 0, w, h);
 
-      // Number of horizontal wave lines
-      const lineCount = 50;
-      const lineSpacing = h / lineCount;
+      for (let py = 0; py < RES_H; py++) {
+        for (let px = 0; px < RES_W; px++) {
+          const nx = px / RES_W; // normalised
+          const ny = py / RES_H;
 
-      for (let i = 0; i < lineCount; i++) {
-        const baseY = i * lineSpacing + lineSpacing * 0.5;
+          // Sum all wave heights at this point
+          let height = 0;
 
-        // Depth factor — lines near center are brighter
-        const centerDist = Math.abs(baseY - h * 0.5) / (h * 0.5);
-        const depthAlpha = (1 - centerDist * 0.7) * 0.25;
+          // Calm source — always present, fades slightly at peak chaos
+          const calmDist = Math.hypot(nx - CALM_SOURCE.x, ny - CALM_SOURCE.y);
+          const calmH =
+            Math.sin(
+              calmDist * CALM_SOURCE.frequency * RES_W -
+              time * CALM_SOURCE.speed +
+              CALM_SOURCE.phase
+            ) *
+            CALM_SOURCE.amplitude *
+            (1 - c * 0.6); // calm wave dims during chaos
+          height += calmH;
 
-        // Draw the wave line
-        ctx.beginPath();
+          // Chaos sources — each fades in with staggered threshold
+          for (let i = 0; i < CHAOS_SOURCES.length; i++) {
+            const src = CHAOS_SOURCES[i];
+            // Stagger: later sources need higher chaos to appear
+            const threshold = (i / CHAOS_SOURCES.length) * 0.7;
+            const intensity = Math.max(
+              0,
+              Math.min(1, (c - threshold) / 0.35)
+            );
+            if (intensity < 0.01) continue;
 
-        const step = 4; // pixel step for smoothness
-        for (let x = 0; x <= w; x += step) {
-          const waveH = getWaveHeight(x, baseY, time, c);
-          const y = baseY + waveH;
-
-          if (x === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
+            const dist = Math.hypot(nx - src.x, ny - src.y);
+            // Wave attenuates with distance
+            const attenuation = Math.max(0.1, 1 - dist * 0.8);
+            const h =
+              Math.sin(
+                dist * src.frequency * RES_W -
+                time * src.speed +
+                src.phase
+              ) *
+              src.amplitude *
+              intensity *
+              attenuation;
+            height += h;
           }
-        }
 
-        // Line color — lime with depth-based alpha
-        const alpha = depthAlpha * (0.6 + c * 0.4);
-        ctx.strokeStyle = `rgba(194, 224, 58, ${alpha})`;
-        ctx.lineWidth = 0.8 + (1 - centerDist) * 0.4;
-        ctx.stroke();
+          // Map height to colour — lime green with alpha from wave height
+          const normalised = (height + 1.5) / 3.0; // 0–1 range (rough)
+          const clamped = Math.max(0, Math.min(1, normalised));
 
-        // Highlight peaks — bright dots at wave crests during chaos
-        if (c > 0.2) {
-          const highlightAlpha = (c - 0.2) * 0.5 * depthAlpha;
-          for (let x = 0; x <= w; x += step * 8) {
-            const waveH = getWaveHeight(x, baseY, time, c);
-            // Only at peaks (positive height, high curvature)
-            const waveH2 = getWaveHeight(x + 2, baseY, time, c);
-            const waveH0 = getWaveHeight(x - 2, baseY, time, c);
-            const curvature = waveH0 + waveH2 - 2 * waveH;
-            if (curvature < -0.3 && waveH > 5) {
-              const y = baseY + waveH;
-              ctx.beginPath();
-              ctx.arc(x, y, 1, 0, Math.PI * 2);
-              ctx.fillStyle = `rgba(194, 224, 58, ${highlightAlpha})`;
-              ctx.fill();
-            }
-          }
+          // During calm: thin bright rings on dark bg (high contrast)
+          // During chaos: dense bright soup
+          const ringSharpness = 1 - c * 0.5;
+          // Sharpen to rings by applying a soft threshold
+          const ringed =
+            Math.pow(
+              Math.abs(Math.sin(clamped * Math.PI * (4 + c * 8))),
+              0.5 + ringSharpness * 1.5
+            );
+
+          const idx = (py * RES_W + px) * 4;
+          buf[idx] = 194;     // R — lime
+          buf[idx + 1] = 224; // G
+          buf[idx + 2] = 58;  // B
+          buf[idx + 3] = Math.round(ringed * (0.12 + c * 0.1) * 255);
         }
       }
 
-      // Subtle reflection line at center — more visible in calm
-      if (c < 0.7) {
-        const reflAlpha = (1 - c) * 0.06;
-        const centerY = h * 0.5;
-        const waveH = getWaveHeight(w * 0.5, centerY, time, c);
-        ctx.beginPath();
-        ctx.moveTo(0, centerY + waveH * 0.3);
-        for (let x = 0; x <= w; x += 6) {
-          const hh = getWaveHeight(x, centerY, time, c);
-          ctx.lineTo(x, centerY + hh * 0.3);
-        }
-        ctx.strokeStyle = `rgba(194, 224, 58, ${reflAlpha})`;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-
+      ctx.putImageData(imageData, 0, 0);
       frameRef.current = requestAnimationFrame(draw);
     };
 
     frameRef.current = requestAnimationFrame(draw);
-
-    return () => {
-      cancelAnimationFrame(frameRef.current);
-      window.removeEventListener("resize", resize);
-    };
+    return () => cancelAnimationFrame(frameRef.current);
   }, []);
 
   return (
     <canvas
       ref={canvasRef}
       className={className}
-      style={{ width: "100%", height: "100%" }}
+      style={{
+        width: "100%",
+        height: "100%",
+        imageRendering: "auto",
+      }}
     />
   );
 }
