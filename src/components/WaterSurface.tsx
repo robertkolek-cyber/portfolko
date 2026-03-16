@@ -134,11 +134,11 @@ export default function WaterSurface({
             );
 
           const idx = (py * RES_W + px) * 4;
-          // Blend indigo → pink based on chaos level
-          buf[idx]     = Math.round(99  + (236 - 99)  * c * 0.6); // R
-          buf[idx + 1] = Math.round(102 + (72  - 102) * c * 0.6); // G
-          buf[idx + 2] = Math.round(241 + (153 - 241) * c * 0.6); // B
-          buf[idx + 3] = Math.round(ringed * (0.18 + c * 0.14) * 255);
+          // Blend light blue → royal blue based on chaos level
+          buf[idx]     = Math.round(147 + (37  - 147) * c * 0.7); // R
+          buf[idx + 1] = Math.round(197 + (99  - 197) * c * 0.7); // G
+          buf[idx + 2] = Math.round(253 + (235 - 253) * c * 0.7); // B
+          buf[idx + 3] = Math.round(ringed * (0.20 + c * 0.15) * 255);
         }
       }
 

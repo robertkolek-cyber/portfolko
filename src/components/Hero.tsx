@@ -256,9 +256,9 @@ export default function Hero() {
 
     const glowShadow = g > 0.01
       ? [
-          `0 0 ${60 * g}px rgba(99, 102, 241, ${0.8 * Math.min(1, g)})`,
-          `0 0 ${150 * g}px rgba(167, 139, 250, ${0.5 * Math.min(1, g)})`,
-          `0 0 ${280 * g}px rgba(236, 72, 153, ${0.25 * Math.min(1, g)})`,
+          `0 0 ${60 * g}px rgba(37, 99, 235, ${0.8 * Math.min(1, g)})`,
+          `0 0 ${150 * g}px rgba(59, 130, 246, ${0.5 * Math.min(1, g)})`,
+          `0 0 ${280 * g}px rgba(147, 197, 253, ${0.3 * Math.min(1, g)})`,
         ].join(", ")
       : "none";
 
@@ -325,9 +325,9 @@ export default function Hero() {
         <WaterSurface chaos={frame.waterChaos} />
       </div>
 
-      {/* Ambient glow — indigo top-right, pink bottom-left */}
+      {/* Ambient glow — royal blue top-right, light blue bottom-left */}
       <div className="absolute top-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-lime/[0.12] blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[15%] left-[8%] w-[400px] h-[400px] rounded-full bg-pink/[0.09] blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[15%] left-[8%] w-[400px] h-[400px] rounded-full bg-dark-700/[0.15] blur-[100px] pointer-events-none" />
 
       {/* Clarity bloom — background glow that swells behind text */}
       {frame.glowIntensity > 0.01 && (
@@ -337,7 +337,7 @@ export default function Hero() {
             width: `${500 * frame.glowIntensity}px`,
             height: `${250 * frame.glowIntensity}px`,
             transform: "translate(-50%, -50%)",
-            background: `radial-gradient(ellipse, rgba(99, 102, 241, ${0.18 * Math.min(1, frame.glowIntensity)}) 0%, rgba(236, 72, 153, ${0.08 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
+            background: `radial-gradient(ellipse, rgba(37, 99, 235, ${0.2 * Math.min(1, frame.glowIntensity)}) 0%, rgba(147, 197, 253, ${0.1 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
             filter: `blur(${50 * frame.glowIntensity}px)`,
           }}
         />
