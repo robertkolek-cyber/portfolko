@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import NetworkMesh from "./NetworkMesh";
+import WaterSurface from "./WaterSurface";
 
 /* ═══════════════════════════════════════════════════════════════
    ONE TIMELINE. ONE rAF LOOP. EVERY VALUE IS A SMOOTH FUNCTION
@@ -81,6 +81,7 @@ const REST_START = GLOW_START + 1.0; // secondary content starts during glow
 interface FrameState {
   visibleCount: number;
   noiseIntensity: number; // 0–1 smooth
+  waterChaos: number; // 0–1, drives water surface
   glowIntensity: number; // 0–1+ (overshoot)
   restOpacity: number;
   restY: number;
@@ -96,6 +97,7 @@ export default function Hero() {
   const [frame, setFrame] = useState<FrameState>({
     visibleCount: 0,
     noiseIntensity: 0,
+    waterChaos: 0.15,
     glowIntensity: 0,
     restOpacity: 0,
     restY: 24,
@@ -129,11 +131,28 @@ export default function Hero() {
       // ── Noise intensity: smooth ramp up during complexity, ease down after ──
       let noise = 0;
       if (t >= COMPLEXITY_START && t <= CLARITY_END) {
-        // Ramp up during complexity
         const rampUp = smoothstep(COMPLEXITY_START, COMPLEXITY_END, t);
-        // Ramp down from " into " through clarity
         const rampDown = 1 - smoothstep(CLARITY_START - 0.15, CLARITY_END, t);
         noise = easeOutCubic(rampUp) * rampDown;
+      }
+
+      // ── Water chaos: wider arc than text noise ──
+      // Starts calm, builds before complexity, peaks during, settles after clarity
+      let waterChaos = 0.15; // base: gentle ripple
+      if (t < COMPLEXITY_START) {
+        // Anticipation — slight build before complexity starts typing
+        waterChaos = 0.15 + smoothstep(COMPLEXITY_START - 0.4, COMPLEXITY_START, t) * 0.2;
+      } else if (t <= COMPLEXITY_END + 0.3) {
+        // Full chaos during complexity
+        const ramp = smoothstep(COMPLEXITY_START, COMPLEXITY_START + 0.4, t);
+        waterChaos = 0.35 + easeOutCubic(ramp) * 0.65;
+      } else if (t <= CLARITY_END + 0.5) {
+        // Settle down through " into " and clarity
+        const settle = smoothstep(COMPLEXITY_END + 0.3, CLARITY_END + 0.5, t);
+        waterChaos = 1.0 - easeOutCubic(settle) * 0.92;
+      } else {
+        // After clarity — calm, single wave
+        waterChaos = 0.08;
       }
 
       // ── Drive SVG filter from the same loop ──
@@ -197,6 +216,7 @@ export default function Hero() {
       setFrame({
         visibleCount: count,
         noiseIntensity: noise,
+        waterChaos,
         glowIntensity: glow,
         restOpacity: restEased,
         restY: 24 * (1 - restEased),
@@ -300,9 +320,9 @@ export default function Hero() {
         </defs>
       </svg>
 
-      {/* Ambient mesh */}
-      <div className="absolute inset-0 opacity-50 pointer-events-none">
-        <NetworkMesh />
+      {/* Water surface */}
+      <div className="absolute inset-0 pointer-events-none">
+        <WaterSurface chaos={frame.waterChaos} />
       </div>
 
       {/* Ambient glow */}
