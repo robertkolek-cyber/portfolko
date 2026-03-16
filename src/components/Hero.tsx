@@ -69,10 +69,12 @@ const COMPLEXITY_END = TIMELINE.chars.filter((c) => c.token === "complexity").po
 const CLARITY_START = TIMELINE.chars.find((c) => c.token === "clarity")!.time;
 const CLARITY_END = LAST_CHAR_TIME;
 
-// Glow starts after a beat
-const GLOW_START = CLARITY_END + 0.3;
-const GLOW_DURATION = 1.4;
-const REST_START = GLOW_START + 0.6; // secondary content
+// Glow: slow bloom, hold, then fade out
+const GLOW_START = CLARITY_END + 0.35;
+const GLOW_IN = 2.0;       // slow ramp up
+const GLOW_HOLD = 1.2;     // hold at peak
+const GLOW_OUT = 1.8;      // fade out
+const REST_START = GLOW_START + 1.0; // secondary content starts during glow
 
 /* ── Component ────────────────────────────────────────────────── */
 
@@ -136,27 +138,41 @@ export default function Hero() {
 
       // ── Drive SVG filter from the same loop ──
       if (noise > 0.01) {
-        seed += 3;
+        seed += 4;
         if (turbRef.current) {
           turbRef.current.setAttribute("seed", String(seed));
-          // Frequency wobble for organic crunch
-          const freq = 0.55 + Math.sin(t * 5.5) * 0.2;
-          turbRef.current.setAttribute("baseFrequency", String(freq.toFixed(3)));
+          // High X freq, very low Y freq → horizontal bands/scanlines
+          const freqX = 0.7 + Math.sin(t * 4) * 0.15;
+          const freqY = 0.015 + Math.sin(t * 6.3) * 0.008;
+          turbRef.current.setAttribute(
+            "baseFrequency",
+            `${freqX.toFixed(3)} ${freqY.toFixed(4)}`
+          );
         }
         if (dispRef.current) {
-          // Scale pulsates, modulated by overall intensity
-          const scale = noise * (20 + Math.sin(t * 7.3) * 8);
+          // Horizontal tear — mostly X displacement, modulated by intensity
+          const scale = noise * (24 + Math.sin(t * 8.5) * 10);
           dispRef.current.setAttribute("scale", String(scale.toFixed(1)));
         }
       } else {
         if (dispRef.current) dispRef.current.setAttribute("scale", "0");
       }
 
-      // ── Glow: overshoot curve ──
+      // ── Glow: slow bloom → hold → fade out ──
       let glow = 0;
       if (t >= GLOW_START) {
-        const raw = Math.min(1, (t - GLOW_START) / GLOW_DURATION);
-        glow = easeOutBack(raw);
+        const elapsed = t - GLOW_START;
+        if (elapsed < GLOW_IN) {
+          // Ramp up with overshoot
+          glow = easeOutBack(elapsed / GLOW_IN);
+        } else if (elapsed < GLOW_IN + GLOW_HOLD) {
+          // Hold at peak with subtle breath
+          glow = 1 + Math.sin((elapsed - GLOW_IN) * 2.5) * 0.06;
+        } else {
+          // Fade out
+          const fadeT = (elapsed - GLOW_IN - GLOW_HOLD) / GLOW_OUT;
+          glow = Math.max(0, 1 - easeOutCubic(Math.min(1, fadeT)));
+        }
       }
 
       // ── Secondary content: staggered ease-out ──
@@ -262,22 +278,23 @@ export default function Hero() {
       {/* SVG noise filter — driven from the main rAF loop */}
       <svg className="absolute w-0 h-0" aria-hidden="true">
         <defs>
-          <filter id="textNoise" x="-10%" y="-10%" width="120%" height="120%">
+          <filter id="textNoise" x="-15%" y="-5%" width="130%" height="110%">
             <feTurbulence
               ref={turbRef}
               type="fractalNoise"
-              baseFrequency="0.55"
-              numOctaves="4"
+              baseFrequency="0.7 0.015"
+              numOctaves="3"
               seed="0"
               result="noise"
             />
+            {/* X-only displacement → horizontal tear/scanline effect */}
             <feDisplacementMap
               ref={dispRef}
               in="SourceGraphic"
               in2="noise"
               scale="0"
               xChannelSelector="R"
-              yChannelSelector="G"
+              yChannelSelector="R"
             />
           </filter>
         </defs>
