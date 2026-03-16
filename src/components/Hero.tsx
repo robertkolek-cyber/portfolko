@@ -1,197 +1,307 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import NetworkMesh from "./NetworkMesh";
-import NoiseSvg from "./NoiseSvg";
 
-/* ── Typing engine ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   ONE TIMELINE. ONE rAF LOOP. EVERY VALUE IS A SMOOTH FUNCTION
+   OF TIME. NO setTimeout. NO CSS transition. NO linear easing.
+   ═══════════════════════════════════════════════════════════════ */
 
-interface Token {
-  text: string;
-  type: "normal" | "complexity" | "clarity";
-}
+/* ── Easing library ───────────────────────────────────────────── */
 
-const TOKENS: Token[] = [
-  { text: "I turn ", type: "normal" },
-  { text: "complexity", type: "complexity" },
-  { text: " into ", type: "normal" },
-  { text: "clarity", type: "clarity" },
-];
-
-const FULL_TEXT = TOKENS.map((t) => t.text).join("");
-
-/* ── Easing helper ────────────────────────────────────────────── */
-
-// cubic-bezier approximation for CSS ease-out
+// Smooth deceleration — fast start, gentle stop
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
-/* ── Hero ──────────────────────────────────────────────────────── */
+// Dramatic deceleration — even snappier
+const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
+
+// Overshoot then settle — for the glow bloom
+const easeOutBack = (t: number) => {
+  const c = 1.7;
+  return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
+};
+
+// Smooth step — nice for interpolating curves
+const smoothstep = (edge0: number, edge1: number, x: number) => {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+};
+
+/* ── Token timeline ───────────────────────────────────────────── */
+
+interface CharEntry {
+  char: string;
+  time: number; // exact second this character appears
+  token: "normal" | "complexity" | "clarity";
+}
+
+function buildTimeline(): { chars: CharEntry[]; totalDuration: number } {
+  const tokens: { text: string; type: "normal" | "complexity" | "clarity"; msPerChar: number }[] = [
+    { text: "I turn ", type: "normal", msPerChar: 60 },
+    { text: "complexity", type: "complexity", msPerChar: 80 },
+    { text: " into ", type: "normal", msPerChar: 50 },
+    { text: "clarity", type: "clarity", msPerChar: 155 },
+  ];
+
+  const startDelay = 0.6; // seconds before first char
+  const chars: CharEntry[] = [];
+  let cursor = startDelay;
+
+  for (const token of tokens) {
+    for (const char of token.text) {
+      chars.push({ char, time: cursor, token: token.type });
+      cursor += token.msPerChar / 1000;
+    }
+  }
+
+  // Beat after last char before glow
+  const totalDuration = cursor + 2.5;
+  return { chars, totalDuration };
+}
+
+const TIMELINE = buildTimeline();
+const LAST_CHAR_TIME = TIMELINE.chars[TIMELINE.chars.length - 1].time;
+
+// When does each phase start/end?
+const COMPLEXITY_START = TIMELINE.chars.find((c) => c.token === "complexity")!.time;
+const COMPLEXITY_END = TIMELINE.chars.filter((c) => c.token === "complexity").pop()!.time;
+const CLARITY_START = TIMELINE.chars.find((c) => c.token === "clarity")!.time;
+const CLARITY_END = LAST_CHAR_TIME;
+
+// Glow starts after a beat
+const GLOW_START = CLARITY_END + 0.3;
+const GLOW_DURATION = 1.4;
+const REST_START = GLOW_START + 0.6; // secondary content
+
+/* ── Component ────────────────────────────────────────────────── */
+
+interface FrameState {
+  visibleCount: number;
+  noiseIntensity: number; // 0–1 smooth
+  glowIntensity: number; // 0–1+ (overshoot)
+  restOpacity: number;
+  restY: number;
+  ctaOpacity: number;
+  ctaY: number;
+  scrollOpacity: number;
+  scrollY: number;
+  cursorOpacity: number;
+  showCursor: boolean;
+}
 
 export default function Hero() {
-  const [charIndex, setCharIndex] = useState(0);
-  const [phase, setPhase] = useState<"waiting" | "typing" | "done">("waiting");
-  const [noiseActive, setNoiseActive] = useState(false);
-  const [clarityGlow, setClarityGlow] = useState(false);
-  const [glowScale, setGlowScale] = useState(0); // 0→1, animated with easing
-  const [showRest, setShowRest] = useState(false);
-  const typingRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const glowFrameRef = useRef(0);
+  const [frame, setFrame] = useState<FrameState>({
+    visibleCount: 0,
+    noiseIntensity: 0,
+    glowIntensity: 0,
+    restOpacity: 0,
+    restY: 24,
+    ctaOpacity: 0,
+    ctaY: 20,
+    scrollOpacity: 0,
+    scrollY: 12,
+    cursorOpacity: 1,
+    showCursor: true,
+  });
 
-  const getTokenAt = useCallback((idx: number) => {
-    let offset = 0;
-    for (const token of TOKENS) {
-      if (idx < offset + token.text.length) return token.type;
-      offset += token.text.length;
-    }
-    return "normal" as const;
-  }, []);
+  const turbRef = useRef<SVGFETurbulenceElement>(null);
+  const dispRef = useRef<SVGFEDisplacementMapElement>(null);
+  const rafRef = useRef(0);
+  const startRef = useRef(0);
 
-  // Start typing
   useEffect(() => {
-    const start = setTimeout(() => setPhase("typing"), 800);
-    return () => clearTimeout(start);
-  }, []);
+    startRef.current = performance.now();
+    let seed = 0;
 
-  // Animated glow ramp — eased, not linear
-  useEffect(() => {
-    if (!clarityGlow) return;
-    const start = performance.now();
-    const duration = 1200; // slow, luxurious ramp
+    const tick = (now: number) => {
+      const t = (now - startRef.current) / 1000; // seconds
 
-    const animate = (now: number) => {
-      const elapsed = now - start;
-      const raw = Math.min(1, elapsed / duration);
-      setGlowScale(easeOutCubic(raw));
-      if (raw < 1) {
-        glowFrameRef.current = requestAnimationFrame(animate);
+      // ── Visible characters ──
+      let count = 0;
+      for (const entry of TIMELINE.chars) {
+        if (t >= entry.time) count++;
+        else break;
       }
+
+      // ── Noise intensity: smooth ramp up during complexity, ease down after ──
+      let noise = 0;
+      if (t >= COMPLEXITY_START && t <= CLARITY_END) {
+        // Ramp up during complexity
+        const rampUp = smoothstep(COMPLEXITY_START, COMPLEXITY_END, t);
+        // Ramp down from " into " through clarity
+        const rampDown = 1 - smoothstep(CLARITY_START - 0.15, CLARITY_END, t);
+        noise = easeOutCubic(rampUp) * rampDown;
+      }
+
+      // ── Drive SVG filter from the same loop ──
+      if (noise > 0.01) {
+        seed += 3;
+        if (turbRef.current) {
+          turbRef.current.setAttribute("seed", String(seed));
+          // Frequency wobble for organic crunch
+          const freq = 0.55 + Math.sin(t * 5.5) * 0.2;
+          turbRef.current.setAttribute("baseFrequency", String(freq.toFixed(3)));
+        }
+        if (dispRef.current) {
+          // Scale pulsates, modulated by overall intensity
+          const scale = noise * (20 + Math.sin(t * 7.3) * 8);
+          dispRef.current.setAttribute("scale", String(scale.toFixed(1)));
+        }
+      } else {
+        if (dispRef.current) dispRef.current.setAttribute("scale", "0");
+      }
+
+      // ── Glow: overshoot curve ──
+      let glow = 0;
+      if (t >= GLOW_START) {
+        const raw = Math.min(1, (t - GLOW_START) / GLOW_DURATION);
+        glow = easeOutBack(raw);
+      }
+
+      // ── Secondary content: staggered ease-out ──
+      const restRaw = Math.min(1, Math.max(0, (t - REST_START) / 0.9));
+      const restEased = easeOutQuart(restRaw);
+
+      const ctaRaw = Math.min(1, Math.max(0, (t - REST_START - 0.2) / 0.9));
+      const ctaEased = easeOutQuart(ctaRaw);
+
+      const scrollRaw = Math.min(1, Math.max(0, (t - REST_START - 0.45) / 0.9));
+      const scrollEased = easeOutQuart(scrollRaw);
+
+      // ── Cursor: smooth sine blink, not CSS ──
+      const typing = t < CLARITY_END + 0.1;
+      const cursorVisible = t < REST_START + 0.3;
+      // Blink with eased sine — holds at extremes, quick transition
+      const blinkPhase = Math.sin(t * 3.2);
+      const cursorAlpha = cursorVisible
+        ? (typing ? 0.85 : smoothstep(-0.3, 0.3, blinkPhase))
+        : 0;
+
+      setFrame({
+        visibleCount: count,
+        noiseIntensity: noise,
+        glowIntensity: glow,
+        restOpacity: restEased,
+        restY: 24 * (1 - restEased),
+        ctaOpacity: ctaEased,
+        ctaY: 20 * (1 - ctaEased),
+        scrollOpacity: scrollEased,
+        scrollY: 12 * (1 - scrollEased),
+        cursorOpacity: cursorAlpha,
+        showCursor: cursorVisible,
+      });
+
+      rafRef.current = requestAnimationFrame(tick);
     };
-    glowFrameRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(glowFrameRef.current);
-  }, [clarityGlow]);
 
-  // Typing loop
-  useEffect(() => {
-    if (phase !== "typing") return;
-    if (charIndex >= FULL_TEXT.length) {
-      setPhase("done");
-      setNoiseActive(false);
-      // Beat before glow
-      setTimeout(() => setClarityGlow(true), 200);
-      setTimeout(() => setShowRest(true), 1200);
-      return;
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  // ── Render visible text with styling ──
+  const renderText = () => {
+    const visible = TIMELINE.chars.slice(0, frame.visibleCount);
+    if (visible.length === 0) return null;
+
+    // Group consecutive chars by token type for single spans
+    const groups: { token: string; text: string }[] = [];
+    for (const entry of visible) {
+      const last = groups[groups.length - 1];
+      if (last && last.token === entry.token) {
+        last.text += entry.char;
+      } else {
+        groups.push({ token: entry.token, text: entry.char });
+      }
     }
 
-    const currentToken = getTokenAt(charIndex);
+    const n = frame.noiseIntensity;
+    const g = frame.glowIntensity;
 
-    // Typing speed
-    let delay = 65;
-    const char = FULL_TEXT[charIndex];
-    if (char === " ") delay = 35;
-    if (currentToken === "complexity") delay = 80;
-    // Clarity: much slower, deliberate
-    if (currentToken === "clarity") delay = 150;
+    const glowShadow = g > 0.01
+      ? [
+          `0 0 ${60 * g}px rgba(194, 224, 58, ${0.7 * Math.min(1, g)})`,
+          `0 0 ${150 * g}px rgba(194, 224, 58, ${0.4 * Math.min(1, g)})`,
+          `0 0 ${280 * g}px rgba(194, 224, 58, ${0.2 * Math.min(1, g)})`,
+        ].join(", ")
+      : "none";
 
-    // Noise on during complexity, lingers through " into ", off at clarity
-    if (currentToken === "complexity") {
-      setNoiseActive(true);
-    } else if (currentToken === "clarity") {
-      setNoiseActive(false);
-    }
-
-    typingRef.current = setTimeout(() => {
-      setCharIndex((i) => i + 1);
-    }, delay);
-
-    return () => clearTimeout(typingRef.current);
-  }, [phase, charIndex, getTokenAt]);
-
-  // Build rendered text
-  const rendered = FULL_TEXT.slice(0, charIndex);
-
-  // Glow values — 3x bigger
-  const glowShadow = clarityGlow
-    ? [
-        `0 0 ${60 * glowScale}px rgba(194, 224, 58, ${0.7 * glowScale})`,
-        `0 0 ${150 * glowScale}px rgba(194, 224, 58, ${0.4 * glowScale})`,
-        `0 0 ${280 * glowScale}px rgba(194, 224, 58, ${0.2 * glowScale})`,
-      ].join(", ")
-    : "none";
-
-  const renderStyledText = () => {
-    let offset = 0;
-    return TOKENS.map((token, ti) => {
-      const start = offset;
-      const end = offset + token.text.length;
-      offset = end;
-
-      const visible = rendered.slice(start, end);
-      if (!visible) return null;
-
-      if (token.type === "complexity") {
+    return groups.map((group, i) => {
+      if (group.token === "complexity") {
         return (
           <span
-            key={ti}
+            key={i}
             className="text-lime italic inline-block"
             style={{
-              filter: noiseActive ? "url(#textNoise)" : "none",
-              transition: "filter 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+              filter: n > 0.01 ? "url(#textNoise)" : "none",
             }}
           >
-            {visible}
+            {group.text}
           </span>
         );
       }
-
-      if (token.type === "clarity") {
+      if (group.token === "clarity") {
         return (
           <span
-            key={ti}
+            key={i}
             className="text-lime italic"
-            style={{
-              textShadow: glowShadow,
-              transition: "text-shadow 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
-            }}
+            style={{ textShadow: glowShadow }}
           >
-            {visible}
+            {group.text}
           </span>
         );
       }
-
       return (
-        <span key={ti} className="text-slate-100">
-          {visible}
-        </span>
+        <span key={i} className="text-slate-100">{group.text}</span>
       );
     });
   };
 
-  const showCursor = phase === "typing" || (phase === "done" && !showRest);
-
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-6">
-      {/* SVG noise filter definition */}
-      <NoiseSvg active={noiseActive} />
+      {/* SVG noise filter — driven from the main rAF loop */}
+      <svg className="absolute w-0 h-0" aria-hidden="true">
+        <defs>
+          <filter id="textNoise" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence
+              ref={turbRef}
+              type="fractalNoise"
+              baseFrequency="0.55"
+              numOctaves="4"
+              seed="0"
+              result="noise"
+            />
+            <feDisplacementMap
+              ref={dispRef}
+              in="SourceGraphic"
+              in2="noise"
+              scale="0"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </defs>
+      </svg>
 
       {/* Ambient mesh */}
       <div className="absolute inset-0 opacity-50 pointer-events-none">
         <NetworkMesh />
       </div>
 
-      {/* Soft ambient glow */}
+      {/* Ambient glow */}
       <div className="absolute top-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-lime/[0.06] blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[15%] left-[8%] w-[350px] h-[350px] rounded-full bg-dark-300/[0.08] blur-[80px] pointer-events-none" />
 
-      {/* Clarity glow bloom — big background pulse behind the text */}
-      {clarityGlow && (
+      {/* Clarity bloom — background glow that swells behind text */}
+      {frame.glowIntensity > 0.01 && (
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+          className="absolute top-1/2 left-1/2 pointer-events-none"
           style={{
-            width: `${400 * glowScale}px`,
-            height: `${200 * glowScale}px`,
-            background: `radial-gradient(ellipse, rgba(194, 224, 58, ${0.12 * glowScale}) 0%, transparent 70%)`,
-            filter: `blur(${40 * glowScale}px)`,
-            transition: "none", // driven by rAF, not CSS
+            width: `${500 * frame.glowIntensity}px`,
+            height: `${250 * frame.glowIntensity}px`,
+            transform: "translate(-50%, -50%)",
+            background: `radial-gradient(ellipse, rgba(194, 224, 58, ${0.14 * Math.min(1, frame.glowIntensity)}) 0%, transparent 70%)`,
+            filter: `blur(${50 * frame.glowIntensity}px)`,
           }}
         />
       )}
@@ -203,12 +313,11 @@ export default function Hero() {
       <div className="relative z-30 max-w-5xl mx-auto text-center">
         {/* Role line */}
         <div
-          style={{
-            opacity: showRest ? 1 : 0,
-            transform: showRest ? "translateY(0)" : "translateY(12px)",
-            transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
-          }}
           className="mb-10"
+          style={{
+            opacity: frame.restOpacity,
+            transform: `translateY(${frame.restY}px)`,
+          }}
         >
           <div className="inline-flex items-center gap-3 text-sm tracking-[0.2em] uppercase text-slate-500 font-medium">
             <span className="w-8 h-px bg-dark-500" />
@@ -217,69 +326,61 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Headline — typed out */}
+        {/* Headline */}
         <h1 className="font-[family-name:var(--font-display)] text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.92] tracking-tight font-bold min-h-[1.8em]">
-          {renderStyledText()}
-          {showCursor && (
+          {renderText()}
+          {frame.showCursor && (
             <span
-              className="inline-block w-[3px] md:w-[5px] h-[0.8em] bg-lime/80 ml-1 align-middle"
-              style={{
-                animation: "pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-              }}
+              className="inline-block w-[3px] md:w-[5px] h-[0.8em] bg-lime ml-1 align-middle"
+              style={{ opacity: frame.cursorOpacity }}
             />
           )}
         </h1>
 
-        {/* Subtext + CTA */}
-        <div
+        {/* Subtext */}
+        <p
+          className="mt-10 md:mt-14 text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed"
           style={{
-            opacity: showRest ? 1 : 0,
-            transform: showRest ? "translateY(0)" : "translateY(20px)",
-            transition: "opacity 1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s",
+            opacity: frame.restOpacity,
+            transform: `translateY(${frame.restY}px)`,
           }}
         >
-          <p className="mt-10 md:mt-14 text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            I design products and systems that make the complex feel simple —
-            blending strategy, structure, and human-centered thinking.
-          </p>
+          I design products and systems that make the complex feel simple —
+          blending strategy, structure, and human-centered thinking.
+        </p>
 
-          <div
-            className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-4"
-            style={{
-              opacity: showRest ? 1 : 0,
-              transform: showRest ? "translateY(0)" : "translateY(16px)",
-              transition: "opacity 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s, transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s",
-            }}
+        {/* CTAs */}
+        <div
+          className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-4"
+          style={{
+            opacity: frame.ctaOpacity,
+            transform: `translateY(${frame.ctaY}px)`,
+          }}
+        >
+          <a
+            href="#work"
+            className="group inline-flex items-center gap-3 bg-lime text-dark-950 px-8 py-4 rounded-full text-sm font-semibold tracking-wide glow-lime-sm"
+            style={{ transition: "background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
           >
-            <a
-              href="#work"
-              className="group inline-flex items-center gap-3 bg-lime text-dark-950 px-8 py-4 rounded-full text-sm font-semibold tracking-wide hover:bg-lime-light glow-lime-sm"
-              style={{ transition: "background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
+            <span className="group-hover:brightness-110">View my work</span>
+            <svg
+              className="w-4 h-4 group-hover:translate-x-1"
+              style={{ transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
             >
-              View my work
-              <svg
-                className="w-4 h-4"
-                style={{ transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-            </a>
-            <a
-              href="#contact"
-              className="inline-flex items-center gap-2 text-slate-300 px-8 py-4 rounded-full text-sm font-medium tracking-wide border border-dark-600 hover:border-lime/50 hover:text-lime"
-              style={{ transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
-            >
-              Get in touch
-            </a>
-          </div>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </a>
+          <a
+            href="#contact"
+            className="inline-flex items-center gap-2 text-slate-300 px-8 py-4 rounded-full text-sm font-medium tracking-wide border border-dark-600 hover:border-lime/50 hover:text-lime"
+            style={{ transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          >
+            Get in touch
+          </a>
         </div>
       </div>
 
@@ -287,17 +388,12 @@ export default function Hero() {
       <div
         className="absolute bottom-10 left-1/2"
         style={{
-          opacity: showRest ? 1 : 0,
-          transform: showRest
-            ? "translateX(-50%) translateY(0)"
-            : "translateX(-50%) translateY(10px)",
-          transition: "opacity 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s, transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s",
+          opacity: frame.scrollOpacity,
+          transform: `translateX(-50%) translateY(${frame.scrollY}px)`,
         }}
       >
         <div className="flex flex-col items-center gap-3">
-          <span className="text-xs tracking-widest uppercase text-slate-600">
-            Scroll
-          </span>
+          <span className="text-xs tracking-widest uppercase text-slate-600">Scroll</span>
           <div className="w-px h-12 bg-gradient-to-b from-lime/30 to-transparent" />
         </div>
       </div>
