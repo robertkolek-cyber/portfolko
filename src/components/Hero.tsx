@@ -114,6 +114,11 @@ export default function Hero() {
   const rafRef = useRef(0);
   const startRef = useRef(0);
 
+  // Scroll-driven refs — direct DOM manipulation, zero React overhead
+  const waterScrollRef = useRef<HTMLDivElement>(null);
+  const contentScrollRef = useRef<HTMLDivElement>(null);
+  const scrollHintRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     startRef.current = performance.now();
     let seed = 0;
@@ -146,13 +151,13 @@ export default function Hero() {
         // Full chaos during complexity
         const ramp = smoothstep(COMPLEXITY_START, COMPLEXITY_START + 0.4, t);
         waterChaos = 0.35 + easeOutCubic(ramp) * 0.65;
-      } else if (t <= CLARITY_END + 0.5) {
-        // Settle down through " into " and clarity
-        const settle = smoothstep(COMPLEXITY_END + 0.3, CLARITY_END + 0.5, t);
-        waterChaos = 1.0 - easeOutCubic(settle) * 0.92;
+      } else if (t <= CLARITY_START) {
+        // Settle hard to 0 during " into " — perfectly circular by the time clarity types
+        const settle = smoothstep(COMPLEXITY_END + 0.05, CLARITY_START, t);
+        waterChaos = 1.0 - easeOutCubic(settle);
       } else {
-        // After clarity — calm, single wave
-        waterChaos = 0.08;
+        // Clarity and beyond — single centered source, perfect rings
+        waterChaos = 0.0;
       }
 
       // ── Drive SVG filter from the same loop ──
@@ -233,6 +238,27 @@ export default function Hero() {
 
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  // Scroll: zoom water in, fade text out — jumping-into-water effect
+  useEffect(() => {
+    const onScroll = () => {
+      const p = Math.min(1, window.scrollY / (window.innerHeight * 0.65));
+
+      if (waterScrollRef.current) {
+        waterScrollRef.current.style.transform = `scale(${1 + p * 2.0})`;
+      }
+      if (contentScrollRef.current) {
+        const op = Math.max(0, 1 - p * 2.5);
+        contentScrollRef.current.style.opacity = String(op);
+        contentScrollRef.current.style.transform = `translateY(${-p * 60}px)`;
+      }
+      if (scrollHintRef.current) {
+        scrollHintRef.current.style.opacity = String(Math.max(0, 1 - p * 8));
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   // ── Render visible text with styling ──
@@ -320,8 +346,8 @@ export default function Hero() {
         </defs>
       </svg>
 
-      {/* Water surface */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Water surface — zooms in on scroll */}
+      <div ref={waterScrollRef} className="absolute inset-0 pointer-events-none" style={{ transformOrigin: "center center" }}>
         <WaterSurface chaos={frame.waterChaos} />
       </div>
 
@@ -346,8 +372,8 @@ export default function Hero() {
       {/* Grid */}
       <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
 
-      {/* Content */}
-      <div className="relative z-30 max-w-5xl mx-auto text-center">
+      {/* Content — fades out + drifts up on scroll */}
+      <div ref={contentScrollRef} className="relative z-30 max-w-5xl mx-auto text-center">
         {/* Role line */}
         <div
           className="mb-10"
@@ -423,6 +449,7 @@ export default function Hero() {
 
       {/* Scroll indicator */}
       <div
+        ref={scrollHintRef}
         className="absolute bottom-10 left-1/2"
         style={{
           opacity: frame.scrollOpacity,
