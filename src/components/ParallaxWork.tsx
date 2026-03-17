@@ -24,7 +24,9 @@ export default function ParallaxWork() {
     const step = 0.75 / total;
 
     const getTiming = (index: number) => {
-      const center = 0.15 + index * step;
+      // Start tiles at 0.25 so first card is invisible at progress=0
+      // (hero fades out 0–5%, tiles begin appearing from ~8%)
+      const center = 0.25 + index * step;
       const start = center - step * 1.15;
       const end = center + step * 0.85;
       return { start, center, end };
