@@ -17,20 +17,23 @@ export default function ProjectCard({
     const el = parallaxRef.current;
     if (!el) return;
 
-    // Even/odd columns get different speeds → visible depth between columns
-    const speed = index % 2 === 0 ? 0.6 : 0.85;
-
     el.style.willChange = "transform";
+    el.style.transformStyle = "preserve-3d";
 
     const update = () => {
       const rect = el.getBoundingClientRect();
       const viewH = window.innerHeight;
       const cardCenter = rect.top + rect.height / 2;
-      const fromCenter = (cardCenter - viewH / 2) / viewH; // -0.5 … 0.5+
-      // Strong parallax: cards below center get pushed down, above get pulled up
-      // Net effect: they move toward the viewer (faster than scroll)
-      const ty = fromCenter * 180 * speed;
-      el.style.transform = `translateY(${ty}px)`;
+      // 0 when card center is at viewport bottom, 1 at viewport top
+      const progress = 1 - cardCenter / viewH;
+      const clamped = Math.max(0, Math.min(1, progress));
+
+      // Cards start far away (negative Z) and fly toward the viewer as they scroll up
+      const z = -250 + clamped * 300;   // -250px → +50px toward viewer
+      const rotX = (1 - clamped) * 6;   // slight tilt that flattens out
+      const scale = 0.88 + clamped * 0.12; // subtle size growth
+
+      el.style.transform = `translateZ(${z}px) rotateX(${rotX}deg) scale(${scale})`;
     };
 
     update();
