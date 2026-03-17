@@ -45,6 +45,15 @@ const experiences = [
   },
 ];
 
+// Initial opacity for each item when the panel first appears (before scrolling)
+const BASE_OPACITIES = [1, 0.6, 0.25, 0.1, 0.05];
+
+// Smoothstep easing: smooth S-curve between 0 and 1
+function smoothstep(t: number) {
+  const c = Math.max(0, Math.min(1, t));
+  return c * c * (3 - 2 * c);
+}
+
 function Card({ exp }: { exp: (typeof experiences)[0] }) {
   return (
     <div className="w-[300px]">
@@ -77,12 +86,12 @@ export default function CVTimeline() {
   const trackRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [entered, setEntered] = useState(false);
+  const scrollStartedRef = useRef(false);
 
-  // IntersectionObserver: the moment section peeks into viewport, trigger entrance
+  // IntersectionObserver: fires at 1px visibility → trigger panel entrance
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -90,14 +99,25 @@ export default function CVTimeline() {
           observer.disconnect();
         }
       },
-      { threshold: 0 } // fires at 1px visibility
+      { threshold: 0 }
     );
-
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
 
-  // Horizontal parallax (scroll-driven, only active after entrance completes)
+  // When panel enters: animate items to their base opacities with staggered CSS transitions
+  useEffect(() => {
+    if (!entered) return;
+    itemRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const delay = 0.35 + i * 0.07;
+      el.style.transition = `opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`;
+      el.style.opacity = String(BASE_OPACITIES[i] ?? 0.05);
+      el.style.transform = "translateY(0)";
+    });
+  }, [entered]);
+
+  // Horizontal parallax — scroll-driven
   useEffect(() => {
     const container = containerRef.current;
     const track = trackRef.current;
@@ -107,7 +127,6 @@ export default function CVTimeline() {
       const travel = Math.max(0, track.scrollWidth - window.innerWidth);
       container.style.height = `${travel + window.innerHeight}px`;
     };
-
     setHeight();
     window.addEventListener("resize", setHeight);
 
@@ -120,22 +139,32 @@ export default function CVTimeline() {
       if (scrollable <= 0) return;
       const p = Math.max(0, Math.min(1, scrolled / scrollable));
 
+      // On first scroll tick: remove CSS transitions so scroll is instant/smooth
+      if (!scrollStartedRef.current && p > 0) {
+        scrollStartedRef.current = true;
+        itemRefs.current.forEach((el) => {
+          if (el) el.style.transition = "none";
+        });
+      }
+
+      // Move track horizontally
       const travel = track.scrollWidth - window.innerWidth;
       track.style.transform = `translateX(${-p * travel}px)`;
 
-      // Stagger items (item 0 is always visible, transition hands off to scroll)
+      // Each item: interpolate from BASE_OPACITY to 1.0 as it scrolls into focus
       itemRefs.current.forEach((el, i) => {
         if (!el) return;
-        const threshold =
-          i === 0 ? 0 : (i / (experiences.length - 1)) * 0.8;
-        const ip = Math.min(1, Math.max(0, (p - threshold) / 0.1));
+        // Evenly spread activation thresholds across scroll range
+        const threshold = i === 0 ? 0 : (i / (experiences.length - 1)) * 0.75;
+        const activationRange = 0.2;
+        const t = smoothstep((p - threshold) / activationRange);
+        const baseOp = BASE_OPACITIES[i] ?? 0.05;
+        const opacity = baseOp + (1 - baseOp) * t;
         const isAbove = i % 2 === 0;
-        // For item 0: once scroll starts, take over from CSS transition
-        if (i === 0) {
-          el.style.transition = "none";
-        }
-        el.style.opacity = i === 0 ? "1" : String(ip);
-        el.style.transform = i === 0 ? "translateY(0)" : `translateY(${(1 - ip) * (isAbove ? 28 : -28)}px)`;
+        // Subtle rise as item activates (proportional to how invisible it started)
+        const yOffset = (1 - t) * (isAbove ? 18 : -18) * (1 - baseOp);
+        el.style.opacity = String(opacity);
+        el.style.transform = `translateY(${yOffset}px)`;
       });
     };
 
@@ -155,13 +184,13 @@ export default function CVTimeline() {
       style={{ backgroundColor: "#0f1d3d", marginTop: "-2rem" }}
     >
       <div className="sticky top-0 h-screen overflow-hidden">
-        {/* Content wrapper — auto-animates up via CSS transition when entered */}
+        {/* Content wrapper — slides up automatically on entrance */}
         <div
           ref={contentRef}
           className="absolute inset-0"
           style={{
             transform: entered ? "translateY(0)" : "translateY(100%)",
-            transition: "transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
+            transition: "transform 0.9s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
           {/* Section label */}
@@ -169,7 +198,8 @@ export default function CVTimeline() {
             className="absolute top-10 left-10 z-20 pointer-events-none"
             style={{
               opacity: entered ? 1 : 0,
-              transition: "opacity 0.6s ease 0.4s",
+              transform: entered ? "translateY(0)" : "translateY(8px)",
+              transition: "opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.45s, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.45s",
             }}
           >
             <p className="text-xs tracking-[0.3em] uppercase font-medium" style={{ color: "#64748b" }}>
@@ -182,7 +212,8 @@ export default function CVTimeline() {
             className="absolute top-10 right-10 z-20"
             style={{
               opacity: entered ? 1 : 0,
-              transition: "opacity 0.6s ease 0.4s",
+              transform: entered ? "translateY(0)" : "translateY(8px)",
+              transition: "opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.5s, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.5s",
             }}
           >
             <a
@@ -191,18 +222,8 @@ export default function CVTimeline() {
               className="inline-flex items-center gap-2 text-xs tracking-[0.2em] uppercase hover:text-lime transition-colors duration-300 font-medium"
               style={{ color: "#64748b" }}
             >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
-                />
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
               Download CV
             </a>
@@ -212,20 +233,14 @@ export default function CVTimeline() {
           <div
             ref={trackRef}
             className="absolute inset-y-0 left-0 flex"
-            style={{
-              paddingLeft: "10vw",
-              paddingRight: "18vw",
-              gap: "5vw",
-              willChange: "transform",
-            }}
+            style={{ paddingLeft: "10vw", paddingRight: "18vw", gap: "5vw", willChange: "transform" }}
           >
             {/* Timeline rule */}
             <div
               className="absolute top-1/2 left-0 h-px pointer-events-none"
               style={{
                 width: `${experiences.length * 450 + 400}px`,
-                background:
-                  "linear-gradient(to right, transparent, rgba(255,255,255,0.08) 5%, rgba(255,255,255,0.08) 95%, transparent)",
+                background: "linear-gradient(to right, transparent, rgba(255,255,255,0.08) 5%, rgba(255,255,255,0.08) 95%, transparent)",
               }}
             />
 
@@ -234,33 +249,26 @@ export default function CVTimeline() {
               return (
                 <div
                   key={i}
-                  ref={(el) => {
-                    itemRefs.current[i] = el;
-                  }}
+                  ref={(el) => { itemRefs.current[i] = el; }}
                   className="relative flex-shrink-0 h-screen flex flex-col"
                   style={{
                     width: 340,
-                    opacity: i === 0 ? (entered ? 1 : 0) : 0,
-                    transform: i === 0 ? (entered ? "translateY(0)" : "translateY(28px)") : undefined,
-                    transition: i === 0 ? "opacity 0.6s ease 0.5s, transform 0.6s ease 0.5s" : undefined,
+                    opacity: 0,
+                    transform: "translateY(0)",
                   }}
                 >
-                  {/* Top half — card for "above" entries */}
                   <div className="flex-1 flex flex-col justify-end pb-10">
                     {isAbove && <Card exp={exp} />}
                   </div>
 
-                  {/* Dot on the centre line */}
+                  {/* Dot */}
                   <div className="absolute top-1/2 left-0 -translate-y-1/2 z-10">
                     <div
                       className="w-3 h-3 rounded-full bg-lime"
-                      style={{
-                        boxShadow: "0 0 0 4px rgba(96, 165, 250, 0.25)",
-                      }}
+                      style={{ boxShadow: "0 0 0 4px rgba(96, 165, 250, 0.25)" }}
                     />
                   </div>
 
-                  {/* Bottom half — card for "below" entries */}
                   <div className="flex-1 flex flex-col justify-start pt-10">
                     {!isAbove && <Card exp={exp} />}
                   </div>
