@@ -3,12 +3,52 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Morphing field visualization — generative flow field that transitions
- * from tangled chaos to clean geometric order.
+ * Top-down water surface — drop-based expanding ripples.
  *
- * chaos=1: turbulent, tangled field lines with high-frequency noise
- * chaos=0: clean concentric rings radiating from center
+ * Uses a proper wave model: discrete drops create expanding circular
+ * wavefronts that interfere, attenuate, and create beautiful moiré.
+ *
+ * chaos=1: many overlapping drops, dense interference
+ * chaos=0: single centred drop, pristine concentric rings
  */
+
+/* ── Drop model ─────────────────────────────────────────────── */
+
+interface Drop {
+  x: number; // 0-1 normalised
+  y: number;
+  birthTime: number;
+  amplitude: number;
+  // Each drop emits several harmonic ring sets
+  wavelengths: number[]; // px wavelengths at internal res
+  speed: number; // px/s expansion speed
+  decay: number; // amplitude halving distance
+}
+
+function makeDrop(
+  x: number,
+  y: number,
+  t: number,
+  amp: number,
+  speed: number
+): Drop {
+  return {
+    x,
+    y,
+    birthTime: t,
+    amplitude: amp,
+    // 3 harmonics per drop — gives each ring a richer, more organic look
+    wavelengths: [
+      14 + Math.random() * 6,
+      26 + Math.random() * 8,
+      44 + Math.random() * 12,
+    ],
+    speed: speed + (Math.random() - 0.5) * 8,
+    decay: 120 + Math.random() * 60,
+  };
+}
+
+/* ── Component ──────────────────────────────────────────────── */
 
 export default function WaterSurface({
   chaos,
@@ -28,78 +68,143 @@ export default function WaterSurface({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const RES_W = 400;
-    const RES_H = 280;
-    canvas.width = RES_W;
-    canvas.height = RES_H;
-    ctx.imageSmoothingEnabled = true;
+    // Higher resolution for crisp rings
+    const W = 480;
+    const H = 320;
+    canvas.width = W;
+    canvas.height = H;
 
-    const imageData = ctx.createImageData(RES_W, RES_H);
-    const buf = imageData.data;
+    const imgData = ctx.createImageData(W, H);
+    const buf = imgData.data;
 
     let time = 0;
+    const drops: Drop[] = [];
+    let nextChaosDrop = 0;
+    let lastCalmDrop = -999;
 
-    // Precompute sin/cos tables for performance
-    const TWO_PI = Math.PI * 2;
+    // Seed a calm centre drop immediately
+    drops.push(makeDrop(0.5, 0.5, 0, 0.9, 50));
 
     const draw = () => {
-      time += 0.012;
+      const dt = 0.016;
+      time += dt;
       const c = chaosRef.current;
-      const invC = 1 - c;
 
-      const cx = RES_W * 0.5;
-      const cy = RES_H * 0.5;
+      // ── Spawn drops based on chaos level ──
+      // During chaos: frequent drops at random positions
+      if (c > 0.1 && time >= nextChaosDrop) {
+        const rate = 0.06 + (1 - c) * 0.25; // seconds between drops
+        nextChaosDrop = time + rate;
+        drops.push(
+          makeDrop(
+            0.08 + Math.random() * 0.84,
+            0.08 + Math.random() * 0.84,
+            time,
+            0.4 + c * 0.6,
+            40 + c * 25
+          )
+        );
+      }
+
+      // During calm: periodic centred drops (like a dripping faucet)
+      if (c < 0.15 && time - lastCalmDrop > 2.8) {
+        lastCalmDrop = time;
+        drops.push(makeDrop(0.5, 0.5, time, 0.85, 48));
+      }
+
+      // Prune old drops (rings faded out)
+      const MAX_AGE = 6.5;
+      while (drops.length > 0 && time - drops[0].birthTime > MAX_AGE) {
+        drops.shift();
+      }
+
+      // ── Render pixel field ──
+      const cx = W * 0.5;
+      const cy = H * 0.5;
       const maxDist = Math.hypot(cx, cy);
 
-      for (let py = 0; py < RES_H; py++) {
-        for (let px = 0; px < RES_W; px++) {
-          const nx = px / RES_W;
-          const ny = py / RES_H;
+      for (let py = 0; py < H; py++) {
+        for (let px = 0; px < W; px++) {
+          let height = 0;
 
-          const dx = px - cx;
-          const dy = py - cy;
-          const dist = Math.hypot(dx, dy);
-          const normDist = dist / maxDist;
+          // Sum wave contribution from every active drop
+          for (const drop of drops) {
+            const age = time - drop.birthTime;
+            if (age < 0) continue;
 
-          // === ORDER: Clean concentric rings with subtle rotation ===
-          const ringFreq = 0.06;
-          const ringPhase = dist * ringFreq - time * 0.8;
-          const ringVal = Math.sin(ringPhase) * 0.5 + 0.5;
-          // Sharpen rings
-          const ringSharp = Math.pow(ringVal, 2.5);
+            const dx = px - drop.x * W;
+            const dy = py - drop.y * H;
+            const dist = Math.hypot(dx, dy);
 
-          // === CHAOS: Multi-frequency noise field ===
-          // Simplex-like noise via layered sinusoids
-          const n1 = Math.sin(nx * 12.5 + time * 1.3) * Math.cos(ny * 9.7 - time * 0.9);
-          const n2 = Math.sin(nx * 23.1 - time * 2.1 + ny * 5.0) * Math.cos(ny * 17.3 + time * 1.7);
-          const n3 = Math.sin((nx + ny) * 15.0 + time * 0.7) * Math.sin((nx - ny) * 11.0 - time * 1.1);
-          const n4 = Math.sin(normDist * 20 + Math.atan2(dy, dx) * 3 - time * 2.5);
-          const chaosVal = (n1 * 0.35 + n2 * 0.25 + n3 * 0.25 + n4 * 0.15) * 0.5 + 0.5;
+            // Wavefront radius at this moment
+            const frontR = age * drop.speed;
 
-          // === BLEND based on chaos parameter ===
-          const fieldVal = ringSharp * invC + chaosVal * c;
+            // Only contribute if the wavefront has reached this pixel
+            // (with a soft leading edge)
+            const behind = frontR - dist;
+            if (behind < -2) continue;
 
-          // Pulsing brightness based on field value
-          const brightness = fieldVal;
+            // Leading edge softness — wave fades in over ~8px
+            const leadFade = Math.min(1, Math.max(0, behind / 8));
 
-          // Color: calm = soft cyan-blue, chaos = deeper electric blue
-          const r = Math.round(100 + 80 * invC + brightness * (50 - 30 * c));
-          const g = Math.round(160 + 60 * invC + brightness * (60 - 40 * c));
-          const b = Math.round(220 + 35 * invC + brightness * (35 - 10 * c));
+            // Distance attenuation — 1/sqrt(r) like real 2D waves
+            const rAtten = 1 / (1 + dist / drop.decay);
 
-          // Alpha: rings are more transparent, chaos is denser
-          const edgeFade = 1 - Math.pow(normDist, 1.5) * 0.6;
-          const alpha = brightness * (0.12 + c * 0.14) * edgeFade;
+            // Age fade — drop energy dissipates over time
+            const ageFade = Math.max(0, 1 - age / MAX_AGE);
+            const ageFadeSq = ageFade * ageFade;
 
-          const idx = (py * RES_W + px) * 4;
+            // Sum harmonics — each wavelength creates its own ring set
+            let h = 0;
+            for (const wl of drop.wavelengths) {
+              h += Math.cos((dist / wl) * Math.PI * 2 - age * 3.0);
+            }
+            h /= drop.wavelengths.length;
+
+            height += h * drop.amplitude * rAtten * ageFadeSq * leadFade;
+          }
+
+          // ── Map height to visual ──
+
+          // Normalise height to roughly -1..1 range
+          const nh = Math.max(-1, Math.min(1, height));
+
+          // Ring extraction: we want *thin bright lines* where height peaks,
+          // dark between them — like looking down at water caustics
+          // Use the absolute derivative (gradient magnitude) to find ring edges
+          const ring = Math.pow(Math.abs(nh), 0.6);
+
+          // Also use height directly for subtle ambient fill
+          const fill = (nh + 1) * 0.5; // 0-1
+
+          // Combine: ring edges dominate, with soft fill underneath
+          const brightness = ring * 0.7 + fill * 0.3;
+
+          // ── Color ──
+          // Base: cool blue. Peaks: warmer cyan. Troughs: deeper indigo.
+          const warmShift = nh * 0.5 + 0.5; // 0=trough, 1=peak
+
+          const r = Math.round(60 + warmShift * 90 + brightness * 40);
+          const g = Math.round(120 + warmShift * 70 + brightness * 55);
+          const b = Math.round(200 + warmShift * 25 + brightness * 30);
+
+          // ── Alpha ──
+          // Subtle overall, brighter at ring peaks
+          // Edge vignette
+          const normDist = Math.hypot(px - cx, py - cy) / maxDist;
+          const vignette = 1 - Math.pow(normDist, 2) * 0.5;
+
+          const alpha = brightness * (0.14 + c * 0.1) * vignette;
+
+          const idx = (py * W + px) * 4;
           buf[idx] = Math.min(255, r);
           buf[idx + 1] = Math.min(255, g);
           buf[idx + 2] = Math.min(255, b);
-          buf[idx + 3] = Math.round(alpha * 255);
+          buf[idx + 3] = Math.round(Math.min(1, alpha) * 255);
         }
       }
 
-      ctx.putImageData(imageData, 0, 0);
+      ctx.putImageData(imgData, 0, 0);
       frameRef.current = requestAnimationFrame(draw);
     };
 
