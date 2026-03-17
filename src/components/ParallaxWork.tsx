@@ -5,20 +5,7 @@ import Link from "next/link";
 import Hero from "./Hero";
 import { projects } from "@/lib/projects";
 
-/* ── F1-style depth fly-through ────────────────────────────────
-   Cards emerge from center background (tiny), scale up toward the
-   viewer, then blast past. Multiple cards visible simultaneously
-   at different depths. Minimal horizontal drift — pure Z-axis feel.
-   ─────────────────────────────────────────────────────────────── */
-
-// Slight positional stagger per card [xVw, yPct]
-// Gives the "gallery in space" look — not a single straight lane
-const CARD_OFFSETS = [
-  [-8,  -4],  // 0: slightly left, slightly up
-  [ 6,   5],  // 1: slightly right, slightly down
-  [-4,   3],  // 2: center-left, slightly down
-  [ 9,  -6],  // 3: right, slightly up
-];
+/* ── Combined hero + parallax fly-through ──────────────────── */
 
 export default function ParallaxWork() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,20 +21,24 @@ export default function ParallaxWork() {
     const heading = headingRef.current;
     if (!container) return;
 
-    // Each card occupies this fraction of the total scroll
-    const step = 0.7 / total;
+    const step = 0.75 / total;
 
     const getTiming = (index: number) => {
-      const center = 0.22 + index * step;
-      // Wide entry window so multiple cards are visible at once
-      const start = center - step * 1.4;
-      const end   = center + step * 0.9;
+      // Start tiles at 0.25 so first card is invisible at progress=0
+      // (hero fades out 0–5%, tiles begin appearing from ~8%)
+      const center = 0.25 + index * step;
+      const start = center - step * 1.15;
+      const end = center + step * 0.85;
       return { start, center, end };
     };
 
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-    const interpolate = (progress: number, inputs: number[], outputs: number[]) => {
+    const interpolate = (
+      progress: number,
+      inputs: number[],
+      outputs: number[]
+    ) => {
       if (progress <= inputs[0]) return outputs[0];
       if (progress >= inputs[inputs.length - 1]) return outputs[outputs.length - 1];
       for (let i = 0; i < inputs.length - 1; i++) {
@@ -65,62 +56,62 @@ export default function ParallaxWork() {
       const containerHeight = rect.height - window.innerHeight;
       const progress = Math.max(0, Math.min(1, containerTop / containerHeight));
 
-      // Hero: fades out 0–5%
+      // Hero fade-out: 0–5% of scroll
       if (heroWrapper) {
-        const p = Math.min(1, progress / 0.05);
-        heroWrapper.style.opacity = String(Math.max(0, 1 - p));
-        heroWrapper.style.transform = `scale(${1 + p * 0.12}) translateY(${-p * 60}px)`;
+        const heroOpacity = Math.max(0, 1 - progress / 0.05);
+        const heroScale = 1 + Math.min(progress / 0.05, 1) * 0.15;
+        const heroY = -Math.min(progress / 0.05, 1) * 80;
+        heroWrapper.style.opacity = String(heroOpacity);
+        heroWrapper.style.transform = `scale(${heroScale}) translateY(${heroY}px)`;
         heroWrapper.style.pointerEvents = progress > 0.03 ? "none" : "auto";
       }
 
-      // Heading: stays visible from 5% onward while tiles are showing
+      // "Selected Work" heading: appears 5–10%, fades out 10–15%
       if (heading) {
-        const fadeIn = Math.min(1, Math.max(0, (progress - 0.05) / 0.05));
-        // Fade out only at very end (after all tiles pass)
-        const fadeOut = Math.min(1, Math.max(0, (progress - 0.88) / 0.06));
-        heading.style.opacity = String(fadeIn * (1 - fadeOut));
-        heading.style.display = fadeIn === 0 && fadeOut === 1 ? "none" : "block";
+        let hOpacity = 0;
+        if (progress < 0.05) {
+          hOpacity = 0;
+        } else if (progress < 0.10) {
+          hOpacity = (progress - 0.05) / 0.05; // fade in
+        } else if (progress < 0.15) {
+          hOpacity = 1 - (progress - 0.10) / 0.05; // fade out
+        }
+        const hScale = 1 + Math.max(0, (progress - 0.10) / 0.05) * 0.1;
+        const hBlur = Math.max(0, (progress - 0.10) / 0.05) * 10;
+        heading.style.opacity = String(Math.max(0, hOpacity));
+        heading.style.transform = `scale(${Math.min(hScale, 1.1)})`;
+        heading.style.filter = `blur(${Math.min(Math.max(0, hBlur), 10)}px)`;
+        heading.style.display = progress > 0.16 ? "none" : "block";
       }
 
-      // Tiles
+      // Tiles fly through
       for (let i = 0; i < total; i++) {
         const el = tileRefs.current[i];
         if (!el) continue;
 
         const { start, center, end } = getTiming(i);
-        const [xOffset, yOffset] = CARD_OFFSETS[i % CARD_OFFSETS.length];
+        const isEven = i % 2 === 0;
 
-        // Pure depth: starts tiny (far away), peaks at ~90% size, blasts past
-        const scale = interpolate(progress,
-          [start, center, end],
-          [0.08, 0.88, 2.6]
-        );
+        const scale = interpolate(progress, [start, center, end], [0.3, 1, 3.5]);
 
-        // Subtle X drift — feels like natural 3D parallax, not a slide
-        const x = interpolate(progress,
-          [start, center, end],
-          [xOffset * 0.3, xOffset, xOffset * 1.8]  // vw
-        );
-
-        // Subtle Y — card floats in from slightly above/below
-        const y = interpolate(progress,
-          [start, center, end],
-          [yOffset * 0.5, yOffset, yOffset * 1.5]  // %
-        );
-
-        // Opacity: fast fade in, long hold, quick fade out as it blasts past
-        const opIn  = start + (center - start) * 0.25;
-        const opOut = end   - (end - center)   * 0.30;
-        const opacity = interpolate(progress,
+        const opIn = start + (center - start) * 0.3;
+        const opOut = end - (end - center) * 0.2;
+        const opacity = interpolate(
+          progress,
           [start, opIn, center, opOut, end],
           [0, 1, 1, 1, 0]
         );
 
-        // z-index: bigger = closer = on top
+        const xVw = interpolate(
+          progress,
+          [start, center, end],
+          isEven ? [-5, -35, -120] : [5, 35, 120]
+        );
+
         const z = Math.round(scale * 100);
 
         el.style.opacity = String(opacity);
-        el.style.transform = `translateX(${x}vw) translateY(${y}%) scale(${scale})`;
+        el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
         el.style.zIndex = String(z);
       }
     };
@@ -133,16 +124,15 @@ export default function ParallaxWork() {
   return (
     <section id="work" ref={containerRef} className="relative h-[800vh]">
       <div className="sticky top-0 h-screen w-full overflow-hidden">
-
-        {/* Hero — fades out on first scroll */}
+        {/* Hero — visible at top, fades out on scroll */}
         <div ref={heroWrapperRef} className="absolute inset-0 z-20">
           <Hero />
         </div>
 
-        {/* Persistent label — bottom-left during tile sequence */}
+        {/* "Selected Work" heading — bottom-left, small */}
         <div
           ref={headingRef}
-          className="absolute bottom-10 left-10 z-30"
+          className="absolute bottom-10 left-10 z-10"
           style={{ opacity: 0 }}
         >
           <p className="text-xs tracking-[0.3em] uppercase text-slate-500 font-medium mb-2">
@@ -153,47 +143,57 @@ export default function ParallaxWork() {
           </h2>
         </div>
 
-        {/* Project tiles — depth fly-through */}
+        {/* Project tiles — fly through */}
         {projects.map((project, i) => (
           <div
             key={project.slug}
             ref={(el) => { tileRefs.current[i] = el; }}
             className="absolute inset-0 flex items-center justify-center"
-            style={{ opacity: 0, pointerEvents: "none", willChange: "transform, opacity" }}
+            style={{ opacity: 0, pointerEvents: "none" }}
           >
             <div style={{ pointerEvents: "auto" }}>
               <Link href={`/projects/${project.slug}`} className="group block">
-                <article className="w-[55vw] max-w-2xl">
-                  {/* Card image */}
+                <article className="w-[80vw] max-w-3xl">
                   <div
-                    className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-5"
+                    className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6 border border-dark-700/50"
                     style={{ backgroundColor: project.color }}
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="font-[family-name:var(--font-display)] text-white/70 text-5xl md:text-6xl font-bold select-none">
+                      <span className="font-[family-name:var(--font-display)] text-white/80 text-5xl md:text-7xl font-bold select-none">
                         {project.title}
                       </span>
                     </div>
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
-                    <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between opacity-0 group-hover:opacity-100 transition-all duration-400 translate-y-2 group-hover:translate-y-0">
-                      <span className="text-white text-sm font-medium tracking-wide">
-                        View case study →
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
+                      <span className="text-lime text-sm font-medium tracking-wide">
+                        View case study
                       </span>
+                      <svg
+                        className="w-5 h-5 text-lime"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
+                        />
+                      </svg>
                     </div>
                   </div>
 
-                  {/* Card info */}
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="font-[family-name:var(--font-display)] text-xl md:text-2xl font-semibold text-slate-100 group-hover:text-lime transition-colors duration-300">
+                      <h3 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-semibold text-slate-100 group-hover:text-lime transition-colors duration-300">
                         {project.title}
                       </h3>
-                      <p className="mt-1 text-slate-400 text-sm leading-relaxed">
+                      <p className="mt-1.5 text-slate-400 text-sm md:text-base leading-relaxed">
                         {project.tagline}
                       </p>
                     </div>
-                    <span className="flex-shrink-0 mt-1 text-[10px] tracking-widest uppercase text-slate-500 font-medium">
+                    <span className="flex-shrink-0 mt-1 text-xs tracking-wide uppercase text-slate-500 font-medium">
                       {project.category}
                     </span>
                   </div>
