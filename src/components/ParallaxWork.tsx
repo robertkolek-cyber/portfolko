@@ -81,7 +81,7 @@ export default function ParallaxWork() {
         heading.style.opacity = String(Math.max(0, hOpacity));
         heading.style.transform = `scale(${Math.min(hScale, 1.1)})`;
         heading.style.filter = `blur(${Math.min(Math.max(0, hBlur), 10)}px)`;
-        heading.style.display = progress > 0.16 ? "none" : "flex";
+        heading.style.display = progress > 0.16 ? "none" : "block";
       }
 
       // Tiles fly through
@@ -129,22 +129,18 @@ export default function ParallaxWork() {
           <Hero />
         </div>
 
-        {/* "Selected Work" heading — fades in after hero, then out */}
+        {/* "Selected Work" heading — bottom-left, small */}
         <div
           ref={headingRef}
-          className="absolute inset-0 flex items-center justify-center z-10"
+          className="absolute bottom-10 left-10 z-10"
           style={{ opacity: 0 }}
         >
-          <div className="text-center px-6">
-            <p className="text-sm tracking-[0.3em] uppercase text-slate-500 font-medium mb-4">
-              Selected Work
-            </p>
-            <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl lg:text-6xl leading-[1.1] font-bold text-slate-100">
-              Projects that
-              <br />
-              <span className="italic text-lime">define</span> my craft.
-            </h2>
-          </div>
+          <p className="text-xs tracking-[0.3em] uppercase text-slate-500 font-medium mb-2">
+            Selected Work
+          </p>
+          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-100">
+            Projects that <span className="italic text-lime">define</span> my craft.
+          </h2>
         </div>
 
         {/* Project tiles — fly through */}
