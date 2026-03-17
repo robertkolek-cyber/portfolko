@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 /**
  * Top-down water surface — circular ripples from wave sources.
- * chaos=1: many sources interfering (complex, choppy)
+ * chaos=1: many sources interfering, domain-warped, jittery (complexity)
  * chaos=0: single source, clean expanding rings (clarity)
  */
 
@@ -78,11 +78,25 @@ export default function WaterSurface({
           const nx = px / RES_W; // normalised
           const ny = py / RES_H;
 
-          // Sum all wave heights at this point
+          // ── Domain warping: distort coordinates by layered noise ──
+          // Creates fluid, swirling patterns during chaos
+          const warpStrength = c * 0.12;
+          const wnx = nx + (
+            Math.sin(ny * 7.3 + time * 0.8) * 0.5 +
+            Math.sin(ny * 14.7 + time * 1.3) * 0.25 +
+            Math.sin(nx * 9.1 + ny * 11.2 + time * 0.6) * 0.25
+          ) * warpStrength;
+          const wny = ny + (
+            Math.cos(nx * 8.1 + time * 0.6) * 0.5 +
+            Math.cos(nx * 15.3 + time * 1.1) * 0.25 +
+            Math.cos(ny * 10.7 + nx * 12.4 + time * 0.7) * 0.25
+          ) * warpStrength;
+
+          // Sum all wave heights at this point (using warped coordinates)
           let height = 0;
 
           // Calm source — always present, fades slightly at peak chaos
-          const calmDist = Math.hypot(nx - CALM_SOURCE.x, ny - CALM_SOURCE.y);
+          const calmDist = Math.hypot(wnx - CALM_SOURCE.x, wny - CALM_SOURCE.y);
           const calmH =
             Math.sin(
               calmDist * CALM_SOURCE.frequency * RES_W -
@@ -104,7 +118,7 @@ export default function WaterSurface({
             );
             if (intensity < 0.01) continue;
 
-            const dist = Math.hypot(nx - src.x, ny - src.y);
+            const dist = Math.hypot(wnx - src.x, wny - src.y);
             // Wave attenuates with distance
             const attenuation = Math.max(0.1, 1 - dist * 0.8);
             const h =
@@ -118,6 +132,13 @@ export default function WaterSurface({
               attenuation;
             height += h;
           }
+
+          // ── High-frequency jitter: noisy vibration on wave lines ──
+          const jitter = (
+            Math.sin(nx * 190 + time * 8.5) +
+            Math.sin(ny * 170 + time * 10.3)
+          ) * 0.12 * c;
+          height += jitter;
 
           // Map height to colour — lime green with alpha from wave height
           const normalised = (height + 1.5) / 3.0; // 0–1 range (rough)

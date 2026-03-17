@@ -91,6 +91,15 @@ interface FrameState {
   scrollY: number;
   cursorOpacity: number;
   showCursor: boolean;
+  // Glitch layers for "complexity"
+  glitch1X: number;
+  glitch1Y: number;
+  glitch1ClipTop: number;
+  glitch1ClipBot: number;
+  glitch2X: number;
+  glitch2Y: number;
+  glitch2ClipTop: number;
+  glitch2ClipBot: number;
 }
 
 export default function Hero() {
@@ -107,10 +116,20 @@ export default function Hero() {
     scrollY: 12,
     cursorOpacity: 1,
     showCursor: true,
+    glitch1X: 0,
+    glitch1Y: 0,
+    glitch1ClipTop: 50,
+    glitch1ClipBot: 50,
+    glitch2X: 0,
+    glitch2Y: 0,
+    glitch2ClipTop: 50,
+    glitch2ClipBot: 50,
   });
 
   const turbRef = useRef<SVGFETurbulenceElement>(null);
   const dispRef = useRef<SVGFEDisplacementMapElement>(null);
+  const grainTurbRef = useRef<SVGFETurbulenceElement>(null);
+  const blurFilterRef = useRef<SVGFEGaussianBlurElement>(null);
   const rafRef = useRef(0);
   const startRef = useRef(0);
 
@@ -122,6 +141,7 @@ export default function Hero() {
   useEffect(() => {
     startRef.current = performance.now();
     let seed = 0;
+    let grainSeed = 100;
 
     const tick = (now: number) => {
       const t = (now - startRef.current) / 1000; // seconds
@@ -163,6 +183,7 @@ export default function Hero() {
       // ── Drive SVG filter from the same loop ──
       if (noise > 0.01) {
         seed += 4;
+        grainSeed += 7;
         if (turbRef.current) {
           turbRef.current.setAttribute("seed", String(seed));
           // High X freq, very low Y freq → horizontal bands/scanlines
@@ -178,8 +199,43 @@ export default function Hero() {
           const scale = noise * (24 + Math.sin(t * 8.5) * 10);
           dispRef.current.setAttribute("scale", String(scale.toFixed(1)));
         }
+        // Grain noise — rapid seed change for static feel
+        if (grainTurbRef.current) {
+          grainTurbRef.current.setAttribute("seed", String(grainSeed));
+        }
+        // Blur — soft focus on complexity text
+        if (blurFilterRef.current) {
+          blurFilterRef.current.setAttribute("stdDeviation", (noise * 1.0).toFixed(2));
+        }
       } else {
         if (dispRef.current) dispRef.current.setAttribute("scale", "0");
+        if (blurFilterRef.current) blurFilterRef.current.setAttribute("stdDeviation", "0");
+      }
+
+      // ── Glitch layers: two ghost copies that jitter behind "complexity" ──
+      let g1x = 0, g1y = 0, g1ct = 50, g1cb = 50;
+      let g2x = 0, g2y = 0, g2ct = 50, g2cb = 50;
+
+      if (noise > 0.01) {
+        // Intermittent burst — glitch isn't constant, has "spikes"
+        const burst = Math.pow(Math.max(0, Math.sin(t * 4.7) * Math.sin(t * 11.3)), 2);
+        const strength = noise * (0.3 + burst * 0.7);
+
+        // Ghost 1 — jitters right/down, shows a horizontal band
+        g1x = (Math.sin(t * 17.3) * 4 + Math.sin(t * 31.7) * 2) * strength;
+        g1y = Math.cos(t * 11.1) * 1.5 * strength;
+        const band1h = 25 + Math.sin(t * 7.3) * 20;
+        const band1c = 50 + Math.sin(t * 9.7) * 40;
+        g1ct = Math.max(0, Math.min(95, band1c - band1h));
+        g1cb = Math.max(0, Math.min(95, 100 - band1c));
+
+        // Ghost 2 — jitters opposite direction, different band rhythm
+        g2x = -(Math.cos(t * 19.1) * 3.5 + Math.cos(t * 29.3) * 1.8) * strength;
+        g2y = Math.sin(t * 13.3) * 1.5 * strength;
+        const band2h = 20 + Math.cos(t * 8.9) * 15;
+        const band2c = 45 + Math.cos(t * 12.1) * 38;
+        g2ct = Math.max(0, Math.min(95, band2c - band2h));
+        g2cb = Math.max(0, Math.min(95, 100 - band2c));
       }
 
       // ── Glow: slow bloom → hold → fade out ──
@@ -231,6 +287,14 @@ export default function Hero() {
         scrollY: 12 * (1 - scrollEased),
         cursorOpacity: cursorAlpha,
         showCursor: cursorVisible,
+        glitch1X: g1x,
+        glitch1Y: g1y,
+        glitch1ClipTop: g1ct,
+        glitch1ClipBot: g1cb,
+        glitch2X: g2x,
+        glitch2Y: g2y,
+        glitch2ClipTop: g2ct,
+        glitch2ClipBot: g2cb,
       });
 
       rafRef.current = requestAnimationFrame(tick);
@@ -272,14 +336,45 @@ export default function Hero() {
     return groups.map((group, i) => {
       if (group.token === "complexity") {
         return (
-          <span
-            key={i}
-            className="text-lime italic inline-block"
-            style={{
-              filter: n > 0.01 ? "url(#textNoise)" : "none",
-            }}
-          >
-            {group.text}
+          <span key={i} className="relative inline-block">
+            {/* Ghost layer 1 — jitters with clip-path band */}
+            {n > 0.01 && (
+              <span
+                className="absolute inset-0 text-lime italic pointer-events-none select-none"
+                aria-hidden="true"
+                style={{
+                  transform: `translate(${frame.glitch1X}px, ${frame.glitch1Y}px)`,
+                  clipPath: `inset(${frame.glitch1ClipTop}% 0 ${frame.glitch1ClipBot}% 0)`,
+                  opacity: n * 0.6,
+                }}
+              >
+                {group.text}
+              </span>
+            )}
+            {/* Ghost layer 2 — opposite jitter, different band */}
+            {n > 0.01 && (
+              <span
+                className="absolute inset-0 text-lime italic pointer-events-none select-none"
+                aria-hidden="true"
+                style={{
+                  transform: `translate(${frame.glitch2X}px, ${frame.glitch2Y}px)`,
+                  clipPath: `inset(${frame.glitch2ClipTop}% 0 ${frame.glitch2ClipBot}% 0)`,
+                  opacity: n * 0.45,
+                }}
+              >
+                {group.text}
+              </span>
+            )}
+            {/* Main text — displacement + grain + blur via SVG filter chain */}
+            <span
+              className="text-lime italic"
+              style={{
+                filter: n > 0.01 ? "url(#textNoise)" : "none",
+                opacity: 1 - n * 0.15,
+              }}
+            >
+              {group.text}
+            </span>
           </span>
         );
       }
@@ -302,26 +397,54 @@ export default function Hero() {
 
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
-      {/* SVG noise filter — driven from the main rAF loop */}
+      {/* SVG filter chain — displacement → grain → blur, all driven from rAF */}
       <svg className="absolute w-0 h-0" aria-hidden="true">
         <defs>
           <filter id="textNoise" x="-15%" y="-5%" width="130%" height="110%">
+            {/* Displacement noise — horizontal scanline tear */}
             <feTurbulence
               ref={turbRef}
               type="fractalNoise"
               baseFrequency="0.7 0.015"
               numOctaves="3"
               seed="0"
-              result="noise"
+              result="dispNoise"
             />
-            {/* X-only displacement → horizontal tear/scanline effect */}
             <feDisplacementMap
               ref={dispRef}
               in="SourceGraphic"
-              in2="noise"
+              in2="dispNoise"
               scale="0"
               xChannelSelector="R"
               yChannelSelector="R"
+              result="displaced"
+            />
+            {/* Grain noise — rapid static texture masked over text */}
+            <feTurbulence
+              ref={grainTurbRef}
+              type="fractalNoise"
+              baseFrequency="0.85 0.85"
+              numOctaves="4"
+              seed="100"
+              result="grain"
+            />
+            <feColorMatrix
+              in="grain"
+              type="saturate"
+              values="0"
+              result="grainBW"
+            />
+            <feBlend
+              in="displaced"
+              in2="grainBW"
+              mode="overlay"
+              result="withGrain"
+            />
+            {/* Soft blur — makes complexity text hard to focus on */}
+            <feGaussianBlur
+              ref={blurFilterRef}
+              in="withGrain"
+              stdDeviation="0"
             />
           </filter>
         </defs>
@@ -331,6 +454,15 @@ export default function Hero() {
       <div ref={waterScrollRef} className="absolute inset-0 pointer-events-none" style={{ transformOrigin: "center center" }}>
         <WaterSurface chaos={frame.waterChaos} />
       </div>
+
+      {/* Atmospheric fog — radial depth blur at center during chaos */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse 50% 50% at center, rgba(15, 23, 42, ${0.55 * frame.waterChaos}) 0%, transparent 65%)`,
+          opacity: frame.waterChaos > 0.01 ? 1 : 0,
+        }}
+      />
 
       {/* Ambient glow — royal blue top-right, light blue bottom-left */}
       <div className="absolute top-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-lime/[0.12] blur-[120px] pointer-events-none" />
