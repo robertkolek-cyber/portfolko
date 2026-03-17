@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const experiences = [
   {
@@ -75,79 +75,64 @@ export default function CVTimeline() {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
-  const labelRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [entered, setEntered] = useState(false);
 
+  // IntersectionObserver: the moment section peeks into viewport, trigger entrance
   useEffect(() => {
     const container = containerRef.current;
-    const content = contentRef.current;
-    const track = trackRef.current;
-    const label = labelRef.current;
-    if (!container || !content || !track) return;
+    if (!container) return;
 
-    // Entrance phase: content rises from bottom over 0.5 screen-heights of scroll
-    const ENTRANCE_SCREENS = 0.5;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setEntered(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0 } // fires at 1px visibility
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Horizontal parallax (scroll-driven, only active after entrance completes)
+  useEffect(() => {
+    const container = containerRef.current;
+    const track = trackRef.current;
+    if (!container || !track) return;
 
     const setHeight = () => {
       const travel = Math.max(0, track.scrollWidth - window.innerWidth);
-      const entranceHeight = window.innerHeight * ENTRANCE_SCREENS;
-      container.style.height = `${entranceHeight + travel + window.innerHeight}px`;
+      container.style.height = `${travel + window.innerHeight}px`;
     };
 
     setHeight();
     window.addEventListener("resize", setHeight);
 
     const update = () => {
+      if (!entered) return;
+
       const rect = container.getBoundingClientRect();
       const scrolled = -rect.top;
       const scrollable = container.offsetHeight - window.innerHeight;
       if (scrollable <= 0) return;
-      const progress = Math.max(0, Math.min(1, scrolled / scrollable));
+      const p = Math.max(0, Math.min(1, scrolled / scrollable));
 
-      const entranceHeight = window.innerHeight * ENTRANCE_SCREENS;
-      const entranceRatio = entranceHeight / scrollable;
+      const travel = track.scrollWidth - window.innerWidth;
+      track.style.transform = `translateX(${-p * travel}px)`;
 
-      if (progress <= entranceRatio) {
-        // === Phase 1: Content rises from bottom ===
-        const ep = progress / entranceRatio; // 0 → 1
-        const eased = 1 - Math.pow(1 - ep, 3); // ease-out
-        const yPct = (1 - eased) * 100; // 100% → 0%
-
-        content.style.transform = `translateY(${yPct}%)`;
-        track.style.transform = "translateX(0)";
-
-        // Label fades in during last 40% of entrance
-        if (label) {
-          const labelP = Math.max(0, (ep - 0.6) / 0.4);
-          label.style.opacity = String(labelP);
-        }
-
-        // Items hidden during entrance
-        itemRefs.current.forEach((el) => {
-          if (el) el.style.opacity = "0";
-        });
-      } else {
-        // === Phase 2: Horizontal parallax ===
-        const hp = (progress - entranceRatio) / (1 - entranceRatio); // 0 → 1
-
-        content.style.transform = "translateY(0)";
-
-        const travel = track.scrollWidth - window.innerWidth;
-        track.style.transform = `translateX(${-hp * travel}px)`;
-
-        if (label) label.style.opacity = "1";
-
-        // Stagger items
-        itemRefs.current.forEach((el, i) => {
-          if (!el) return;
-          const threshold =
-            i === 0 ? -0.05 : (i / (experiences.length - 1)) * 0.8;
-          const ip = Math.min(1, Math.max(0, (hp - threshold) / 0.1));
-          const isAbove = i % 2 === 0;
-          el.style.opacity = String(ip);
-          el.style.transform = `translateY(${(1 - ip) * (isAbove ? 28 : -28)}px)`;
-        });
-      }
+      // Stagger items
+      itemRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const threshold =
+          i === 0 ? -0.05 : (i / (experiences.length - 1)) * 0.8;
+        const ip = Math.min(1, Math.max(0, (p - threshold) / 0.1));
+        const isAbove = i % 2 === 0;
+        el.style.opacity = String(ip);
+        el.style.transform = `translateY(${(1 - ip) * (isAbove ? 28 : -28)}px)`;
+      });
     };
 
     update();
@@ -156,7 +141,7 @@ export default function CVTimeline() {
       window.removeEventListener("scroll", update);
       window.removeEventListener("resize", setHeight);
     };
-  }, []);
+  }, [entered]);
 
   return (
     <section
@@ -166,20 +151,22 @@ export default function CVTimeline() {
       style={{ backgroundColor: "#0f1d3d", marginTop: "-2rem" }}
     >
       <div className="sticky top-0 h-screen overflow-hidden">
-        {/* Content wrapper — rises from bottom, bg is already on section */}
+        {/* Content wrapper — auto-animates up via CSS transition when entered */}
         <div
           ref={contentRef}
           className="absolute inset-0"
           style={{
-            willChange: "transform",
-            transform: "translateY(100%)",
+            transform: entered ? "translateY(0)" : "translateY(100%)",
+            transition: "transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
           {/* Section label */}
           <div
-            ref={labelRef}
             className="absolute top-10 left-10 z-20 pointer-events-none"
-            style={{ opacity: 0 }}
+            style={{
+              opacity: entered ? 1 : 0,
+              transition: "opacity 0.6s ease 0.4s",
+            }}
           >
             <p className="text-xs tracking-[0.3em] uppercase font-medium" style={{ color: "#64748b" }}>
               Experience
@@ -187,7 +174,13 @@ export default function CVTimeline() {
           </div>
 
           {/* Download CV link */}
-          <div className="absolute top-10 right-10 z-20">
+          <div
+            className="absolute top-10 right-10 z-20"
+            style={{
+              opacity: entered ? 1 : 0,
+              transition: "opacity 0.6s ease 0.4s",
+            }}
+          >
             <a
               href="/cv.pdf"
               download
