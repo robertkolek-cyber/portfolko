@@ -24,11 +24,11 @@ export default function ParallaxWork() {
     const step = 0.75 / total;
 
     const getTiming = (index: number) => {
-      // Start tiles at 0.25 so first card is invisible at progress=0
-      // (hero fades out 0–5%, tiles begin appearing from ~8%)
       const center = 0.25 + index * step;
-      const start = center - step * 1.15;
-      const end = center + step * 0.85;
+      // Wider entry window (1.6×) so the next card is already visible
+      // while the current one is still at center
+      const start = center - step * 1.6;
+      const end   = center + step * 0.85;
       return { start, center, end };
     };
 
@@ -96,7 +96,8 @@ export default function ParallaxWork() {
 
         const opIn = start + (center - start) * 0.3;
         const opOut = end - (end - center) * 0.2;
-        const opacity = interpolate(
+        // Never show before hero fully fades (progress < 0.07)
+        const opacity = progress < 0.07 ? 0 : interpolate(
           progress,
           [start, opIn, center, opOut, end],
           [0, 1, 1, 1, 0]
