@@ -14,14 +14,9 @@ const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
 const easeOutQuint = (t: number) => 1 - Math.pow(1 - t, 5);
 
-const easeOutBack = (t: number) => {
-  const c = 1.7;
-  return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
-};
-
 const easeOutElastic = (t: number) => {
   if (t === 0 || t === 1) return t;
-  return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * (2 * Math.PI / 3)) + 1;
+  return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1;
 };
 
 const smoothstep = (edge0: number, edge1: number, x: number) => {
@@ -45,7 +40,7 @@ function buildTimeline(): { chars: CharEntry[]; totalDuration: number } {
     { text: "clarity", type: "clarity", msPerChar: 140 },
   ];
 
-  const startDelay = 0.8; // breath before first keystroke
+  const startDelay = 0.8;
   const chars: CharEntry[] = [];
   let cursor = startDelay;
 
@@ -54,7 +49,7 @@ function buildTimeline(): { chars: CharEntry[]; totalDuration: number } {
       chars.push({ char, time: cursor, token: token.type });
       cursor += token.msPerChar / 1000;
     }
-    // Small beat between tokens
+    // Deliberate beats between semantic tokens
     if (token.type === "complexity") cursor += 0.08;
     if (token.text === " into ") cursor += 0.05;
   }
@@ -78,9 +73,9 @@ const GLOW_HOLD = 1.0;
 const GLOW_OUT = 2.0;
 const REST_START = GLOW_START + 0.8;
 
-// Ring pulse — starts slightly before glow peaks
-const RING_PULSE_START = GLOW_START + 0.6;
-const RING_PULSE_DURATION = 2.4;
+// Ring pulse — expands outward on bloom
+const RING_PULSE_START = GLOW_START + 0.5;
+const RING_PULSE_DURATION = 2.2;
 
 /* ── Component ────────────────────────────────────────────────── */
 
@@ -106,7 +101,7 @@ export default function Hero() {
     unveilOpacity: 0,
     visibleCount: 0,
     noiseIntensity: 0,
-    waterChaos: 0.08,
+    waterChaos: 0.12,
     glowIntensity: 0,
     ringPulseProgress: -1,
     restOpacity: 0,
@@ -129,7 +124,6 @@ export default function Hero() {
   const smoothMouseRef = useRef({ x: 0, y: 0 });
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    // Normalise to -1 … 1 from viewport centre
     mouseRef.current.x = (e.clientX / window.innerWidth - 0.5) * 2;
     mouseRef.current.y = (e.clientY / window.innerHeight - 0.5) * 2;
   }, []);
@@ -139,7 +133,6 @@ export default function Hero() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [handleMouseMove]);
 
-  // Refs for scroll hints
   const waterScrollRef = useRef<HTMLDivElement>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const scrollHintRef = useRef<HTMLDivElement>(null);
@@ -151,13 +144,13 @@ export default function Hero() {
     const tick = (now: number) => {
       const t = (now - startRef.current) / 1000;
 
-      // ── Smooth mouse interpolation (lerp) ──
+      // ── Smooth mouse interpolation ──
       const m = smoothMouseRef.current;
       const target = mouseRef.current;
       m.x += (target.x - m.x) * 0.06;
       m.y += (target.y - m.y) * 0.06;
 
-      // ── Unveil: whole scene fades in ──
+      // ── Unveil ──
       const unveil = Math.min(1, t / 0.5);
 
       // ── Visible characters ──
@@ -176,12 +169,12 @@ export default function Hero() {
       }
 
       // ── Water chaos ──
-      let waterChaos = 0.08;
+      let waterChaos = 0.12;
       if (t < COMPLEXITY_START) {
-        waterChaos = 0.08 + smoothstep(COMPLEXITY_START - 0.5, COMPLEXITY_START, t) * 0.18;
+        waterChaos = 0.12 + smoothstep(COMPLEXITY_START - 0.5, COMPLEXITY_START, t) * 0.18;
       } else if (t <= COMPLEXITY_END + 0.3) {
         const ramp = smoothstep(COMPLEXITY_START, COMPLEXITY_START + 0.5, t);
-        waterChaos = 0.26 + easeOutCubic(ramp) * 0.74;
+        waterChaos = 0.30 + easeOutCubic(ramp) * 0.70;
       } else if (t <= CLARITY_START) {
         const settle = smoothstep(COMPLEXITY_END + 0.05, CLARITY_START, t);
         waterChaos = 1.0 - easeOutQuart(settle);
@@ -206,7 +199,7 @@ export default function Hero() {
         if (dispRef.current) dispRef.current.setAttribute("scale", "0");
       }
 
-      // ── Glow bloom ──
+      // ── Glow bloom (elastic) ──
       let glow = 0;
       if (t >= GLOW_START) {
         const elapsed = t - GLOW_START;
@@ -242,7 +235,7 @@ export default function Hero() {
       const cursorVisible = t < REST_START + 0.4;
       const blinkPhase = Math.sin(t * 3.0);
       const cursorAlpha = cursorVisible
-        ? (typing ? 0.9 : smoothstep(-0.25, 0.25, blinkPhase))
+        ? typing ? 0.9 : smoothstep(-0.25, 0.25, blinkPhase)
         : 0;
 
       setFrame({
@@ -370,17 +363,13 @@ export default function Hero() {
       {/* Ambient glow — parallax with mouse */}
       <div
         className="absolute top-[8%] right-[12%] w-[550px] h-[550px] rounded-full bg-lime/[0.10] blur-[140px] pointer-events-none"
-        style={{
-          transform: `translate(${mx * -18}px, ${my * -12}px)`,
-        }}
+        style={{ transform: `translate(${mx * -18}px, ${my * -12}px)` }}
       />
       <div
         className="absolute bottom-[12%] left-[6%] w-[450px] h-[450px] rounded-full bg-dark-700/[0.12] blur-[110px] pointer-events-none"
-        style={{
-          transform: `translate(${mx * 14}px, ${my * 10}px)`,
-        }}
+        style={{ transform: `translate(${mx * 14}px, ${my * 10}px)` }}
       />
-      {/* Subtle centre glow — appears with clarity */}
+      {/* Centre glow — blooms with clarity */}
       <div
         className="absolute top-1/2 left-1/2 w-[300px] h-[300px] rounded-full pointer-events-none"
         style={{

@@ -3,31 +3,28 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Concentric ring field — continuously expanding rings from wave sources.
- * chaos = 0 → single centre source, perfect thin rings, meditative calm
- * chaos = 1 → multiple overlapping sources, wobbly thick rings, interference
+ * Top-down water surface — actual expanding ring strokes with
+ * additive blending. Where rings from different drops overlap
+ * they glow brighter, creating natural interference.
+ *
+ * chaos → many drops, dense luminous collisions
+ * calm  → single centred drop, pristine concentric rings
  */
 
-interface RingSource {
-  x: number; // normalised 0–1
-  y: number;
-  speed: number; // expansion rate multiplier
-  phaseOffset: number;
+/* ── Drop ───────────────────────────────────────────────────── */
+
+interface Drop {
+  cx: number;
+  cy: number;
+  birth: number;
+  rings: number;
+  spacing: number;
+  speed: number;
+  amplitude: number;
+  hue: number;
 }
 
-const CENTER: RingSource = { x: 0.5, y: 0.5, speed: 1.0, phaseOffset: 0 };
-
-const CHAOS_SOURCES: RingSource[] = [
-  { x: 0.12, y: 0.22, speed: 1.3, phaseOffset: 0.15 },
-  { x: 0.82, y: 0.18, speed: 1.1, phaseOffset: 0.40 },
-  { x: 0.72, y: 0.78, speed: 0.9, phaseOffset: 0.65 },
-  { x: 0.18, y: 0.76, speed: 1.4, phaseOffset: 0.30 },
-  { x: 0.88, y: 0.52, speed: 1.2, phaseOffset: 0.80 },
-];
-
-const RINGS_PER_SOURCE = 12;
-const POINTS_PER_RING = 200;
-const TWO_PI = Math.PI * 2;
+/* ── Component ──────────────────────────────────────────────── */
 
 export default function WaterSurface({
   chaos,
@@ -44,141 +41,138 @@ export default function WaterSurface({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d")!;
     if (!ctx) return;
 
-    let w = 0;
-    let h = 0;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let W = 0;
+    let H = 0;
 
     const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio, 2);
-      w = rect.width;
-      h = rect.height;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
+      W = canvas.clientWidth;
+      H = canvas.clientHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
-    window.addEventListener("resize", resize);
+    window.addEventListener("resize", resize, { passive: true });
 
+    const drops: Drop[] = [];
     let time = 0;
+    let nextChaosDrop = 0;
+    let lastCalmDrop = -10;
 
-    // Pre-allocate angle lookup
-    const angles: number[] = [];
-    for (let i = 0; i <= POINTS_PER_RING; i++) {
-      angles.push((i / POINTS_PER_RING) * TWO_PI);
-    }
+    // Seed first calm drop
+    drops.push({
+      cx: W * 0.5,
+      cy: H * 0.5,
+      birth: 0,
+      rings: 8,
+      spacing: 32 + Math.random() * 8,
+      speed: 52,
+      amplitude: 0.9,
+      hue: 0,
+    });
 
-    function drawSource(
-      drawCtx: CanvasRenderingContext2D,
-      sx: number,
-      sy: number,
-      speed: number,
-      phaseOffset: number,
-      baseAlpha: number,
-      wobbleMul: number,
-      lineWidth: number,
-      ringCount: number,
-    ) {
-      const maxR = Math.hypot(w, h) * 0.55;
-
-      for (let r = 0; r < ringCount; r++) {
-        // Continuously expanding phase — rings born at centre, expand outward
-        const phase = ((time * speed * 0.15 + phaseOffset + r / ringCount) % 1.0);
-        const radius = phase * maxR;
-        if (radius < 2) continue;
-
-        // Fade: peak brightness in mid-range, transparent at edges and centre
-        const fadeCentre = Math.min(1, radius / (maxR * 0.12));
-        const fadeEdge = 1 - Math.pow(phase, 1.8);
-        const alpha = baseAlpha * fadeCentre * fadeEdge;
-        if (alpha < 0.005) continue;
-
-        // Wobble: multi-frequency for organic feel
-        const wobbleAmt = wobbleMul * radius * 0.08;
-
-        drawCtx.beginPath();
-        for (let i = 0; i <= POINTS_PER_RING; i++) {
-          const a = angles[i];
-          let noise = 0;
-          if (wobbleAmt > 0.5) {
-            noise += Math.sin(a * 3 + time * 1.4 + r * 0.7) * 0.40;
-            noise += Math.sin(a * 7 - time * 0.9 + r * 0.4) * 0.25;
-            noise += Math.sin(a * 13 + time * 2.3 + r * 1.1) * 0.15;
-            noise += Math.cos(a * 5 - time * 1.7 + r * 0.9) * 0.20;
-          }
-
-          const R = radius + noise * wobbleAmt;
-          // 0.6 Y ratio → perspective ellipse
-          const x = sx + Math.cos(a) * R;
-          const y = sy + Math.sin(a) * R * 0.6;
-
-          if (i === 0) drawCtx.moveTo(x, y);
-          else drawCtx.lineTo(x, y);
-        }
-        drawCtx.closePath();
-
-        // Bloom: draw glow layer first (thicker, transparent)
-        if (alpha > 0.03) {
-          drawCtx.lineWidth = lineWidth + 3;
-          drawCtx.strokeStyle = `rgba(37, 99, 235, ${alpha * 0.3})`;
-          drawCtx.stroke();
-        }
-
-        // Crisp ring
-        drawCtx.lineWidth = lineWidth;
-        drawCtx.strokeStyle = `rgba(147, 197, 253, ${alpha})`;
-        drawCtx.stroke();
-      }
-    }
+    const MAX_AGE = 7;
 
     const draw = () => {
       time += 0.016;
       const c = chaosRef.current;
 
-      ctx.clearRect(0, 0, w, h);
+      // Chaos: rain of drops
+      if (c > 0.08 && time >= nextChaosDrop) {
+        const interval = 0.04 + (1 - c) * 0.35;
+        nextChaosDrop = time + interval;
 
-      // Centre source — always present, clean at calm, dimmed at peak chaos
-      const centreAlpha = 0.12 * (1 - c * 0.4);
-      const centreWobble = c * 0.7;
-      const centreWidth = 0.6 + c * 0.3;
-      drawSource(
-        ctx,
-        w * CENTER.x,
-        h * CENTER.y,
-        CENTER.speed,
-        CENTER.phaseOffset,
-        centreAlpha,
-        centreWobble,
-        centreWidth,
-        RINGS_PER_SOURCE + 4,
-      );
-
-      // Chaos sources — fade in as chaos increases
-      if (c > 0.15) {
-        const intensity = Math.min(1, (c - 0.15) / 0.5);
-        for (let s = 0; s < CHAOS_SOURCES.length; s++) {
-          const src = CHAOS_SOURCES[s];
-          // Stagger: later sources need more chaos
-          const threshold = s / CHAOS_SOURCES.length;
-          const srcIntensity = Math.max(0, Math.min(1, (intensity - threshold * 0.6) / 0.5));
-          if (srcIntensity < 0.01) continue;
-
-          drawSource(
-            ctx,
-            w * src.x,
-            h * src.y,
-            src.speed,
-            src.phaseOffset,
-            0.06 * srcIntensity,
-            0.6 + srcIntensity * 0.4,
-            0.5 + srcIntensity * 0.4,
-            Math.floor(RINGS_PER_SOURCE * 0.6 * srcIntensity),
-          );
+        const burstCount = c > 0.7 && Math.random() < 0.3 ? 2 : 1;
+        for (let b = 0; b < burstCount; b++) {
+          drops.push({
+            cx: W * (0.05 + Math.random() * 0.9),
+            cy: H * (0.05 + Math.random() * 0.9),
+            birth: time + b * 0.02,
+            rings: 5 + Math.floor(Math.random() * 4),
+            spacing: 22 + Math.random() * 18,
+            speed: 38 + Math.random() * 30 + c * 15,
+            amplitude: 0.3 + c * 0.5 + Math.random() * 0.2,
+            hue: Math.random() * 30 - 15,
+          });
         }
       }
 
+      // Calm: slow centred drops
+      if (c < 0.12) {
+        const calmInterval = 2.6 + (1 - c) * 0.5;
+        if (time - lastCalmDrop > calmInterval) {
+          lastCalmDrop = time;
+          drops.push({
+            cx: W * 0.5 + (Math.random() - 0.5) * 4,
+            cy: H * 0.5 + (Math.random() - 0.5) * 3,
+            birth: time,
+            rings: 8,
+            spacing: 30 + Math.random() * 10,
+            speed: 48 + Math.random() * 8,
+            amplitude: 0.85,
+            hue: Math.random() * 10 - 5,
+          });
+        }
+      }
+
+      // Prune
+      while (drops.length > 0 && time - drops[0].birth > MAX_AGE) {
+        drops.shift();
+      }
+      if (drops.length > 80) drops.splice(0, drops.length - 80);
+
+      // ── Draw ──
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalCompositeOperation = "lighter";
+
+      for (const drop of drops) {
+        const age = time - drop.birth;
+        if (age < 0) continue;
+
+        const ageFade = Math.max(0, 1 - age / MAX_AGE);
+        const ageFactor = ageFade * ageFade;
+        if (ageFactor < 0.005) continue;
+
+        const baseAlpha = drop.amplitude * ageFactor;
+
+        for (let r = 0; r < drop.rings; r++) {
+          const radius = age * drop.speed + r * drop.spacing;
+          if (radius < 1) continue;
+
+          const ringFade = 1 - (r / drop.rings) * 0.6;
+          const distAtten = 1 / Math.sqrt(1 + radius * 0.008);
+          const pulse = 0.85 + Math.sin(age * 2.2 - r * 0.7) * 0.15;
+
+          const alpha = baseAlpha * ringFade * distAtten * pulse;
+          if (alpha < 0.003) continue;
+
+          const lw = Math.max(0.5, 1.8 - r * 0.12 - radius * 0.001);
+
+          const hue = 210 + drop.hue + ringFade * 8;
+          const sat = 70 + (1 - ringFade) * 20;
+          const light = 60 + ringFade * 15;
+
+          // Crisp ring
+          ctx.beginPath();
+          ctx.arc(drop.cx, drop.cy, radius, 0, Math.PI * 2);
+          ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${light}%, ${Math.min(1, alpha * 0.6)})`;
+          ctx.lineWidth = lw;
+          ctx.stroke();
+
+          // Soft glow ring
+          ctx.beginPath();
+          ctx.arc(drop.cx, drop.cy, radius, 0, Math.PI * 2);
+          ctx.strokeStyle = `hsla(${hue + 5}, ${sat - 10}%, ${light + 10}%, ${Math.min(1, alpha * 0.15)})`;
+          ctx.lineWidth = lw * 5;
+          ctx.stroke();
+        }
+      }
+
+      ctx.globalCompositeOperation = "source-over";
       frameRef.current = requestAnimationFrame(draw);
     };
 
@@ -193,7 +187,10 @@ export default function WaterSurface({
     <canvas
       ref={canvasRef}
       className={className}
-      style={{ width: "100%", height: "100%" }}
+      style={{
+        width: "100%",
+        height: "100%",
+      }}
     />
   );
 }
