@@ -268,9 +268,12 @@ export default function Hero() {
         released = true;
         document.documentElement.style.overflow = "";
         window.scrollTo({ top: window.innerHeight, behavior: "smooth" });
+        return; // stop the rAF loop — no longer needed
       }
 
-      zoomRaf = requestAnimationFrame(animate);
+      if (!released) {
+        zoomRaf = requestAnimationFrame(animate);
+      }
     };
 
     const onWheel = (e: WheelEvent) => {

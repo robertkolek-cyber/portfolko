@@ -2,12 +2,13 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { projects, type Project } from "@/lib/projects";
+import { motion, useScroll, useTransform, MotionValue } from "framer-motion";
+import { projects } from "@/lib/projects";
+import type { Project } from "@/lib/projects";
 
-/* ── Per-tile timing ────────────────────────────────────────── */
+/* ── Tile timing — each tile gets a scroll window ──────────── */
 
-function useTileTiming(index: number, total: number) {
+function getTileTiming(index: number, total: number) {
   const step = 0.75 / total;
   const center = 0.15 + index * step;
   const start = center - step * 1.15;
@@ -15,7 +16,7 @@ function useTileTiming(index: number, total: number) {
   return { start, center, end };
 }
 
-/* ── Single project tile ────────────────────────────────────── */
+/* ── Single fly-through tile ───────────────────────────────── */
 
 function ProjectTile({
   project,
@@ -26,40 +27,48 @@ function ProjectTile({
   project: Project;
   index: number;
   total: number;
-  scrollYProgress: ReturnType<typeof useScroll>["scrollYProgress"];
+  scrollYProgress: MotionValue<number>;
 }) {
-  const { start, center, end } = useTileTiming(index, total);
+  const { start, center, end } = getTileTiming(index, total);
   const isEven = index % 2 === 0;
 
-  // Scale: small → full → massive fly-past
+  // All hooks at the top level — never inside JSX
   const scale = useTransform(scrollYProgress, [start, center, end], [0.3, 1, 3.5]);
 
-  // Opacity: fade in, hold, fade out
   const opacity = useTransform(
     scrollYProgress,
     [start, start + (center - start) * 0.3, center, end - (end - center) * 0.2, end],
     [0, 1, 1, 1, 0]
   );
 
-  // Horizontal drift: stagger even/odd
-  const x = useTransform(
+  const xPercent = useTransform(
     scrollYProgress,
     [start, center, end],
-    isEven ? ["-5vw", "-32vw", "-100vw"] : ["5vw", "32vw", "100vw"]
+    isEven ? [-5, -35, -120] : [5, 35, 120]
   );
+  // Convert numeric vw value to string — hook called at top level
+  const x = useTransform(xPercent, (v) => `${v}vw`);
 
-  // Z-index derived from scale (closer = higher)
   const zIndex = useTransform(scale, (s) => Math.round(s * 100));
 
   return (
     <motion.div
-      className="absolute inset-0 flex items-center justify-center pointer-events-none"
-      style={{ opacity, zIndex }}
+      className="absolute inset-0 flex items-center justify-center"
+      style={{
+        opacity,
+        zIndex,
+        pointerEvents: "none",
+      }}
     >
-      <motion.div style={{ scale, x }} className="pointer-events-auto">
-        <Link href={`/projects/${project.slug}`} className="group block">
+      <motion.div
+        style={{ scale, x }}
+      >
+        <Link
+          href={`/projects/${project.slug}`}
+          className="group block"
+          style={{ pointerEvents: "auto" }}
+        >
           <article className="w-[80vw] max-w-3xl">
-            {/* Image area */}
             <div
               className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6 border border-dark-700/50"
               style={{ backgroundColor: project.color }}
@@ -90,7 +99,6 @@ function ProjectTile({
               </div>
             </div>
 
-            {/* Info */}
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-semibold text-slate-100 group-hover:text-lime transition-colors duration-300">
@@ -111,23 +119,24 @@ function ProjectTile({
   );
 }
 
-/* ── Section heading that fades out ─────────────────────────── */
+/* ── Heading — fades out on scroll ─────────────────────────── */
 
 function SectionHeading({
   scrollYProgress,
 }: {
-  scrollYProgress: ReturnType<typeof useScroll>["scrollYProgress"];
+  scrollYProgress: MotionValue<number>;
 }) {
+  // All hooks at top level
   const opacity = useTransform(scrollYProgress, [0, 0.06], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.05], [1, 1.1]);
-  const y = useTransform(scrollYProgress, [0, 0.05], ["0vh", "-5vh"]);
-  const filter = useTransform(scrollYProgress, [0, 0.05], ["blur(0px)", "blur(10px)"]);
-  const display = useTransform(scrollYProgress, (v) => (v > 0.08 ? "none" : "block"));
+  const headingScale = useTransform(scrollYProgress, [0, 0.05], [1, 1.1]);
+  const y = useTransform(scrollYProgress, [0, 0.05], [0, -60]);
+  const blurVal = useTransform(scrollYProgress, [0, 0.05], [0, 10]);
+  const filter = useTransform(blurVal, (b) => `blur(${b}px)`);
 
   return (
     <motion.div
       className="absolute inset-0 flex items-center justify-center z-10"
-      style={{ opacity, scale, y, filter, display }}
+      style={{ opacity, scale: headingScale, y, filter }}
     >
       <div className="text-center px-6">
         <p className="text-sm tracking-[0.3em] uppercase text-slate-500 font-medium mb-4">
@@ -143,7 +152,7 @@ function SectionHeading({
   );
 }
 
-/* ── Main parallax section ──────────────────────────────────── */
+/* ── Main parallax container ───────────────────────────────── */
 
 export default function ParallaxWork() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -156,12 +165,8 @@ export default function ParallaxWork() {
 
   return (
     <section id="work" ref={containerRef} className="relative h-[800vh]">
-      {/* Sticky viewport — everything stays visible here */}
       <div className="sticky top-0 h-screen w-full overflow-hidden">
-        {/* Heading — fades out immediately */}
         <SectionHeading scrollYProgress={scrollYProgress} />
-
-        {/* Project tiles — fly through one by one */}
         {projects.map((project, i) => (
           <ProjectTile
             key={project.slug}
