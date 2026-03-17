@@ -30,6 +30,7 @@ export default function ParallaxWork() {
     if (!container) return;
 
     const step = 0.75 / allItems;
+    let hasSnapped = false;
 
     const getTiming = (index: number) => {
       const center = 0.25 + index * step;
@@ -107,6 +108,19 @@ export default function ParallaxWork() {
         ctaEl.style.transform = `scale(${scale})`;
         ctaEl.style.zIndex    = String(Math.round(scale * 100 + 10));
         ctaEl.style.pointerEvents = opacity > 0.1 ? "auto" : "none";
+
+        // Auto-snap to CV section once CTA has fully faded out
+        if (opacity <= 0 && progress > end && !hasSnapped) {
+          hasSnapped = true;
+          const cvSection = document.getElementById("cv");
+          if (cvSection) {
+            cvSection.scrollIntoView({ behavior: "smooth" });
+          }
+        }
+        // Reset snap flag when scrolling back up
+        if (progress < end) {
+          hasSnapped = false;
+        }
       }
     };
 
