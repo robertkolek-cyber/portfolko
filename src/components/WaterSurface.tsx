@@ -3,41 +3,31 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Top-down water surface — circular ripples from wave sources.
- * chaos=1: many sources interfering (complex, choppy)
- * chaos=0: single source, clean expanding rings (clarity)
+ * Concentric ring field — continuously expanding rings from wave sources.
+ * chaos = 0 → single centre source, perfect thin rings, meditative calm
+ * chaos = 1 → multiple overlapping sources, wobbly thick rings, interference
  */
 
-interface WaveSource {
-  // Normalised 0–1 coords
-  x: number;
+interface RingSource {
+  x: number; // normalised 0–1
   y: number;
-  frequency: number;
-  amplitude: number;
-  speed: number;
-  phase: number;
+  speed: number; // expansion rate multiplier
+  phaseOffset: number;
 }
 
-// Multiple interference sources — active at high chaos
-const CHAOS_SOURCES: WaveSource[] = [
-  { x: 0.15, y: 0.25, frequency: 0.045, amplitude: 1.0, speed: 1.8, phase: 0.0 },
-  { x: 0.75, y: 0.15, frequency: 0.038, amplitude: 0.9, speed: 2.1, phase: 1.3 },
-  { x: 0.55, y: 0.80, frequency: 0.052, amplitude: 0.85, speed: 1.5, phase: 2.7 },
-  { x: 0.20, y: 0.75, frequency: 0.030, amplitude: 0.95, speed: 2.4, phase: 0.8 },
-  { x: 0.85, y: 0.60, frequency: 0.060, amplitude: 0.7, speed: 1.2, phase: 3.5 },
-  { x: 0.45, y: 0.35, frequency: 0.042, amplitude: 0.8, speed: 2.8, phase: 4.2 },
-  { x: 0.10, y: 0.55, frequency: 0.035, amplitude: 0.75, speed: 1.6, phase: 5.1 },
-  { x: 0.90, y: 0.35, frequency: 0.055, amplitude: 0.65, speed: 2.0, phase: 2.1 },
+const CENTER: RingSource = { x: 0.5, y: 0.5, speed: 1.0, phaseOffset: 0 };
+
+const CHAOS_SOURCES: RingSource[] = [
+  { x: 0.12, y: 0.22, speed: 1.3, phaseOffset: 0.15 },
+  { x: 0.82, y: 0.18, speed: 1.1, phaseOffset: 0.40 },
+  { x: 0.72, y: 0.78, speed: 0.9, phaseOffset: 0.65 },
+  { x: 0.18, y: 0.76, speed: 1.4, phaseOffset: 0.30 },
+  { x: 0.88, y: 0.52, speed: 1.2, phaseOffset: 0.80 },
 ];
 
-// The one calm source — centre of the canvas
-const CALM_SOURCE: WaveSource = {
-  x: 0.5, y: 0.5,
-  frequency: 0.028,
-  amplitude: 1.0,
-  speed: 0.8,
-  phase: 0.0,
-};
+const RINGS_PER_SOURCE = 12;
+const POINTS_PER_RING = 200;
+const TWO_PI = Math.PI * 2;
 
 export default function WaterSurface({
   chaos,
@@ -57,108 +47,153 @@ export default function WaterSurface({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Internal resolution — low enough to be fast, high enough to be smooth
-    const RES_W = 320;
-    const RES_H = 200;
-    canvas.width = RES_W;
-    canvas.height = RES_H;
-    ctx.imageSmoothingEnabled = true;
+    let w = 0;
+    let h = 0;
 
-    const imageData = ctx.createImageData(RES_W, RES_H);
-    const buf = imageData.data;
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio, 2);
+      w = rect.width;
+      h = rect.height;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    window.addEventListener("resize", resize);
 
     let time = 0;
+
+    // Pre-allocate angle lookup
+    const angles: number[] = [];
+    for (let i = 0; i <= POINTS_PER_RING; i++) {
+      angles.push((i / POINTS_PER_RING) * TWO_PI);
+    }
+
+    function drawSource(
+      drawCtx: CanvasRenderingContext2D,
+      sx: number,
+      sy: number,
+      speed: number,
+      phaseOffset: number,
+      baseAlpha: number,
+      wobbleMul: number,
+      lineWidth: number,
+      ringCount: number,
+    ) {
+      const maxR = Math.hypot(w, h) * 0.55;
+
+      for (let r = 0; r < ringCount; r++) {
+        // Continuously expanding phase — rings born at centre, expand outward
+        const phase = ((time * speed * 0.15 + phaseOffset + r / ringCount) % 1.0);
+        const radius = phase * maxR;
+        if (radius < 2) continue;
+
+        // Fade: peak brightness in mid-range, transparent at edges and centre
+        const fadeCentre = Math.min(1, radius / (maxR * 0.12));
+        const fadeEdge = 1 - Math.pow(phase, 1.8);
+        const alpha = baseAlpha * fadeCentre * fadeEdge;
+        if (alpha < 0.005) continue;
+
+        // Wobble: multi-frequency for organic feel
+        const wobbleAmt = wobbleMul * radius * 0.08;
+
+        drawCtx.beginPath();
+        for (let i = 0; i <= POINTS_PER_RING; i++) {
+          const a = angles[i];
+          let noise = 0;
+          if (wobbleAmt > 0.5) {
+            noise += Math.sin(a * 3 + time * 1.4 + r * 0.7) * 0.40;
+            noise += Math.sin(a * 7 - time * 0.9 + r * 0.4) * 0.25;
+            noise += Math.sin(a * 13 + time * 2.3 + r * 1.1) * 0.15;
+            noise += Math.cos(a * 5 - time * 1.7 + r * 0.9) * 0.20;
+          }
+
+          const R = radius + noise * wobbleAmt;
+          // 0.6 Y ratio → perspective ellipse
+          const x = sx + Math.cos(a) * R;
+          const y = sy + Math.sin(a) * R * 0.6;
+
+          if (i === 0) drawCtx.moveTo(x, y);
+          else drawCtx.lineTo(x, y);
+        }
+        drawCtx.closePath();
+
+        // Bloom: draw glow layer first (thicker, transparent)
+        if (alpha > 0.03) {
+          drawCtx.lineWidth = lineWidth + 3;
+          drawCtx.strokeStyle = `rgba(37, 99, 235, ${alpha * 0.3})`;
+          drawCtx.stroke();
+        }
+
+        // Crisp ring
+        drawCtx.lineWidth = lineWidth;
+        drawCtx.strokeStyle = `rgba(147, 197, 253, ${alpha})`;
+        drawCtx.stroke();
+      }
+    }
 
     const draw = () => {
       time += 0.016;
       const c = chaosRef.current;
 
-      for (let py = 0; py < RES_H; py++) {
-        for (let px = 0; px < RES_W; px++) {
-          const nx = px / RES_W; // normalised
-          const ny = py / RES_H;
+      ctx.clearRect(0, 0, w, h);
 
-          // Sum all wave heights at this point
-          let height = 0;
+      // Centre source — always present, clean at calm, dimmed at peak chaos
+      const centreAlpha = 0.12 * (1 - c * 0.4);
+      const centreWobble = c * 0.7;
+      const centreWidth = 0.6 + c * 0.3;
+      drawSource(
+        ctx,
+        w * CENTER.x,
+        h * CENTER.y,
+        CENTER.speed,
+        CENTER.phaseOffset,
+        centreAlpha,
+        centreWobble,
+        centreWidth,
+        RINGS_PER_SOURCE + 4,
+      );
 
-          // Calm source — always present, fades slightly at peak chaos
-          const calmDist = Math.hypot(nx - CALM_SOURCE.x, ny - CALM_SOURCE.y);
-          const calmH =
-            Math.sin(
-              calmDist * CALM_SOURCE.frequency * RES_W -
-              time * CALM_SOURCE.speed +
-              CALM_SOURCE.phase
-            ) *
-            CALM_SOURCE.amplitude *
-            (1 - c * 0.6); // calm wave dims during chaos
-          height += calmH;
+      // Chaos sources — fade in as chaos increases
+      if (c > 0.15) {
+        const intensity = Math.min(1, (c - 0.15) / 0.5);
+        for (let s = 0; s < CHAOS_SOURCES.length; s++) {
+          const src = CHAOS_SOURCES[s];
+          // Stagger: later sources need more chaos
+          const threshold = s / CHAOS_SOURCES.length;
+          const srcIntensity = Math.max(0, Math.min(1, (intensity - threshold * 0.6) / 0.5));
+          if (srcIntensity < 0.01) continue;
 
-          // Chaos sources — each fades in with staggered threshold
-          for (let i = 0; i < CHAOS_SOURCES.length; i++) {
-            const src = CHAOS_SOURCES[i];
-            // Stagger: later sources need higher chaos to appear
-            const threshold = (i / CHAOS_SOURCES.length) * 0.7;
-            const intensity = Math.max(
-              0,
-              Math.min(1, (c - threshold) / 0.35)
-            );
-            if (intensity < 0.01) continue;
-
-            const dist = Math.hypot(nx - src.x, ny - src.y);
-            // Wave attenuates with distance
-            const attenuation = Math.max(0.1, 1 - dist * 0.8);
-            const h =
-              Math.sin(
-                dist * src.frequency * RES_W -
-                time * src.speed +
-                src.phase
-              ) *
-              src.amplitude *
-              intensity *
-              attenuation;
-            height += h;
-          }
-
-          // Map height to colour — lime green with alpha from wave height
-          const normalised = (height + 1.5) / 3.0; // 0–1 range (rough)
-          const clamped = Math.max(0, Math.min(1, normalised));
-
-          // During calm: thin bright rings on dark bg (high contrast)
-          // During chaos: dense bright soup
-          const ringSharpness = 1 - c * 0.5;
-          // Sharpen to rings by applying a soft threshold
-          const ringed =
-            Math.pow(
-              Math.abs(Math.sin(clamped * Math.PI * (4 + c * 8))),
-              0.5 + ringSharpness * 1.5
-            );
-
-          const idx = (py * RES_W + px) * 4;
-          // Blend light blue → royal blue based on chaos level
-          buf[idx]     = Math.round(147 + (37  - 147) * c * 0.7); // R
-          buf[idx + 1] = Math.round(197 + (99  - 197) * c * 0.7); // G
-          buf[idx + 2] = Math.round(253 + (235 - 253) * c * 0.7); // B
-          buf[idx + 3] = Math.round(ringed * (0.20 + c * 0.15) * 255);
+          drawSource(
+            ctx,
+            w * src.x,
+            h * src.y,
+            src.speed,
+            src.phaseOffset,
+            0.06 * srcIntensity,
+            0.6 + srcIntensity * 0.4,
+            0.5 + srcIntensity * 0.4,
+            Math.floor(RINGS_PER_SOURCE * 0.6 * srcIntensity),
+          );
         }
       }
 
-      ctx.putImageData(imageData, 0, 0);
       frameRef.current = requestAnimationFrame(draw);
     };
 
     frameRef.current = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(frameRef.current);
+    return () => {
+      cancelAnimationFrame(frameRef.current);
+      window.removeEventListener("resize", resize);
+    };
   }, []);
 
   return (
     <canvas
       ref={canvasRef}
       className={className}
-      style={{
-        width: "100%",
-        height: "100%",
-        imageRendering: "auto",
-      }}
+      style={{ width: "100%", height: "100%" }}
     />
   );
 }
