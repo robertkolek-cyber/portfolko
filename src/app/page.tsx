@@ -32,7 +32,7 @@ function WorkSection() {
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 md:gap-12" style={{ perspective: "1200px" }}>
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12">
           {projects.map((project, i) => (
             <ProjectCard key={project.slug} project={project} index={i} />
           ))}

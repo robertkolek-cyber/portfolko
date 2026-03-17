@@ -29,11 +29,12 @@ export default function ProjectCard({
       const clamped = Math.max(0, Math.min(1, progress));
 
       // Cards start far away (negative Z) and fly toward the viewer as they scroll up
-      const z = -250 + clamped * 300;   // -250px → +50px toward viewer
-      const rotX = (1 - clamped) * 6;   // slight tilt that flattens out
-      const scale = 0.88 + clamped * 0.12; // subtle size growth
+      // perspective() must be inline — parent perspective doesn't propagate through <a> tags
+      const z = -300 + clamped * 350;    // -300px → +50px toward viewer
+      const rotX = (1 - clamped) * 8;    // tilt that flattens as card approaches
+      const scale = 0.85 + clamped * 0.15;
 
-      el.style.transform = `translateZ(${z}px) rotateX(${rotX}deg) scale(${scale})`;
+      el.style.transform = `perspective(1000px) translateZ(${z}px) rotateX(${rotX}deg) scale(${scale})`;
     };
 
     update();
