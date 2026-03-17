@@ -2,6 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
+/* ═══════════════════════════════════════════════════════════════
+   CV TIMELINE — "Chaos to Clarity" entrance
+   ONE rAF LOOP. ONE complexity parameter. EVERY value is a
+   smooth function of time. Matches Hero design language.
+   ═══════════════════════════════════════════════════════════════ */
+
 const experiences = [
   {
     period: "2023 — Present",
@@ -45,16 +51,25 @@ const experiences = [
   },
 ];
 
-// Resting opacity for each item — creates depth/perspective on the timeline
+/* ── Depth opacities — perspective on the timeline ─────────── */
 const BASE_OPACITIES = [1, 0.6, 0.25, 0.1, 0.05];
+const LINE_WIDTH = experiences.length * 450 + 400;
 
-// Refined ease: smooth deceleration, no bounce/overshoot
-const EASE = "cubic-bezier(0.4, 0, 0, 1)";
+/* ── Easing ─────────────────────────────────────────────────── */
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
 
-function smoothstep(t: number) {
+function smoothstepVal(t: number) {
   const c = Math.max(0, Math.min(1, t));
   return c * c * (3 - 2 * c);
 }
+
+function smoothstep(edge0: number, edge1: number, x: number) {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+/* ── Card ───────────────────────────────────────────────────── */
 
 function Card({ exp }: { exp: (typeof experiences)[0] }) {
   return (
@@ -82,64 +97,179 @@ function Card({ exp }: { exp: (typeof experiences)[0] }) {
   );
 }
 
+/* ── Timeline Component ─────────────────────────────────────── */
+
 export default function CVTimeline() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
-  const lineRef = useRef<HTMLDivElement>(null);
+  const lineRef = useRef<SVGPathElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLDivElement>(null);
+  const downloadRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const dotRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [entered, setEntered] = useState(false);
-  const scrollStartedRef = useRef(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Trigger entrance when section becomes visible
+  const [entered, setEntered] = useState(false);
+  const entranceDoneRef = useRef(false);
+  const entranceRaf = useRef(0);
+  const scrollRaf = useRef(false);
+
+  /* ── Trigger on visibility ────────────────────────────────── */
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setEntered(true);
-          observer.disconnect();
-        }
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) { setEntered(true); obs.disconnect(); }
       },
       { threshold: 0.05 }
     );
-    observer.observe(container);
-    return () => observer.disconnect();
+    obs.observe(el);
+    return () => obs.disconnect();
   }, []);
 
-  // Entrance choreography — quiet materialization, no sliding
+  /* ── Entrance: single rAF loop — chaos → clarity ──────────── */
   useEffect(() => {
     if (!entered) return;
+    const start = performance.now();
 
-    // 1. Timeline line draws itself from left
-    const line = lineRef.current;
-    if (line) {
-      line.style.transition = `transform 1.6s ${EASE} 0.15s`;
-      line.style.transform = "scaleX(1)";
-    }
+    // Timing constants
+    const FADE_IN = 0.35;       // wrapper fade-in duration
+    const RESOLVE_START = 0.5;  // when chaos begins resolving
+    const RESOLVE_DUR = 2.2;    // how long the resolve takes
+    const TOTAL = RESOLVE_START + RESOLVE_DUR;
 
-    // 2. Dots emerge along the line (scale up from nothing)
-    dotRefs.current.forEach((dot, i) => {
-      if (!dot) return;
-      const delay = 0.4 + i * 0.12;
-      dot.style.transition = `transform 0.8s ${EASE} ${delay}s, opacity 0.8s ${EASE} ${delay}s`;
-      dot.style.transform = "scale(1)";
-      dot.style.opacity = String(BASE_OPACITIES[i] ?? 0.05);
-    });
+    const tick = (now: number) => {
+      const t = (now - start) / 1000;
 
-    // 3. Cards fade in with subtle upward drift, staggered after their dots
-    itemRefs.current.forEach((el, i) => {
-      if (!el) return;
-      const delay = 0.65 + i * 0.12;
-      el.style.transition = `opacity 1s ${EASE} ${delay}s, transform 1s ${EASE} ${delay}s`;
-      el.style.opacity = String(BASE_OPACITIES[i] ?? 0.05);
-      el.style.transform = "translateY(0)";
-    });
+      // ── Master complexity: 1 → 0 ──
+      let complexity: number;
+      if (t < RESOLVE_START) {
+        complexity = 1.0;
+      } else {
+        const raw = Math.min(1, (t - RESOLVE_START) / RESOLVE_DUR);
+        complexity = 1 - easeOutCubic(raw);
+      }
+
+      // ── Wrapper fade-in ──
+      const wrapper = wrapperRef.current;
+      if (wrapper) {
+        wrapper.style.opacity = String(Math.min(1, t / FADE_IN));
+      }
+
+      // ── Label + download link ──
+      const labelAlpha = smoothstep(0.25, 0.8, t);
+      const labelY = 8 * (1 - labelAlpha);
+      if (labelRef.current) {
+        labelRef.current.style.opacity = String(labelAlpha);
+        labelRef.current.style.transform = `translateY(${labelY}px)`;
+      }
+      if (downloadRef.current) {
+        const dlAlpha = smoothstep(0.35, 0.9, t);
+        downloadRef.current.style.opacity = String(dlAlpha);
+        downloadRef.current.style.transform = `translateY(${8 * (1 - dlAlpha)}px)`;
+      }
+
+      // ── Timeline line: noisy SVG path → straight ──
+      const line = lineRef.current;
+      if (line) {
+        const segments = 180;
+        let d = "";
+        for (let s = 0; s <= segments; s++) {
+          const nx = s / segments;
+          const x = nx * LINE_WIDTH;
+          // Four-octave layered sine noise
+          const noise = (
+            Math.sin(nx * 14 + t * 2.5) * 20 +
+            Math.sin(nx * 28 + t * 1.7 + 1.3) * 11 +
+            Math.sin(nx * 55 + t * 3.4 + 2.7) * 5.5 +
+            Math.sin(nx * 110 + t * 5.0 + 0.5) * 2.5
+          ) * complexity;
+          d += s === 0 ? `M${x},${noise}` : ` L${x},${noise}`;
+        }
+        line.setAttribute("d", d);
+        // Line fades in fast
+        line.style.opacity = String(Math.min(1, t / 0.25));
+      }
+
+      // ── Line glow: pulses during chaos, fades with clarity ──
+      if (glowRef.current) {
+        const pulse = 0.5 + Math.sin(t * 3) * 0.3;
+        const glowAlpha = complexity * pulse * 0.15;
+        const blur = 30 + complexity * 40;
+        glowRef.current.style.opacity = String(glowAlpha);
+        glowRef.current.style.filter = `blur(${blur}px)`;
+      }
+
+      // ── Dots: jitter + pulse during chaos, settle into place ──
+      dotRefs.current.forEach((dot, i) => {
+        if (!dot) return;
+        const baseOp = BASE_OPACITIES[i] ?? 0.05;
+
+        // Dots appear fast (0.3s stagger)
+        const dotFade = Math.min(1, Math.max(0, (t - 0.1 - i * 0.06) / 0.3));
+
+        // Position jitter — each dot has its own phase offset
+        const jX = Math.sin(t * 3.5 + i * 1.7) * 8 * complexity;
+        const jY = Math.cos(t * 2.8 + i * 2.1) * 12 * complexity;
+
+        // Scale pulse
+        const scale = 1 + Math.sin(t * 4.5 + i * 0.9) * 0.4 * complexity;
+
+        // Glow ring: bright during chaos, settles to static ring
+        const glowPulse = 0.25 + complexity * 0.35 * (0.5 + 0.5 * Math.sin(t * 5 + i * 1.2));
+
+        dot.style.transform = `translate(${jX}px, ${jY}px) scale(${scale})`;
+        dot.style.opacity = String(dotFade * baseOp);
+        dot.style.boxShadow = `0 0 0 4px rgba(96, 165, 250, ${glowPulse})`;
+      });
+
+      // ── Cards: emerge as chaos subsides ──
+      itemRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const baseOp = BASE_OPACITIES[i] ?? 0.05;
+
+        // Cards wait for chaos to drop, then ease in (staggered per item)
+        const cardThreshold = 0.55 - i * 0.06;
+        const cardProgress = smoothstep(0.7, cardThreshold, complexity);
+        const isAbove = i % 2 === 0;
+        const yDrift = (1 - cardProgress) * (isAbove ? 10 : -10);
+
+        el.style.opacity = String(cardProgress * baseOp);
+        el.style.transform = `translateY(${yDrift}px)`;
+      });
+
+      // ── Continue or finish ──
+      if (t < TOTAL + 0.1) {
+        entranceRaf.current = requestAnimationFrame(tick);
+      } else {
+        // Set clean final states
+        entranceDoneRef.current = true;
+        if (line) {
+          line.setAttribute("d", `M0,0 L${LINE_WIDTH},0`);
+          line.style.opacity = "1";
+        }
+        if (glowRef.current) glowRef.current.style.opacity = "0";
+        dotRefs.current.forEach((dot, i) => {
+          if (!dot) return;
+          dot.style.transform = "translate(0,0) scale(1)";
+          dot.style.opacity = String(BASE_OPACITIES[i] ?? 0.05);
+          dot.style.boxShadow = "0 0 0 4px rgba(96, 165, 250, 0.25)";
+        });
+        itemRefs.current.forEach((el, i) => {
+          if (!el) return;
+          el.style.opacity = String(BASE_OPACITIES[i] ?? 0.05);
+          el.style.transform = "translateY(0)";
+        });
+      }
+    };
+
+    entranceRaf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(entranceRaf.current);
   }, [entered]);
 
-  // Scroll-driven horizontal parallax
+  /* ── Scroll-driven horizontal parallax (after entrance) ───── */
   useEffect(() => {
     const container = containerRef.current;
     const track = trackRef.current;
@@ -153,7 +283,7 @@ export default function CVTimeline() {
     window.addEventListener("resize", setHeight);
 
     const update = () => {
-      if (!entered) return;
+      if (!entranceDoneRef.current) return;
 
       const rect = container.getBoundingClientRect();
       const scrolled = -rect.top;
@@ -161,20 +291,15 @@ export default function CVTimeline() {
       if (scrollable <= 0) return;
       const p = Math.max(0, Math.min(1, scrolled / scrollable));
 
-      // Strip CSS transitions on first scroll so JS takes over cleanly
-      if (!scrollStartedRef.current && p > 0.005) {
-        scrollStartedRef.current = true;
-        itemRefs.current.forEach((el) => { if (el) el.style.transition = "none"; });
-        dotRefs.current.forEach((dot) => { if (dot) dot.style.transition = "none"; });
-      }
-
+      // Move track horizontally
       const travel = track.scrollWidth - window.innerWidth;
       track.style.transform = `translateX(${-p * travel}px)`;
 
+      // Items: interpolate from base opacity → 1.0
       itemRefs.current.forEach((el, i) => {
         if (!el) return;
         const threshold = i === 0 ? 0 : (i / (experiences.length - 1)) * 0.75;
-        const t = smoothstep((p - threshold) / 0.2);
+        const t = smoothstepVal((p - threshold) / 0.2);
         const baseOp = BASE_OPACITIES[i] ?? 0.05;
         const opacity = baseOp + (1 - baseOp) * t;
         const isAbove = i % 2 === 0;
@@ -183,18 +308,16 @@ export default function CVTimeline() {
         el.style.transform = `translateY(${yOffset}px)`;
       });
 
-      // Dots follow same opacity progression
+      // Dots follow same opacity
       dotRefs.current.forEach((dot, i) => {
         if (!dot) return;
         const threshold = i === 0 ? 0 : (i / (experiences.length - 1)) * 0.75;
-        const t = smoothstep((p - threshold) / 0.2);
+        const t = smoothstepVal((p - threshold) / 0.2);
         const baseOp = BASE_OPACITIES[i] ?? 0.05;
-        const opacity = baseOp + (1 - baseOp) * t;
-        dot.style.opacity = String(opacity);
+        dot.style.opacity = String(baseOp + (1 - baseOp) * t);
       });
     };
 
-    update();
     window.addEventListener("scroll", update, { passive: true });
     return () => {
       window.removeEventListener("scroll", update);
@@ -210,37 +333,24 @@ export default function CVTimeline() {
       style={{ backgroundColor: "#0f1d3d", marginTop: "-2rem" }}
     >
       <div className="sticky top-0 h-screen overflow-hidden">
-        {/* Content wrapper — fades in quietly, no sliding */}
-        <div
-          ref={contentRef}
-          className="absolute inset-0"
-          style={{
-            opacity: entered ? 1 : 0,
-            transition: `opacity 1.2s ${EASE}`,
-          }}
-        >
+        {/* Content wrapper — fades in via rAF, no CSS transition */}
+        <div ref={wrapperRef} className="absolute inset-0" style={{ opacity: 0 }}>
           {/* Section label */}
           <div
+            ref={labelRef}
             className="absolute top-10 left-10 z-20 pointer-events-none"
-            style={{
-              opacity: entered ? 1 : 0,
-              transform: entered ? "translateY(0)" : "translateY(6px)",
-              transition: `opacity 0.9s ${EASE} 0.6s, transform 0.9s ${EASE} 0.6s`,
-            }}
+            style={{ opacity: 0, transform: "translateY(8px)" }}
           >
             <p className="text-xs tracking-[0.3em] uppercase font-medium" style={{ color: "#64748b" }}>
               Experience
             </p>
           </div>
 
-          {/* Download CV link */}
+          {/* Download CV */}
           <div
+            ref={downloadRef}
             className="absolute top-10 right-10 z-20"
-            style={{
-              opacity: entered ? 1 : 0,
-              transform: entered ? "translateY(0)" : "translateY(6px)",
-              transition: `opacity 0.9s ${EASE} 0.7s, transform 0.9s ${EASE} 0.7s`,
-            }}
+            style={{ opacity: 0, transform: "translateY(8px)" }}
           >
             <a
               href="/cv.pdf"
@@ -261,15 +371,29 @@ export default function CVTimeline() {
             className="absolute inset-y-0 left-0 flex"
             style={{ paddingLeft: "10vw", paddingRight: "18vw", gap: "5vw", willChange: "transform" }}
           >
-            {/* Timeline line — draws itself from left via scaleX */}
+            {/* Timeline line — SVG path driven by rAF (chaos → straight) */}
+            <svg
+              className="absolute top-1/2 left-0 pointer-events-none overflow-visible"
+              style={{ width: `${LINE_WIDTH}px`, height: "1px" }}
+            >
+              <path
+                ref={lineRef}
+                d="M0,0"
+                stroke="rgba(255,255,255,0.08)"
+                strokeWidth="1"
+                fill="none"
+                style={{ opacity: 0 }}
+              />
+            </svg>
+
+            {/* Atmospheric glow behind the line — pulses during chaos */}
             <div
-              ref={lineRef}
-              className="absolute top-1/2 left-0 h-px pointer-events-none"
+              ref={glowRef}
+              className="absolute top-1/2 left-[10%] right-[10%] h-px pointer-events-none -translate-y-1/2"
               style={{
-                width: `${experiences.length * 450 + 400}px`,
-                background: "linear-gradient(to right, transparent, rgba(255,255,255,0.08) 5%, rgba(255,255,255,0.08) 95%, transparent)",
-                transform: "scaleX(0)",
-                transformOrigin: "left center",
+                opacity: 0,
+                background: "linear-gradient(to right, transparent, rgba(96, 165, 250, 0.6) 20%, rgba(163, 230, 53, 0.4) 50%, rgba(96, 165, 250, 0.6) 80%, transparent)",
+                height: "2px",
               }}
             />
 
@@ -281,14 +405,11 @@ export default function CVTimeline() {
                   className="relative flex-shrink-0 h-screen flex flex-col"
                   style={{ width: 340 }}
                 >
-                  {/* Card area — managed by itemRefs for entrance + scroll */}
+                  {/* Card area — opacity/transform driven by rAF + scroll */}
                   <div
                     ref={(el) => { itemRefs.current[i] = el; }}
                     className="absolute inset-0 flex flex-col"
-                    style={{
-                      opacity: 0,
-                      transform: `translateY(${isAbove ? 6 : -6}px)`,
-                    }}
+                    style={{ opacity: 0, transform: `translateY(${isAbove ? 10 : -10}px)` }}
                   >
                     <div className="flex-1 flex flex-col justify-end pb-10">
                       {isAbove && <Card exp={exp} />}
@@ -298,15 +419,15 @@ export default function CVTimeline() {
                     </div>
                   </div>
 
-                  {/* Dot — emerges independently via dotRefs */}
+                  {/* Dot — jitters during chaos, settles with clarity */}
                   <div className="absolute top-1/2 left-0 -translate-y-1/2 z-10">
                     <div
                       ref={(el) => { dotRefs.current[i] = el; }}
                       className="w-3 h-3 rounded-full bg-lime"
                       style={{
-                        boxShadow: "0 0 0 4px rgba(96, 165, 250, 0.25)",
-                        transform: "scale(0)",
+                        transform: "translate(0,0) scale(0)",
                         opacity: 0,
+                        boxShadow: "0 0 0 4px rgba(96, 165, 250, 0.25)",
                       }}
                     />
                   </div>
