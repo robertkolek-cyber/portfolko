@@ -123,15 +123,19 @@ export default function CVTimeline() {
       const travel = track.scrollWidth - window.innerWidth;
       track.style.transform = `translateX(${-p * travel}px)`;
 
-      // Stagger items
+      // Stagger items (item 0 is always visible, transition hands off to scroll)
       itemRefs.current.forEach((el, i) => {
         if (!el) return;
         const threshold =
-          i === 0 ? -0.05 : (i / (experiences.length - 1)) * 0.8;
+          i === 0 ? 0 : (i / (experiences.length - 1)) * 0.8;
         const ip = Math.min(1, Math.max(0, (p - threshold) / 0.1));
         const isAbove = i % 2 === 0;
-        el.style.opacity = String(ip);
-        el.style.transform = `translateY(${(1 - ip) * (isAbove ? 28 : -28)}px)`;
+        // For item 0: once scroll starts, take over from CSS transition
+        if (i === 0) {
+          el.style.transition = "none";
+        }
+        el.style.opacity = i === 0 ? "1" : String(ip);
+        el.style.transform = i === 0 ? "translateY(0)" : `translateY(${(1 - ip) * (isAbove ? 28 : -28)}px)`;
       });
     };
 
@@ -234,7 +238,12 @@ export default function CVTimeline() {
                     itemRefs.current[i] = el;
                   }}
                   className="relative flex-shrink-0 h-screen flex flex-col"
-                  style={{ width: 340, opacity: 0 }}
+                  style={{
+                    width: 340,
+                    opacity: i === 0 ? (entered ? 1 : 0) : 0,
+                    transform: i === 0 ? (entered ? "translateY(0)" : "translateY(28px)") : undefined,
+                    transition: i === 0 ? "opacity 0.6s ease 0.5s, transform 0.6s ease 0.5s" : undefined,
+                  }}
                 >
                   {/* Top half — card for "above" entries */}
                   <div className="flex-1 flex flex-col justify-end pb-10">
