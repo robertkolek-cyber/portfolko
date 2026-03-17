@@ -12,6 +12,8 @@ export default function ParallaxWork() {
   const heroWrapperRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
   const tileRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const dotRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const progressWrapperRef = useRef<HTMLDivElement>(null);
 
   const total = projects.length;
 
@@ -19,6 +21,7 @@ export default function ParallaxWork() {
     const container = containerRef.current;
     const heroWrapper = heroWrapperRef.current;
     const heading = headingRef.current;
+    const progressWrapper = progressWrapperRef.current;
     if (!container) return;
 
     const step = 0.75 / total;
@@ -84,6 +87,12 @@ export default function ParallaxWork() {
         heading.style.display = progress > 0.16 ? "none" : "block";
       }
 
+      // Progress indicator visibility — show when tiles are active
+      if (progressWrapper) {
+        const showing = progress > 0.07 && progress < 0.97;
+        progressWrapper.style.opacity = showing ? "1" : "0";
+      }
+
       // Tiles fly through
       for (let i = 0; i < total; i++) {
         const el = tileRefs.current[i];
@@ -113,6 +122,18 @@ export default function ParallaxWork() {
         el.style.opacity = String(opacity);
         el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
         el.style.zIndex = String(z);
+
+        // Active = tile closest to its center point
+        const dot = dotRefs.current[i];
+        if (dot) {
+          const distToCenter = Math.abs(progress - center);
+          const isActive = distToCenter < step * 0.6 && opacity > 0.3;
+          dot.style.opacity = isActive ? "1" : "0.25";
+          dot.style.transform = isActive ? "scaleX(2.5)" : "scaleX(1)";
+          dot.style.backgroundColor = isActive
+            ? "var(--color-lime)"
+            : "var(--color-slate-400)";
+        }
       }
     };
 
@@ -141,6 +162,27 @@ export default function ParallaxWork() {
           <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-100">
             Projects that <span className="italic text-lime">define</span> my craft.
           </h2>
+        </div>
+
+        {/* Progress indicator — bottom right, dots per project */}
+        <div
+          ref={progressWrapperRef}
+          className="absolute bottom-10 right-10 z-30 flex items-center gap-2"
+          style={{ opacity: 0, transition: "opacity 0.4s ease" }}
+        >
+          {projects.map((_, i) => (
+            <div
+              key={i}
+              ref={(el) => { dotRefs.current[i] = el; }}
+              className="h-[3px] w-4 rounded-full"
+              style={{
+                backgroundColor: "var(--color-slate-400)",
+                opacity: 0.25,
+                transformOrigin: "left center",
+                transition: "transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease",
+              }}
+            />
+          ))}
         </div>
 
         {/* Project tiles — fly through */}
