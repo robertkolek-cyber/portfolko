@@ -8,31 +8,24 @@ import WaterSurface from "./WaterSurface";
    OF TIME. NO setTimeout. NO CSS transition. NO linear easing.
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── Easing library ───────────────────────────────────────────── */
+/* ── Easing ─────────────────────────────────────────────────── */
 
-// Smooth deceleration — fast start, gentle stop
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
-
-// Dramatic deceleration — even snappier
 const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
-
-// Overshoot then settle — for the glow bloom
 const easeOutBack = (t: number) => {
   const c = 1.7;
   return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
 };
-
-// Smooth step — nice for interpolating curves
 const smoothstep = (edge0: number, edge1: number, x: number) => {
   const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
   return t * t * (3 - 2 * t);
 };
 
-/* ── Token timeline ───────────────────────────────────────────── */
+/* ── Token timeline ─────────────────────────────────────────── */
 
 interface CharEntry {
   char: string;
-  time: number; // exact second this character appears
+  time: number;
   token: "normal" | "complexity" | "clarity";
 }
 
@@ -44,7 +37,7 @@ function buildTimeline(): { chars: CharEntry[]; totalDuration: number } {
     { text: "clarity", type: "clarity", msPerChar: 155 },
   ];
 
-  const startDelay = 0.6; // seconds before first char
+  const startDelay = 0.6;
   const chars: CharEntry[] = [];
   let cursor = startDelay;
 
@@ -55,34 +48,30 @@ function buildTimeline(): { chars: CharEntry[]; totalDuration: number } {
     }
   }
 
-  // Beat after last char before glow
-  const totalDuration = cursor + 2.5;
-  return { chars, totalDuration };
+  return { chars, totalDuration: cursor + 2.5 };
 }
 
 const TIMELINE = buildTimeline();
 const LAST_CHAR_TIME = TIMELINE.chars[TIMELINE.chars.length - 1].time;
 
-// When does each phase start/end?
 const COMPLEXITY_START = TIMELINE.chars.find((c) => c.token === "complexity")!.time;
 const COMPLEXITY_END = TIMELINE.chars.filter((c) => c.token === "complexity").pop()!.time;
 const CLARITY_START = TIMELINE.chars.find((c) => c.token === "clarity")!.time;
 const CLARITY_END = LAST_CHAR_TIME;
 
-// Glow: slow bloom, hold, then fade out
 const GLOW_START = CLARITY_END + 0.35;
-const GLOW_IN = 2.0;       // slow ramp up
-const GLOW_HOLD = 1.2;     // hold at peak
-const GLOW_OUT = 1.8;      // fade out
-const REST_START = GLOW_START + 1.0; // secondary content starts during glow
+const GLOW_IN = 2.0;
+const GLOW_HOLD = 1.2;
+const GLOW_OUT = 1.8;
+const REST_START = GLOW_START + 1.0;
 
-/* ── Component ────────────────────────────────────────────────── */
+/* ── Component ──────────────────────────────────────────────── */
 
 interface FrameState {
   visibleCount: number;
-  noiseIntensity: number; // 0–1 smooth
-  waterChaos: number; // 0–1, drives water surface
-  glowIntensity: number; // 0–1+ (overshoot)
+  noiseIntensity: number;
+  waterChaos: number;
+  glowIntensity: number;
   restOpacity: number;
   restY: number;
   ctaOpacity: number;
@@ -91,15 +80,6 @@ interface FrameState {
   scrollY: number;
   cursorOpacity: number;
   showCursor: boolean;
-  // Glitch layers for "complexity"
-  glitch1X: number;
-  glitch1Y: number;
-  glitch1ClipTop: number;
-  glitch1ClipBot: number;
-  glitch2X: number;
-  glitch2Y: number;
-  glitch2ClipTop: number;
-  glitch2ClipBot: number;
 }
 
 export default function Hero() {
@@ -116,24 +96,13 @@ export default function Hero() {
     scrollY: 12,
     cursorOpacity: 1,
     showCursor: true,
-    glitch1X: 0,
-    glitch1Y: 0,
-    glitch1ClipTop: 50,
-    glitch1ClipBot: 50,
-    glitch2X: 0,
-    glitch2Y: 0,
-    glitch2ClipTop: 50,
-    glitch2ClipBot: 50,
   });
 
   const turbRef = useRef<SVGFETurbulenceElement>(null);
   const dispRef = useRef<SVGFEDisplacementMapElement>(null);
-  const grainTurbRef = useRef<SVGFETurbulenceElement>(null);
-  const blurFilterRef = useRef<SVGFEGaussianBlurElement>(null);
   const rafRef = useRef(0);
   const startRef = useRef(0);
 
-  // Refs kept for potential external scroll control
   const waterScrollRef = useRef<HTMLDivElement>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const scrollHintRef = useRef<HTMLDivElement>(null);
@@ -141,10 +110,9 @@ export default function Hero() {
   useEffect(() => {
     startRef.current = performance.now();
     let seed = 0;
-    let grainSeed = 100;
 
     const tick = (now: number) => {
-      const t = (now - startRef.current) / 1000; // seconds
+      const t = (now - startRef.current) / 1000;
 
       // ── Visible characters ──
       let count = 0;
@@ -153,7 +121,7 @@ export default function Hero() {
         else break;
       }
 
-      // ── Noise intensity: smooth ramp up during complexity, ease down after ──
+      // ── Noise intensity ──
       let noise = 0;
       if (t >= COMPLEXITY_START && t <= CLARITY_END) {
         const rampUp = smoothstep(COMPLEXITY_START, COMPLEXITY_END, t);
@@ -161,114 +129,62 @@ export default function Hero() {
         noise = easeOutCubic(rampUp) * rampDown;
       }
 
-      // ── Water chaos: wider arc than text noise ──
-      // Starts calm, builds before complexity, peaks during, settles after clarity
-      let waterChaos = 0.15; // base: gentle ripple
+      // ── Water chaos ──
+      let waterChaos = 0.15;
       if (t < COMPLEXITY_START) {
-        // Anticipation — slight build before complexity starts typing
         waterChaos = 0.15 + smoothstep(COMPLEXITY_START - 0.4, COMPLEXITY_START, t) * 0.2;
       } else if (t <= COMPLEXITY_END + 0.3) {
-        // Full chaos during complexity
         const ramp = smoothstep(COMPLEXITY_START, COMPLEXITY_START + 0.4, t);
         waterChaos = 0.35 + easeOutCubic(ramp) * 0.65;
       } else if (t <= CLARITY_START) {
-        // Settle hard to 0 during " into " — perfectly circular by the time clarity types
         const settle = smoothstep(COMPLEXITY_END + 0.05, CLARITY_START, t);
         waterChaos = 1.0 - easeOutCubic(settle);
       } else {
-        // Clarity and beyond — single centered source, perfect rings
         waterChaos = 0.0;
       }
 
-      // ── Drive SVG filter from the same loop ──
+      // ── SVG displacement — subtle horizontal tear ──
       if (noise > 0.01) {
         seed += 4;
-        grainSeed += 7;
         if (turbRef.current) {
           turbRef.current.setAttribute("seed", String(seed));
-          // High X freq, very low Y freq → horizontal bands/scanlines
           const freqX = 0.7 + Math.sin(t * 4) * 0.15;
           const freqY = 0.015 + Math.sin(t * 6.3) * 0.008;
-          turbRef.current.setAttribute(
-            "baseFrequency",
-            `${freqX.toFixed(3)} ${freqY.toFixed(4)}`
-          );
+          turbRef.current.setAttribute("baseFrequency", `${freqX.toFixed(3)} ${freqY.toFixed(4)}`);
         }
         if (dispRef.current) {
-          // Horizontal tear — mostly X displacement, modulated by intensity
-          const scale = noise * (24 + Math.sin(t * 8.5) * 10);
+          const scale = noise * (10 + Math.sin(t * 8.5) * 4);
           dispRef.current.setAttribute("scale", String(scale.toFixed(1)));
-        }
-        // Grain noise — rapid seed change for static feel
-        if (grainTurbRef.current) {
-          grainTurbRef.current.setAttribute("seed", String(grainSeed));
-        }
-        // Blur — soft focus on complexity text
-        if (blurFilterRef.current) {
-          blurFilterRef.current.setAttribute("stdDeviation", (noise * 1.0).toFixed(2));
         }
       } else {
         if (dispRef.current) dispRef.current.setAttribute("scale", "0");
-        if (blurFilterRef.current) blurFilterRef.current.setAttribute("stdDeviation", "0");
       }
 
-      // ── Glitch layers: two ghost copies that jitter behind "complexity" ──
-      let g1x = 0, g1y = 0, g1ct = 50, g1cb = 50;
-      let g2x = 0, g2y = 0, g2ct = 50, g2cb = 50;
-
-      if (noise > 0.01) {
-        // Intermittent burst — glitch isn't constant, has "spikes"
-        const burst = Math.pow(Math.max(0, Math.sin(t * 4.7) * Math.sin(t * 11.3)), 2);
-        const strength = noise * (0.3 + burst * 0.7);
-
-        // Ghost 1 — jitters right/down, shows a horizontal band
-        g1x = (Math.sin(t * 17.3) * 4 + Math.sin(t * 31.7) * 2) * strength;
-        g1y = Math.cos(t * 11.1) * 1.5 * strength;
-        const band1h = 25 + Math.sin(t * 7.3) * 20;
-        const band1c = 50 + Math.sin(t * 9.7) * 40;
-        g1ct = Math.max(0, Math.min(95, band1c - band1h));
-        g1cb = Math.max(0, Math.min(95, 100 - band1c));
-
-        // Ghost 2 — jitters opposite direction, different band rhythm
-        g2x = -(Math.cos(t * 19.1) * 3.5 + Math.cos(t * 29.3) * 1.8) * strength;
-        g2y = Math.sin(t * 13.3) * 1.5 * strength;
-        const band2h = 20 + Math.cos(t * 8.9) * 15;
-        const band2c = 45 + Math.cos(t * 12.1) * 38;
-        g2ct = Math.max(0, Math.min(95, band2c - band2h));
-        g2cb = Math.max(0, Math.min(95, 100 - band2c));
-      }
-
-      // ── Glow: slow bloom → hold → fade out ──
+      // ── Glow ──
       let glow = 0;
       if (t >= GLOW_START) {
         const elapsed = t - GLOW_START;
         if (elapsed < GLOW_IN) {
-          // Ramp up with overshoot
           glow = easeOutBack(elapsed / GLOW_IN);
         } else if (elapsed < GLOW_IN + GLOW_HOLD) {
-          // Hold at peak with subtle breath
           glow = 1 + Math.sin((elapsed - GLOW_IN) * 2.5) * 0.06;
         } else {
-          // Fade out
           const fadeT = (elapsed - GLOW_IN - GLOW_HOLD) / GLOW_OUT;
           glow = Math.max(0, 1 - easeOutCubic(Math.min(1, fadeT)));
         }
       }
 
-      // ── Secondary content: staggered ease-out ──
+      // ── Secondary content ──
       const restRaw = Math.min(1, Math.max(0, (t - REST_START) / 0.9));
       const restEased = easeOutQuart(restRaw);
-
       const ctaRaw = Math.min(1, Math.max(0, (t - REST_START - 0.2) / 0.9));
       const ctaEased = easeOutQuart(ctaRaw);
-
       const scrollRaw = Math.min(1, Math.max(0, (t - REST_START - 0.45) / 0.9));
       const scrollEased = easeOutQuart(scrollRaw);
 
-      // ── Cursor: smooth sine blink, not CSS ──
+      // ── Cursor ──
       const typing = t < CLARITY_END + 0.1;
       const cursorVisible = t < REST_START + 0.3;
-      // Blink with eased sine — holds at extremes, quick transition
       const blinkPhase = Math.sin(t * 3.2);
       const cursorAlpha = cursorVisible
         ? (typing ? 0.85 : smoothstep(-0.3, 0.3, blinkPhase))
@@ -287,14 +203,6 @@ export default function Hero() {
         scrollY: 12 * (1 - scrollEased),
         cursorOpacity: cursorAlpha,
         showCursor: cursorVisible,
-        glitch1X: g1x,
-        glitch1Y: g1y,
-        glitch1ClipTop: g1ct,
-        glitch1ClipBot: g1cb,
-        glitch2X: g2x,
-        glitch2Y: g2y,
-        glitch2ClipTop: g2ct,
-        glitch2ClipBot: g2cb,
       });
 
       rafRef.current = requestAnimationFrame(tick);
@@ -304,14 +212,11 @@ export default function Hero() {
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  // No wheel hijack — scroll is handled by the parent parallax container
-
-  // ── Render visible text with styling ──
+  // ── Render text ──
   const renderText = () => {
     const visible = TIMELINE.chars.slice(0, frame.visibleCount);
     if (visible.length === 0) return null;
 
-    // Group consecutive chars by token type for single spans
     const groups: { token: string; text: string }[] = [];
     for (const entry of visible) {
       const last = groups[groups.length - 1];
@@ -336,45 +241,15 @@ export default function Hero() {
     return groups.map((group, i) => {
       if (group.token === "complexity") {
         return (
-          <span key={i} className="relative inline-block">
-            {/* Ghost layer 1 — jitters with clip-path band */}
-            {n > 0.01 && (
-              <span
-                className="absolute inset-0 text-lime italic pointer-events-none select-none"
-                aria-hidden="true"
-                style={{
-                  transform: `translate(${frame.glitch1X}px, ${frame.glitch1Y}px)`,
-                  clipPath: `inset(${frame.glitch1ClipTop}% 0 ${frame.glitch1ClipBot}% 0)`,
-                  opacity: n * 0.6,
-                }}
-              >
-                {group.text}
-              </span>
-            )}
-            {/* Ghost layer 2 — opposite jitter, different band */}
-            {n > 0.01 && (
-              <span
-                className="absolute inset-0 text-lime italic pointer-events-none select-none"
-                aria-hidden="true"
-                style={{
-                  transform: `translate(${frame.glitch2X}px, ${frame.glitch2Y}px)`,
-                  clipPath: `inset(${frame.glitch2ClipTop}% 0 ${frame.glitch2ClipBot}% 0)`,
-                  opacity: n * 0.45,
-                }}
-              >
-                {group.text}
-              </span>
-            )}
-            {/* Main text — displacement + grain + blur via SVG filter chain */}
-            <span
-              className="text-lime italic"
-              style={{
-                filter: n > 0.01 ? "url(#textNoise)" : "none",
-                opacity: 1 - n * 0.15,
-              }}
-            >
-              {group.text}
-            </span>
+          <span
+            key={i}
+            className="text-slate-100 italic inline-block"
+            style={{
+              filter: n > 0.01 ? "url(#textNoise)" : "none",
+              opacity: 1 - n * 0.35,
+            }}
+          >
+            {group.text}
           </span>
         );
       }
@@ -397,95 +272,39 @@ export default function Hero() {
 
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
-      {/* SVG filter chain — displacement → grain → blur, all driven from rAF */}
+      {/* SVG displacement filter — subtle only */}
       <svg className="absolute w-0 h-0" aria-hidden="true">
         <defs>
           <filter id="textNoise" x="-15%" y="-5%" width="130%" height="110%">
-            {/* Displacement noise — horizontal scanline tear */}
             <feTurbulence
               ref={turbRef}
               type="fractalNoise"
               baseFrequency="0.7 0.015"
               numOctaves="3"
               seed="0"
-              result="dispNoise"
+              result="noise"
             />
             <feDisplacementMap
               ref={dispRef}
               in="SourceGraphic"
-              in2="dispNoise"
+              in2="noise"
               scale="0"
               xChannelSelector="R"
               yChannelSelector="R"
-              result="displaced"
-            />
-            {/* Grain noise — rapid static texture masked over text */}
-            <feTurbulence
-              ref={grainTurbRef}
-              type="fractalNoise"
-              baseFrequency="0.85 0.85"
-              numOctaves="4"
-              seed="100"
-              result="grain"
-            />
-            <feColorMatrix
-              in="grain"
-              type="saturate"
-              values="0"
-              result="grainBW"
-            />
-            <feBlend
-              in="displaced"
-              in2="grainBW"
-              mode="overlay"
-              result="withGrain"
-            />
-            {/* Soft blur — makes complexity text hard to focus on */}
-            <feGaussianBlur
-              ref={blurFilterRef}
-              in="withGrain"
-              stdDeviation="0"
             />
           </filter>
         </defs>
       </svg>
 
-      {/* Water surface — zooms in on scroll */}
+      {/* Wave surface */}
       <div ref={waterScrollRef} className="absolute inset-0 pointer-events-none" style={{ transformOrigin: "center center" }}>
         <WaterSurface chaos={frame.waterChaos} />
       </div>
 
-      {/* Atmospheric fog — radial depth blur at center during chaos */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse 50% 50% at center, rgba(15, 23, 42, ${0.55 * frame.waterChaos}) 0%, transparent 65%)`,
-          opacity: frame.waterChaos > 0.01 ? 1 : 0,
-        }}
-      />
-
-      {/* Ambient glow — royal blue top-right, light blue bottom-left */}
-      <div className="absolute top-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-lime/[0.12] blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[15%] left-[8%] w-[400px] h-[400px] rounded-full bg-dark-700/[0.15] blur-[100px] pointer-events-none" />
-
-      {/* Clarity bloom — background glow that swells behind text */}
-      {frame.glowIntensity > 0.01 && (
-        <div
-          className="absolute top-1/2 left-1/2 pointer-events-none"
-          style={{
-            width: `${500 * frame.glowIntensity}px`,
-            height: `${250 * frame.glowIntensity}px`,
-            transform: "translate(-50%, -50%)",
-            background: `radial-gradient(ellipse, rgba(37, 99, 235, ${0.2 * Math.min(1, frame.glowIntensity)}) 0%, rgba(147, 197, 253, ${0.1 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
-            filter: `blur(${50 * frame.glowIntensity}px)`,
-          }}
-        />
-      )}
-
       {/* Grid */}
       <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
 
-      {/* Content — fades out + drifts up on scroll */}
+      {/* Content */}
       <div ref={contentScrollRef} className="relative z-30 max-w-5xl mx-auto text-center">
         {/* Role line */}
         <div
@@ -507,7 +326,7 @@ export default function Hero() {
           {renderText()}
           {frame.showCursor && (
             <span
-              className="inline-block w-[3px] md:w-[5px] h-[0.8em] bg-lime ml-1 align-middle"
+              className="inline-block w-[3px] md:w-[5px] h-[0.8em] bg-slate-300 ml-1 align-middle"
               style={{ opacity: frame.cursorOpacity }}
             />
           )}
@@ -535,7 +354,7 @@ export default function Hero() {
         >
           <a
             href="#work"
-            className="group inline-flex items-center gap-3 bg-lime text-dark-950 px-8 py-4 rounded-full text-sm font-semibold tracking-wide glow-lime-sm"
+            className="group inline-flex items-center gap-3 bg-lime text-white px-8 py-4 rounded-full text-sm font-semibold tracking-wide glow-lime-sm"
             style={{ transition: "background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
           >
             <span className="group-hover:brightness-110">View my work</span>
@@ -557,17 +376,6 @@ export default function Hero() {
           >
             Get in touch
           </a>
-          <a
-            href="/cv.pdf"
-            download
-            className="inline-flex items-center gap-2 text-slate-400 px-6 py-4 rounded-full text-sm font-medium tracking-wide hover:text-slate-100"
-            style={{ transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
-            Download CV
-          </a>
         </div>
       </div>
 
@@ -580,10 +388,7 @@ export default function Hero() {
           transform: `translateX(-50%) translateY(${frame.scrollY}px)`,
         }}
       >
-        <div className="flex flex-col items-center gap-3">
-          <span className="text-xs tracking-widest uppercase text-slate-600">Scroll</span>
-          <div className="w-px h-12 bg-gradient-to-b from-lime/30 to-transparent" />
-        </div>
+        <span className="text-xs tracking-widest uppercase text-slate-500">Scroll to Explore</span>
       </div>
     </div>
   );
