@@ -2,13 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import Hero from "./Hero";
 import { projects } from "@/lib/projects";
 
-/* ── Pure JS parallax — no framer-motion, no hydration issues ── */
+/* ── Combined hero + parallax fly-through ──────────────────── */
 
 export default function ParallaxWork() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const stickyRef = useRef<HTMLDivElement>(null);
+  const heroWrapperRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
   const tileRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -16,6 +17,7 @@ export default function ParallaxWork() {
 
   useEffect(() => {
     const container = containerRef.current;
+    const heroWrapper = heroWrapperRef.current;
     const heading = headingRef.current;
     if (!container) return;
 
@@ -28,10 +30,8 @@ export default function ParallaxWork() {
       return { start, center, end };
     };
 
-    // Linear interpolation helper
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-    // Multi-stop interpolation
     const interpolate = (
       progress: number,
       inputs: number[],
@@ -50,23 +50,39 @@ export default function ParallaxWork() {
 
     const update = () => {
       const rect = container.getBoundingClientRect();
-      const containerTop = -rect.top; // how far we've scrolled into the container
+      const containerTop = -rect.top;
       const containerHeight = rect.height - window.innerHeight;
       const progress = Math.max(0, Math.min(1, containerTop / containerHeight));
 
-      // Heading fade-out
-      if (heading) {
-        const hOpacity = Math.max(0, 1 - progress / 0.06);
-        const hScale = 1 + Math.min(progress / 0.05, 1) * 0.1;
-        const hY = -Math.min(progress / 0.05, 1) * 60;
-        const hBlur = Math.min(progress / 0.05, 1) * 10;
-        heading.style.opacity = String(hOpacity);
-        heading.style.transform = `scale(${hScale}) translateY(${hY}px)`;
-        heading.style.filter = `blur(${hBlur}px)`;
-        heading.style.display = progress > 0.08 ? "none" : "flex";
+      // Hero fade-out: 0–5% of scroll
+      if (heroWrapper) {
+        const heroOpacity = Math.max(0, 1 - progress / 0.05);
+        const heroScale = 1 + Math.min(progress / 0.05, 1) * 0.15;
+        const heroY = -Math.min(progress / 0.05, 1) * 80;
+        heroWrapper.style.opacity = String(heroOpacity);
+        heroWrapper.style.transform = `scale(${heroScale}) translateY(${heroY}px)`;
+        heroWrapper.style.pointerEvents = progress > 0.03 ? "none" : "auto";
       }
 
-      // Tiles
+      // "Selected Work" heading: appears 5–10%, fades out 10–15%
+      if (heading) {
+        let hOpacity = 0;
+        if (progress < 0.05) {
+          hOpacity = 0;
+        } else if (progress < 0.10) {
+          hOpacity = (progress - 0.05) / 0.05; // fade in
+        } else if (progress < 0.15) {
+          hOpacity = 1 - (progress - 0.10) / 0.05; // fade out
+        }
+        const hScale = 1 + Math.max(0, (progress - 0.10) / 0.05) * 0.1;
+        const hBlur = Math.max(0, (progress - 0.10) / 0.05) * 10;
+        heading.style.opacity = String(Math.max(0, hOpacity));
+        heading.style.transform = `scale(${Math.min(hScale, 1.1)})`;
+        heading.style.filter = `blur(${Math.min(Math.max(0, hBlur), 10)}px)`;
+        heading.style.display = progress > 0.16 ? "none" : "flex";
+      }
+
+      // Tiles fly through
       for (let i = 0; i < total; i++) {
         const el = tileRefs.current[i];
         if (!el) continue;
@@ -74,10 +90,8 @@ export default function ParallaxWork() {
         const { start, center, end } = getTiming(i);
         const isEven = i % 2 === 0;
 
-        // Scale
         const scale = interpolate(progress, [start, center, end], [0.3, 1, 3.5]);
 
-        // Opacity
         const opIn = start + (center - start) * 0.3;
         const opOut = end - (end - center) * 0.2;
         const opacity = interpolate(
@@ -86,14 +100,12 @@ export default function ParallaxWork() {
           [0, 1, 1, 1, 0]
         );
 
-        // X drift (vw units)
         const xVw = interpolate(
           progress,
           [start, center, end],
           isEven ? [-5, -35, -120] : [5, 35, 120]
         );
 
-        // z-index
         const z = Math.round(scale * 100);
 
         el.style.opacity = String(opacity);
@@ -109,14 +121,17 @@ export default function ParallaxWork() {
 
   return (
     <section id="work" ref={containerRef} className="relative h-[800vh]">
-      <div
-        ref={stickyRef}
-        className="sticky top-0 h-screen w-full overflow-hidden"
-      >
-        {/* Heading */}
+      <div className="sticky top-0 h-screen w-full overflow-hidden">
+        {/* Hero — visible at top, fades out on scroll */}
+        <div ref={heroWrapperRef} className="absolute inset-0 z-20">
+          <Hero />
+        </div>
+
+        {/* "Selected Work" heading — fades in after hero, then out */}
         <div
           ref={headingRef}
           className="absolute inset-0 flex items-center justify-center z-10"
+          style={{ opacity: 0 }}
         >
           <div className="text-center px-6">
             <p className="text-sm tracking-[0.3em] uppercase text-slate-500 font-medium mb-4">
@@ -130,7 +145,7 @@ export default function ParallaxWork() {
           </div>
         </div>
 
-        {/* Project tiles */}
+        {/* Project tiles — fly through */}
         {projects.map((project, i) => (
           <div
             key={project.slug}

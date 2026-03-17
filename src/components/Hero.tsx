@@ -114,7 +114,7 @@ export default function Hero() {
   const rafRef = useRef(0);
   const startRef = useRef(0);
 
-  // Scroll-driven refs — direct DOM manipulation, zero React overhead
+  // Refs kept for potential external scroll control
   const waterScrollRef = useRef<HTMLDivElement>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const scrollHintRef = useRef<HTMLDivElement>(null);
@@ -240,59 +240,7 @@ export default function Hero() {
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  // Wheel hijack: page stays put, scrolling drives zoom — "jump into water"
-  useEffect(() => {
-    let zoomTarget = 0;
-    let zoomCurrent = 0;
-    let zoomRaf = 0;
-    let released = false;
-
-    const animate = () => {
-      // Smooth lerp toward target
-      zoomCurrent += (zoomTarget - zoomCurrent) * 0.07;
-      const p = Math.min(1, Math.max(0, zoomCurrent));
-
-      if (waterScrollRef.current) {
-        waterScrollRef.current.style.transform = `scale(${1 + p * 2.4})`;
-      }
-      if (contentScrollRef.current) {
-        contentScrollRef.current.style.opacity = String(Math.max(0, 1 - p * 2.5));
-        contentScrollRef.current.style.transform = `translateY(${-p * 60}px)`;
-      }
-      if (scrollHintRef.current) {
-        scrollHintRef.current.style.opacity = String(Math.max(0, 1 - p * 8));
-      }
-
-      // Fully zoomed — release, scroll past hero
-      if (p > 0.97 && !released) {
-        released = true;
-        document.documentElement.style.overflow = "";
-        window.scrollTo({ top: window.innerHeight, behavior: "smooth" });
-        return; // stop the rAF loop — no longer needed
-      }
-
-      if (!released) {
-        zoomRaf = requestAnimationFrame(animate);
-      }
-    };
-
-    const onWheel = (e: WheelEvent) => {
-      if (released) return;
-      e.preventDefault();
-      zoomTarget = Math.min(1.2, Math.max(0, zoomTarget + e.deltaY * 0.002));
-    };
-
-    // Lock page scroll while the hero zoom is active
-    document.documentElement.style.overflow = "hidden";
-    zoomRaf = requestAnimationFrame(animate);
-    window.addEventListener("wheel", onWheel, { passive: false });
-
-    return () => {
-      document.documentElement.style.overflow = "";
-      window.removeEventListener("wheel", onWheel);
-      cancelAnimationFrame(zoomRaf);
-    };
-  }, []);
+  // No wheel hijack — scroll is handled by the parent parallax container
 
   // ── Render visible text with styling ──
   const renderText = () => {
@@ -353,7 +301,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-6">
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
       {/* SVG noise filter — driven from the main rAF loop */}
       <svg className="absolute w-0 h-0" aria-hidden="true">
         <defs>
@@ -494,6 +442,6 @@ export default function Hero() {
           <div className="w-px h-12 bg-gradient-to-b from-lime/30 to-transparent" />
         </div>
       </div>
-    </section>
+    </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import Navigation from "@/components/Navigation";
-import Hero from "@/components/Hero";
 import ParallaxWork from "@/components/ParallaxWork";
 import About from "@/components/About";
 import Contact from "@/components/Contact";
@@ -12,7 +11,6 @@ export default function Home() {
     <>
       <Navigation />
       <main>
-        <Hero />
         <ParallaxWork />
         <About />
         <Contact />
