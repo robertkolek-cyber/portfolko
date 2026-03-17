@@ -69,22 +69,12 @@ export default function ParallaxWork() {
         heroWrapper.style.pointerEvents = progress > 0.03 ? "none" : "auto";
       }
 
-      // "Selected Work" heading: appears 5–10%, fades out 10–15%
+      // Heading: fades in after hero, stays visible through all tiles, fades out at end
       if (heading) {
-        let hOpacity = 0;
-        if (progress < 0.05) {
-          hOpacity = 0;
-        } else if (progress < 0.10) {
-          hOpacity = (progress - 0.05) / 0.05; // fade in
-        } else if (progress < 0.15) {
-          hOpacity = 1 - (progress - 0.10) / 0.05; // fade out
-        }
-        const hScale = 1 + Math.max(0, (progress - 0.10) / 0.05) * 0.1;
-        const hBlur = Math.max(0, (progress - 0.10) / 0.05) * 10;
-        heading.style.opacity = String(Math.max(0, hOpacity));
-        heading.style.transform = `scale(${Math.min(hScale, 1.1)})`;
-        heading.style.filter = `blur(${Math.min(Math.max(0, hBlur), 10)}px)`;
-        heading.style.display = progress > 0.16 ? "none" : "block";
+        const fadeIn  = Math.min(1, Math.max(0, (progress - 0.05) / 0.05));
+        const fadeOut = Math.min(1, Math.max(0, (progress - 0.90) / 0.05));
+        heading.style.opacity = String(fadeIn * (1 - fadeOut));
+        heading.style.display = fadeIn === 0 ? "none" : "block";
       }
 
       // Progress indicator visibility — show when tiles are active
@@ -122,18 +112,23 @@ export default function ParallaxWork() {
         el.style.opacity = String(opacity);
         el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
         el.style.zIndex = String(z);
+      }
 
-        // Active = tile closest to its center point
+      // Only the single tile closest to its center gets the active dot
+      let closestIndex = -1;
+      let closestDist = Infinity;
+      for (let i = 0; i < total; i++) {
+        const { center } = getTiming(i);
+        const dist = Math.abs(progress - center);
+        if (dist < closestDist) { closestDist = dist; closestIndex = i; }
+      }
+      for (let i = 0; i < total; i++) {
         const dot = dotRefs.current[i];
-        if (dot) {
-          const distToCenter = Math.abs(progress - center);
-          const isActive = distToCenter < step * 0.6 && opacity > 0.3;
-          dot.style.opacity = isActive ? "1" : "0.25";
-          dot.style.transform = isActive ? "scaleX(2.5)" : "scaleX(1)";
-          dot.style.backgroundColor = isActive
-            ? "var(--color-lime)"
-            : "var(--color-slate-400)";
-        }
+        if (!dot) continue;
+        const isActive = i === closestIndex && progress > 0.07 && progress < 0.97;
+        dot.style.opacity = isActive ? "1" : "0.3";
+        dot.style.transform = isActive ? "scaleX(2.5)" : "scaleX(1)";
+        dot.style.backgroundColor = isActive ? "var(--color-lime)" : "var(--color-slate-400)";
       }
     };
 
@@ -167,7 +162,7 @@ export default function ParallaxWork() {
         {/* Progress indicator — bottom right, dots per project */}
         <div
           ref={progressWrapperRef}
-          className="absolute bottom-10 right-10 z-30 flex items-center gap-2"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2"
           style={{ opacity: 0, transition: "opacity 0.4s ease" }}
         >
           {projects.map((_, i) => (
