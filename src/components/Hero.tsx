@@ -98,7 +98,7 @@ interface FrameState {
   showCursor: boolean;
 }
 
-export default function Hero() {
+export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }) {
   const [frame, setFrame] = useState<FrameState>({
     visibleCount: 0,
     elapsedTime: 0,
@@ -306,16 +306,29 @@ export default function Hero() {
     );
   };
 
+  // Scroll-driven split: text fades fast, water zooms in
+  const textFade = Math.max(0, 1 - Math.min(1, scrollProgress / 0.03));
+  const waterScale = 1 + scrollProgress * 40; // zooms from 1x → ~4x by 8%
+  const waterFade = Math.max(0, 1 - Math.min(1, (scrollProgress - 0.04) / 0.06));
+
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
-      {/* Water surface — zooms in on scroll */}
-      <div ref={waterScrollRef} className="absolute inset-0 pointer-events-none" style={{ transformOrigin: "center center" }}>
+      {/* Water surface — zooms in on scroll like diving into the circle */}
+      <div
+        ref={waterScrollRef}
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          transformOrigin: "center center",
+          transform: `scale(${waterScale})`,
+          opacity: waterFade,
+        }}
+      >
         <WaterSurface chaos={frame.waterChaos} />
       </div>
 
       {/* Ambient glow — royal blue top-right, light blue bottom-left */}
-      <div className="absolute top-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-lime/[0.12] blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[15%] left-[8%] w-[400px] h-[400px] rounded-full bg-dark-700/[0.15] blur-[100px] pointer-events-none" />
+      <div className="absolute top-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-lime/[0.12] blur-[120px] pointer-events-none" style={{ opacity: textFade }} />
+      <div className="absolute bottom-[15%] left-[8%] w-[400px] h-[400px] rounded-full bg-dark-700/[0.15] blur-[100px] pointer-events-none" style={{ opacity: textFade }} />
 
       {/* Clarity bloom — background glow that swells behind text */}
       {frame.glowIntensity > 0.01 && (
@@ -327,15 +340,16 @@ export default function Hero() {
             transform: "translate(-50%, -50%)",
             background: `radial-gradient(ellipse, rgba(255, 255, 255, ${0.22 * Math.min(1, frame.glowIntensity)}) 0%, rgba(255, 255, 255, ${0.1 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
             filter: `blur(${70 * frame.glowIntensity}px)`,
+            opacity: textFade,
           }}
         />
       )}
 
       {/* Grid */}
-      <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
+      <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" style={{ opacity: 0.3 * textFade }} />
 
-      {/* Content — fades out + drifts up on scroll */}
-      <div ref={contentScrollRef} className="relative z-30 max-w-5xl mx-auto text-center">
+      {/* Content — fades out fast on scroll, text disappears before water */}
+      <div ref={contentScrollRef} className="relative z-30 max-w-5xl mx-auto text-center" style={{ opacity: textFade, transform: `translateY(${-scrollProgress * 800}px)` }}>
         {/* Role line */}
         <div
           className="mb-10"
@@ -419,7 +433,7 @@ export default function Hero() {
         ref={scrollHintRef}
         className="absolute bottom-10 left-1/2"
         style={{
-          opacity: frame.scrollOpacity,
+          opacity: frame.scrollOpacity * textFade,
           transform: `translateX(-50%) translateY(${frame.scrollY}px)`,
         }}
       >
