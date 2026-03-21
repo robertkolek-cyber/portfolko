@@ -127,12 +127,13 @@ export default function ParallaxWork() {
         const indOp  = indIn * (1 - indOut);
         if (indicatorEl) indicatorEl.style.opacity = String(indOp);
 
-        // Active dot switches at the midpoint between project centers — snappy, early
+        // Active dot switches early — biased 30% before center toward the start
         let activeIndex = 0;
         let minDist = Infinity;
         for (let i = 0; i < total; i++) {
-          const { center } = getTiming(i);
-          const dist = Math.abs(progress - center);
+          const { start, center } = getTiming(i);
+          const biased = start + (center - start) * 0.7;
+          const dist = Math.abs(progress - biased);
           if (dist < minDist) { minDist = dist; activeIndex = i; }
         }
 
