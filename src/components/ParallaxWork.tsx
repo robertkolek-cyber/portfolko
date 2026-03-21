@@ -105,8 +105,8 @@ export default function ParallaxWork() {
           // Position title so its bottom edge sits `gap` px above tile's top
           const titleBottom = tileRect.top - gap;
           // Title is absolutely positioned; set bottom of title to this Y
-          titleEl.style.left   = `${tileRect.left}px`;
-          titleEl.style.width  = `${tileRect.width}px`;
+          titleEl.style.left   = "0";
+          titleEl.style.right  = "0";
           titleEl.style.top    = "auto";
           titleEl.style.bottom = `${window.innerHeight - titleBottom}px`;
 
@@ -246,7 +246,7 @@ export default function ParallaxWork() {
           className="absolute z-[25] pointer-events-none"
           style={{ opacity: 0 }}
         >
-          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800 text-center">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800 text-center whitespace-nowrap">
             Projects that <span className="italic text-lime">define</span> my craft.
           </h2>
         </div>
