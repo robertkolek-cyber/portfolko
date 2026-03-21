@@ -360,7 +360,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         >
           <div className="inline-flex items-center gap-3 text-sm tracking-[0.2em] uppercase text-slate-500 font-medium">
             <span className="w-8 h-px bg-dark-500" />
-            Designer &middot; Problem Solver &middot; Systems Thinker
+            Product Designer
             <span className="w-8 h-px bg-dark-500" />
           </div>
         </div>
@@ -378,8 +378,8 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
             transform: `translateY(${frame.restY}px)`,
           }}
         >
-          I design products and systems that make the complex feel simple —
-          blending strategy, structure, and human-centered thinking.
+          Good design isn't visible — it's felt. I craft products where complexity
+          dissolves into clarity, so people move forward without thinking twice.
         </p>
 
         {/* CTAs */}
