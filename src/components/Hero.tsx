@@ -171,15 +171,15 @@ export default function Hero() {
         }
       }
 
-      // ── Secondary content: staggered ease-out ──
-      const restRaw = Math.min(1, Math.max(0, (t - REST_START) / 0.9));
-      const restEased = easeOutQuart(restRaw);
+      // ── Secondary content: slow, staggered drift up ──
+      const restRaw = Math.min(1, Math.max(0, (t - REST_START) / 1.8));
+      const restEased = easeOutCubic(restRaw);
 
-      const ctaRaw = Math.min(1, Math.max(0, (t - REST_START - 0.2) / 0.9));
-      const ctaEased = easeOutQuart(ctaRaw);
+      const ctaRaw = Math.min(1, Math.max(0, (t - REST_START - 0.45) / 1.8));
+      const ctaEased = easeOutCubic(ctaRaw);
 
-      const scrollRaw = Math.min(1, Math.max(0, (t - REST_START - 0.45) / 0.9));
-      const scrollEased = easeOutQuart(scrollRaw);
+      const scrollRaw = Math.min(1, Math.max(0, (t - REST_START - 0.9) / 1.8));
+      const scrollEased = easeOutCubic(scrollRaw);
 
       // ── Cursor: smooth sine blink, not CSS ──
       const typing = t < CLARITY_END + 0.1;
@@ -196,11 +196,11 @@ export default function Hero() {
         waterChaos,
         glowIntensity: glow,
         restOpacity: restEased,
-        restY: 24 * (1 - restEased),
+        restY: 40 * (1 - restEased),
         ctaOpacity: ctaEased,
-        ctaY: 20 * (1 - ctaEased),
+        ctaY: 36 * (1 - ctaEased),
         scrollOpacity: scrollEased,
-        scrollY: 12 * (1 - scrollEased),
+        scrollY: 24 * (1 - scrollEased),
         cursorOpacity: cursorAlpha,
         showCursor: cursorVisible,
       });
