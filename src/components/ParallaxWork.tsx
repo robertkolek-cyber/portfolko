@@ -183,7 +183,7 @@ export default function ParallaxWork() {
 
   return (
     <section id="work" ref={containerRef} className="relative h-[900vh]">
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
+      <div className="sticky top-0 h-screen w-full overflow-hidden" style={{ contain: "paint" }}>
 
         {/* Underwater background — dark navy, fades in as hero dives away */}
         <div
