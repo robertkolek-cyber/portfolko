@@ -116,8 +116,6 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
     showCursor: true,
   });
 
-  const [mouseCenter, setMouseCenter] = useState<{ x: number; y: number } | undefined>(undefined);
-
   const rafRef = useRef(0);
   const startRef = useRef(0);
 
@@ -127,20 +125,30 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
   const scrollHintRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Track mouse position once animation is done (chaos === 0)
+  // Mouse position as a ref — no re-renders, the canvas rAF reads it directly
+  const mousePosRef = useRef<{ x: number; y: number } | null>(null);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const el = containerRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      setMouseCenter({
+      mousePosRef.current = {
         x: (e.clientX - rect.left) / rect.width,
         y: (e.clientY - rect.top) / rect.height,
-      });
+      };
+    };
+
+    const handleMouseLeave = () => {
+      mousePosRef.current = null;
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseleave", handleMouseLeave);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseleave", handleMouseLeave);
+    };
   }, []);
 
   useEffect(() => {
@@ -345,7 +353,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
           opacity: waterFade,
         }}
       >
-        <WaterSurface chaos={frame.waterChaos} calmCenter={frame.waterChaos < 0.01 ? mouseCenter : undefined} />
+        <WaterSurface chaos={frame.waterChaos} mousePosRef={mousePosRef} />
       </div>
 
       {/* Ambient glow — royal blue top-right, light blue bottom-left */}
