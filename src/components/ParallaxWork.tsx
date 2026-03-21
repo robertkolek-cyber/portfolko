@@ -318,7 +318,7 @@ export default function ParallaxWork() {
           >
             <div style={{ pointerEvents: "auto" }}>
               <Link href={`/projects/${project.slug}`} className="group block">
-                <article className="w-[80vw] sm:w-[65vw] md:w-[55vw] lg:w-[38vw] xl:w-[55vw] max-w-2xl">
+                <article className="w-[80vw] sm:w-[65vw] md:w-[55vw] lg:w-[38vw] xl:w-[40vw] 2xl:w-[55vw] max-w-2xl">
                   <div
                     className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-3 md:mb-6 border border-dark-700/50"
                     style={{ backgroundColor: project.color }}
