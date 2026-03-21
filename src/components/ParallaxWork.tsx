@@ -254,7 +254,7 @@ export default function ParallaxWork() {
           <div
             key={project.slug}
             ref={(el) => { tileRefs.current[i] = el; }}
-            className="absolute inset-0 flex items-center justify-center"
+            className="absolute inset-0 flex items-center justify-center overflow-hidden"
             style={{ opacity: 0, pointerEvents: "none" }}
           >
             <div style={{ pointerEvents: "auto" }}>
