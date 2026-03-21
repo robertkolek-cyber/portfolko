@@ -1,7 +1,202 @@
 "use client";
 
 import Link from "next/link";
-import type { Project } from "@/lib/projects";
+import type { Project, ProjectSection } from "@/lib/projects";
+
+function SectionRenderer({
+  section,
+  index,
+  color,
+}: {
+  section: ProjectSection;
+  index: number;
+  color: string;
+}) {
+  const num = String(index + 1).padStart(2, "0");
+
+  // Highlight / quote-style block
+  if (section.layout === "highlight") {
+    return (
+      <div className="max-w-5xl mx-auto px-6">
+        <div
+          className="rounded-3xl p-12 md:p-16 border border-dark-700/50 relative overflow-hidden"
+          style={{ backgroundColor: color }}
+        >
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_50%,white,transparent_70%)]" />
+          <div className="relative z-10">
+            <span className="text-xs tracking-[0.2em] uppercase text-white/40 font-medium">
+              {num}
+            </span>
+            <h2 className="font-[family-name:var(--font-display)] text-3xl md:text-5xl font-bold text-white mt-3 mb-6 leading-tight">
+              {section.title}
+            </h2>
+            <p className="text-lg md:text-xl text-white/70 leading-relaxed max-w-2xl">
+              {section.content}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Stats block
+  if (section.layout === "stats" && section.stats) {
+    return (
+      <div className="max-w-4xl mx-auto px-6">
+        <div className="grid md:grid-cols-5 gap-8 mb-10">
+          <div className="md:col-span-2">
+            <span className="text-xs tracking-[0.2em] uppercase text-lime font-medium">
+              {num}
+            </span>
+            <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold text-slate-100 mt-2">
+              {section.title}
+            </h2>
+          </div>
+          <div className="md:col-span-3">
+            <p className="text-lg text-slate-300 leading-relaxed">
+              {section.content}
+            </p>
+          </div>
+        </div>
+        <div
+          className={`grid gap-4 ${
+            section.stats.length === 4
+              ? "grid-cols-2 md:grid-cols-4"
+              : "grid-cols-1 md:grid-cols-3"
+          }`}
+        >
+          {section.stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-dark-700/50 bg-dark-800/50 p-6 text-center"
+            >
+              <p className="text-xs tracking-[0.2em] uppercase text-slate-500 font-medium mb-2">
+                {stat.label}
+              </p>
+              <p className="font-[family-name:var(--font-display)] text-lg font-bold text-slate-100">
+                {stat.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Text + Image side by side
+  if (section.layout === "text-image" && section.image) {
+    return (
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <span className="text-xs tracking-[0.2em] uppercase text-lime font-medium">
+              {num}
+            </span>
+            <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold text-slate-100 mt-2 mb-6">
+              {section.title}
+            </h2>
+            <p className="text-lg text-slate-300 leading-relaxed">
+              {section.content}
+            </p>
+          </div>
+          <div className="rounded-2xl overflow-hidden border border-dark-700/50">
+            <img
+              src={section.image}
+              alt={section.title}
+              className="w-full h-auto"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Image + Text (reversed)
+  if (section.layout === "image-text" && section.image) {
+    return (
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="grid md:grid-cols-2 gap-10 items-center">
+          <div className="rounded-2xl overflow-hidden border border-dark-700/50 md:order-1 order-2">
+            <img
+              src={section.image}
+              alt={section.title}
+              className="w-full h-auto"
+            />
+          </div>
+          <div className="md:order-2 order-1">
+            <span className="text-xs tracking-[0.2em] uppercase text-lime font-medium">
+              {num}
+            </span>
+            <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold text-slate-100 mt-2 mb-6">
+              {section.title}
+            </h2>
+            <p className="text-lg text-slate-300 leading-relaxed">
+              {section.content}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Full-width image
+  if (section.layout === "full-image" && section.image) {
+    return (
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="mb-8">
+          <span className="text-xs tracking-[0.2em] uppercase text-lime font-medium">
+            {num}
+          </span>
+          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold text-slate-100 mt-2">
+            {section.title}
+          </h2>
+        </div>
+        <div className="rounded-3xl overflow-hidden border border-dark-700/50">
+          <img
+            src={section.image}
+            alt={section.title}
+            className="w-full h-auto"
+          />
+        </div>
+        {section.content && (
+          <p className="text-lg text-slate-300 leading-relaxed mt-8 max-w-4xl">
+            {section.content}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Default text layout
+  return (
+    <div className="max-w-4xl mx-auto px-6">
+      <div className="grid md:grid-cols-5 gap-8">
+        <div className="md:col-span-2">
+          <span className="text-xs tracking-[0.2em] uppercase text-lime font-medium">
+            {num}
+          </span>
+          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold text-slate-100 mt-2">
+            {section.title}
+          </h2>
+        </div>
+        <div className="md:col-span-3">
+          <p className="text-lg text-slate-300 leading-relaxed">
+            {section.content}
+          </p>
+          {section.image && (
+            <div className="mt-8 rounded-2xl overflow-hidden border border-dark-700/50">
+              <img
+                src={section.image}
+                alt={section.title}
+                className="w-full"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ProjectDetail({
   project,
@@ -48,6 +243,13 @@ export default function ProjectDetail({
           className="relative h-[60vh] md:h-[75vh] flex items-center justify-center overflow-hidden"
           style={{ backgroundColor: project.color }}
         >
+          {project.heroImage && (
+            <img
+              src={project.heroImage}
+              alt={project.title}
+              className="absolute inset-0 w-full h-full object-cover opacity-30"
+            />
+          )}
           <div className="relative z-10 text-center text-white px-6 animate-fade-up">
             <p className="text-sm tracking-[0.3em] uppercase text-white/50 mb-4 font-medium">
               {project.year}
@@ -98,36 +300,16 @@ export default function ProjectDetail({
 
         {/* Custom sections (if project has them) */}
         {hasSections ? (
-          <section className="px-6 pb-16">
-            <div className="max-w-4xl mx-auto space-y-20">
-              {project.sections!.map((section, i) => (
-                <div key={i} className="grid md:grid-cols-5 gap-8">
-                  <div className="md:col-span-2">
-                    <span className="text-xs tracking-[0.2em] uppercase text-lime font-medium">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold text-slate-100 mt-2">
-                      {section.title}
-                    </h2>
-                  </div>
-                  <div className="md:col-span-3">
-                    <p className="text-lg text-slate-300 leading-relaxed">
-                      {section.content}
-                    </p>
-                    {section.image && (
-                      <div className="mt-8 rounded-2xl overflow-hidden border border-dark-700/50">
-                        <img
-                          src={section.image}
-                          alt={section.title}
-                          className="w-full"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+          <div className="space-y-24 pb-24">
+            {project.sections!.map((section, i) => (
+              <SectionRenderer
+                key={i}
+                section={section}
+                index={i}
+                color={project.color}
+              />
+            ))}
+          </div>
         ) : (
           <>
             {/* Fallback: original layout for projects without sections */}

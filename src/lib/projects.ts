@@ -2,7 +2,9 @@ export interface ProjectSection {
   title: string;
   content: string;
   image?: string;
-  layout?: "text" | "text-image" | "image-text" | "full-image";
+  layout?: "text" | "text-image" | "image-text" | "full-image" | "highlight" | "stats";
+  highlight?: boolean;
+  stats?: { label: string; value: string }[];
 }
 
 export interface Project {
@@ -68,13 +70,19 @@ export const projects: Project[] = [
         title: "The Business Case",
         content:
           "Škoda is actively investing in making cars greener for the future. With growing pressure on sustainability and shifting consumer expectations, there's a real need to connect drivers with the environmental and financial impact of how they drive.",
-        layout: "text",
+        layout: "text-image",
+        image: "/portfolko/images/projects/Slide skoda.png",
       },
       {
         title: "So What's Behind?",
         content:
           "Two core pillars drive the concept: direct savings — how much money drivers keep by driving efficiently — and impact — the measurable environmental benefit of reduced emissions and fuel consumption.",
-        layout: "text",
+        layout: "stats",
+        stats: [
+          { label: "Direct Savings", value: "Money saved per ride" },
+          { label: "CO2 Reduced", value: "Environmental impact" },
+          { label: "Fuel Efficiency", value: "Optimized consumption" },
+        ],
       },
       {
         title: "Incentive Shift",
@@ -86,25 +94,34 @@ export const projects: Project[] = [
         title: "This Is a Design Opportunity",
         content:
           "The gap between eco-awareness and actual behavior change is where design can make the biggest difference. Drivers care about the environment, but they need tools that make the abstract tangible.",
-        layout: "text",
+        layout: "highlight",
+        highlight: true,
       },
       {
         title: "How Might We",
         content:
           "How might we create a tool that quantifies the benefits and simplifies the impact of efficient driving — making it feel personal, rewarding, and easy to understand?",
-        layout: "text",
+        layout: "highlight",
+        highlight: true,
       },
       {
         title: "Objectives",
         content:
           "Define a clear savings calculation framework. Give users personal goals to work toward. Demonstrate real-time impact on both their wallet and the environment. Provide a structured path from understanding to action through ride analysis and improvement tips.",
-        layout: "text",
+        layout: "stats",
+        stats: [
+          { label: "Goal #1", value: "Savings framework" },
+          { label: "Goal #2", value: "Personal targets" },
+          { label: "Goal #3", value: "Real-time impact" },
+          { label: "Goal #4", value: "Actionable path" },
+        ],
       },
       {
         title: "Personal Goals",
         content:
           "Users set their own savings objectives — for example, saving enough to buy a bigger car for their family. The app acts as a budget advisor, showing how much they could realistically save by driving more efficiently. Being budget-conscious, the app should serve as a guide that shows potential savings and tracks progress over time.",
-        layout: "text",
+        layout: "image-text",
+        image: "/portfolko/images/projects/skoda-app.png",
       },
       {
         title: "Following the Progress",
@@ -116,13 +133,19 @@ export const projects: Project[] = [
         title: "How Does It Make Calculations?",
         content:
           "The framework works in phases: first, setting the parameters — vehicle type, driving patterns, fuel costs. Then the structure layer calculates CO2 reduction and cost savings per ride. The system compares efficient driving against baseline habits to show exactly where savings come from.",
-        layout: "text",
+        layout: "stats",
+        stats: [
+          { label: "Phase 1", value: "Set parameters" },
+          { label: "Phase 2", value: "Track CO2 & costs" },
+          { label: "Phase 3", value: "Compare & optimize" },
+        ],
       },
       {
         title: "Analyzing Rides",
         content:
           "Each ride gets a detailed breakdown — efficiency score, fuel consumption, route analysis, and comparison against the driver's personal average. The ride analysis helps users understand which habits cost them money and which ones save.",
-        layout: "text",
+        layout: "text-image",
+        image: "/portfolko/images/projects/skoda-app.png",
       },
       {
         title: "Tips How to Improve",
@@ -134,7 +157,8 @@ export const projects: Project[] = [
         title: "Profile",
         content:
           "The profile brings everything together — cumulative savings, environmental impact, driving score history, and goal progress. It's the driver's personal dashboard for smarter mobility.",
-        layout: "text",
+        layout: "image-text",
+        image: "/portfolko/images/projects/Slide skoda.png",
       },
     ],
   },
