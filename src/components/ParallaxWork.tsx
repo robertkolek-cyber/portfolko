@@ -20,6 +20,8 @@ export default function ParallaxWork() {
   const headingRef      = useRef<HTMLDivElement>(null);
   const tileRefs        = useRef<(HTMLDivElement | null)[]>([]);
   const ctaRef          = useRef<HTMLDivElement>(null);
+  const dotsRef         = useRef<HTMLDivElement>(null);
+  const dotItemRefs     = useRef<(HTMLDivElement | null)[]>([]);
 
   const [heroScroll, setHeroScroll] = useState(0);
 
@@ -33,6 +35,7 @@ export default function ParallaxWork() {
     const underwaterEl = underwaterRef.current;
     const heading      = headingRef.current;
     const ctaEl        = ctaRef.current;
+    const dotsEl       = dotsRef.current;
     if (!container) return;
 
     const step = 0.75 / allItems;
@@ -115,6 +118,33 @@ export default function ParallaxWork() {
         el.style.zIndex    = String(Math.round(scale * 100));
       }
 
+      // Project dots — fade in with projects, highlight active one
+      if (dotsEl) {
+        const firstTiming = getTiming(0);
+        const ctaTiming   = getTiming(total);
+        const dotsIn  = Math.min(1, Math.max(0, (progress - firstTiming.start) / 0.04));
+        const dotsOut = Math.min(1, Math.max(0, (progress - ctaTiming.start) / 0.04));
+        dotsEl.style.opacity = String(dotsIn * (1 - dotsOut));
+      }
+      for (let i = 0; i < total; i++) {
+        const dot = dotItemRefs.current[i];
+        if (!dot) continue;
+        const { start, center, end } = getTiming(i);
+        // Active when this tile is closest to center stage
+        const distFromCenter = Math.abs(progress - center);
+        const maxDist = (end - start) / 2;
+        const active = Math.max(0, 1 - distFromCenter / maxDist);
+        // Dot: small dim circle → larger bright filled circle
+        const size   = 4 + active * 4;       // 4px → 8px
+        const op     = 0.25 + active * 0.75; // dim → full
+        dot.style.width   = `${size}px`;
+        dot.style.height  = `${size}px`;
+        dot.style.opacity = String(op);
+        dot.style.backgroundColor = active > 0.5
+          ? "var(--color-lime)"
+          : "var(--color-slate-400)";
+      }
+
       // CTA slide — last item, same fly-through but stays centered (no lateral drift)
       if (ctaEl) {
         const { start, center, end } = getTiming(total);
@@ -189,6 +219,27 @@ export default function ParallaxWork() {
           <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800">
             Projects that <span className="italic text-lime">define</span> my craft.
           </h2>
+        </div>
+
+        {/* Project progress dots — right edge, visible during project tiles */}
+        <div
+          ref={dotsRef}
+          className="absolute right-8 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-3"
+          style={{ opacity: 0 }}
+        >
+          {projects.map((project, i) => (
+            <div
+              key={project.slug}
+              ref={(el) => { dotItemRefs.current[i] = el; }}
+              className="rounded-full transition-none"
+              style={{
+                width: 4,
+                height: 4,
+                backgroundColor: "var(--color-slate-400)",
+                opacity: 0.25,
+              }}
+            />
+          ))}
         </div>
 
         {/* Project tiles */}
