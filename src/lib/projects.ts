@@ -43,8 +43,8 @@ export const projects: Project[] = [
     category: "Brand & Product",
     year: "2025",
     color: "#1a3328",
-    thumbnail: "/portfolko/images/projects/skoda-app.png",
-    heroImage: "/portfolko/images/projects/skoda-app.png",
+    thumbnail: "/portfolko/images/projects/Slide skoda.png",
+    heroImage: "/portfolko/images/projects/Slide skoda.png",
     overview:
       "A mobile companion app for Škoda drivers that helps them save both economically and environmentally through smart driving insights and car management.",
     challenge:
