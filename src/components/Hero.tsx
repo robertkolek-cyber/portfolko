@@ -116,6 +116,8 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
     showCursor: true,
   });
 
+  const [mouseCenter, setMouseCenter] = useState<{ x: number; y: number } | undefined>(undefined);
+
   const rafRef = useRef(0);
   const startRef = useRef(0);
 
@@ -123,6 +125,23 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
   const waterScrollRef = useRef<HTMLDivElement>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const scrollHintRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Track mouse position once animation is done (chaos === 0)
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const el = containerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setMouseCenter({
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height,
+      });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
   useEffect(() => {
     startRef.current = performance.now();
@@ -315,7 +334,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
   const waterFade = Math.max(0, 1 - Math.min(1, (scrollProgress - 0.04) / 0.06));
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
+    <div ref={containerRef} className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
       {/* Water surface — zooms in on scroll like diving into the circle */}
       <div
         ref={waterScrollRef}
@@ -326,7 +345,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
           opacity: waterFade,
         }}
       >
-        <WaterSurface chaos={frame.waterChaos} />
+        <WaterSurface chaos={frame.waterChaos} calmCenter={frame.waterChaos < 0.01 ? mouseCenter : undefined} />
       </div>
 
       {/* Ambient glow — royal blue top-right, light blue bottom-left */}
