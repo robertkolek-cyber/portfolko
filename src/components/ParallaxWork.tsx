@@ -79,10 +79,10 @@ export default function ParallaxWork() {
         // Depth progress across project tiles (0.10 → 0.90 mapped to 0 → 1)
         const depthT = Math.max(0, Math.min(1, (progress - 0.10) / 0.80));
 
-        // Interpolate from lighter blue to dark navy
-        const r = Math.round(lerp(18, 2, depthT));
-        const g = Math.round(lerp(50, 8, depthT));
-        const b = Math.round(lerp(85, 16, depthT));
+        // Interpolate from bright teal/cyan to deep dark navy
+        const r = Math.round(lerp(40, 2, depthT));
+        const g = Math.round(lerp(130, 8, depthT));
+        const b = Math.round(lerp(180, 16, depthT));
         underwaterEl.style.background = `radial-gradient(ellipse at 50% 30%, rgb(${r},${g},${b}) 0%, rgb(${Math.round(r*0.5)},${Math.round(g*0.5)},${Math.round(b*0.5)}) 60%, rgb(${Math.round(r*0.3)},${Math.round(g*0.3)},${Math.round(b*0.3)}) 100%)`;
       }
 
