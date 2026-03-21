@@ -297,7 +297,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         </span>
         {/* Line 2 — only rendered once " into " starts */}
         {line2.length > 0 && (
-          <span style={{ display: "block" }}>
+          <span style={{ display: "block", marginTop: "0.5em" }}>
             {renderLine(line2)}
             {cursor}
           </span>
