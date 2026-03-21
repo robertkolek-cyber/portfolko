@@ -246,7 +246,7 @@ export default function ParallaxWork() {
           className="absolute z-[25] pointer-events-none"
           style={{ opacity: 0 }}
         >
-          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800 text-center whitespace-nowrap">
+          <h2 className="font-[family-name:var(--font-display)] text-lg sm:text-xl md:text-2xl lg:text-3xl leading-[1.1] font-bold text-slate-800 text-center whitespace-nowrap">
             Projects that <span className="italic text-lime">define</span> my craft.
           </h2>
         </div>
@@ -269,8 +269,8 @@ export default function ParallaxWork() {
             }}
           />
           {/* Text content */}
-          <div className="relative z-10 text-center pb-16 pt-32">
-            <p className="text-xs tracking-[0.3em] uppercase text-slate-400 font-medium">
+          <div className="relative z-10 text-center pb-12 md:pb-16 pt-20 md:pt-32">
+            <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium">
               Selected Work
             </p>
           </div>
@@ -311,9 +311,9 @@ export default function ParallaxWork() {
           >
             <div style={{ pointerEvents: "auto" }}>
               <Link href={`/projects/${project.slug}`} className="group block">
-                <article className="w-[80vw] max-w-3xl">
+                <article className="w-[85vw] sm:w-[75vw] md:w-[65vw] lg:w-[70vw] xl:w-[65vw] max-w-3xl">
                   <div
-                    className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6 border border-dark-700/50"
+                    className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-3 md:mb-6 border border-dark-700/50"
                     style={{ backgroundColor: project.color }}
                   >
                     {project.thumbnail ? (
@@ -339,14 +339,14 @@ export default function ParallaxWork() {
                   </div>
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-semibold text-slate-800 group-hover:text-lime transition-colors duration-300">
+                      <h3 className="font-[family-name:var(--font-display)] text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-slate-800 group-hover:text-lime transition-colors duration-300">
                         {project.title}
                       </h3>
-                      <p className="mt-1.5 text-slate-500 text-sm md:text-base leading-relaxed">
+                      <p className="mt-1 md:mt-1.5 text-slate-500 text-xs sm:text-sm md:text-base leading-relaxed">
                         {project.tagline}
                       </p>
                     </div>
-                    <span className="flex-shrink-0 mt-1 text-xs tracking-wide uppercase text-slate-400 font-medium">
+                    <span className="flex-shrink-0 mt-1 text-[10px] md:text-xs tracking-wide uppercase text-slate-400 font-medium">
                       {project.category}
                     </span>
                   </div>
@@ -362,18 +362,18 @@ export default function ParallaxWork() {
           className="absolute inset-0 flex items-center justify-center"
           style={{ opacity: 0, pointerEvents: "none" }}
         >
-          <div className="w-[80vw] max-w-2xl text-center">
-            <p className="text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-6">
+          <div className="w-[85vw] sm:w-[80vw] max-w-2xl text-center">
+            <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-4 md:mb-6">
               Let&apos;s collaborate
             </p>
-            <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-6xl lg:text-7xl leading-[1.05] font-bold text-slate-800 mb-8">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl leading-[1.05] font-bold text-slate-800 mb-6 md:mb-8">
               Got a project in mind?
               <br />
               <span className="italic text-lime">Let&apos;s talk.</span>
             </h2>
             <a
               href="mailto:hello@robertkolek.com"
-              className="group inline-flex items-center gap-3 bg-lime text-dark-950 px-10 py-4 rounded-full text-base font-semibold tracking-wide hover:bg-lime-light transition-colors duration-300 glow-lime mb-12"
+              className="group inline-flex items-center gap-2 md:gap-3 bg-lime text-dark-950 px-6 md:px-10 py-3 md:py-4 rounded-full text-sm md:text-base font-semibold tracking-wide hover:bg-lime-light transition-colors duration-300 glow-lime mb-8 md:mb-12"
             >
               hello@robertkolek.com
               <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
