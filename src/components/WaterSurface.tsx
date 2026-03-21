@@ -138,11 +138,32 @@ export default function WaterSurface({
             );
 
           const idx = (py * RES_W + px) * 4;
-          // Pale cool tones: calm = pale light blue/grey, chaos = deeper indigo
-          buf[idx]     = Math.round(180 + (75  - 180) * c * 0.7); // R: pale grey → indigo
-          buf[idx + 1] = Math.round(200 + (85  - 200) * c * 0.7); // G: light blue → deep blue
-          buf[idx + 2] = Math.round(235 + (200 - 235) * c * 0.7); // B: stays blue-ish
-          buf[idx + 3] = Math.round(ringed * (0.20 + c * 0.15) * 255);
+
+          // Spatial colour gradient — dreamy mix across the canvas
+          // Top-left: soft pink | Top-right: pale grey-blue
+          // Bottom-left: lavender | Bottom-right: deep indigo-blue
+          const pinkR = 220, pinkG = 160, pinkB = 200;   // dusty pink
+          const greyBlueR = 170, greyBlueG = 190, greyBlueB = 230; // pale grey-blue
+          const lavR = 180, lavG = 160, lavB = 220;       // lavender
+          const indigoR = 75, indigoG = 90, indigoB = 200; // deep indigo
+
+          // Bilinear interpolation across canvas position
+          const topR = pinkR + (greyBlueR - pinkR) * nx;
+          const topG = pinkG + (greyBlueG - pinkG) * nx;
+          const topB = pinkB + (greyBlueB - pinkB) * nx;
+          const botR = lavR + (indigoR - lavR) * nx;
+          const botG = lavG + (indigoG - lavG) * nx;
+          const botB = lavB + (indigoB - lavB) * nx;
+
+          const baseR = topR + (botR - topR) * ny;
+          const baseG = topG + (botG - topG) * ny;
+          const baseB = topB + (botB - topB) * ny;
+
+          // Chaos deepens colors toward indigo
+          buf[idx]     = Math.round(baseR + (indigoR - baseR) * c * 0.4);
+          buf[idx + 1] = Math.round(baseG + (indigoG - baseG) * c * 0.4);
+          buf[idx + 2] = Math.round(baseB + (indigoB - baseB) * c * 0.4);
+          buf[idx + 3] = Math.round(ringed * (0.22 + c * 0.15) * 255);
         }
       }
 
