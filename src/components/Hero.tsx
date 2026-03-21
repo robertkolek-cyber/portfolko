@@ -274,7 +274,7 @@ export default function Hero() {
         return (
           <span
             key={i}
-            className="text-lime italic inline-block"
+            className="text-slate-900 italic inline-block"
             style={{
               filter: n > 0.01 ? "url(#textNoise)" : "none",
             }}
@@ -314,14 +314,21 @@ export default function Hero() {
               seed="0"
               result="noise"
             />
-            {/* X-only displacement → horizontal tear/scanline effect */}
+            {/* Zero out the G channel → 0.5 = neutral → no Y displacement */}
+            <feColorMatrix
+              in="noise"
+              type="matrix"
+              values="1 0 0 0 0  0 0 0 0 0.5  0 0 1 0 0  0 0 0 1 0"
+              result="noiseH"
+            />
+            {/* X-only displacement — G is constant 0.5 → pure horizontal tear */}
             <feDisplacementMap
               ref={dispRef}
               in="SourceGraphic"
-              in2="noise"
+              in2="noiseH"
               scale="0"
               xChannelSelector="R"
-              yChannelSelector="R"
+              yChannelSelector="G"
             />
           </filter>
         </defs>
