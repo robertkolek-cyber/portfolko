@@ -69,11 +69,11 @@ const COMPLEXITY_END = TIMELINE.chars.filter((c) => c.token === "complexity").po
 const CLARITY_START = TIMELINE.chars.find((c) => c.token === "clarity")!.time;
 const CLARITY_END = LAST_CHAR_TIME;
 
-// Glow: slow bloom, hold, then fade out
-const GLOW_START = CLARITY_END + 0.35;
-const GLOW_IN = 2.0;       // slow ramp up
-const GLOW_HOLD = 1.2;     // hold at peak
-const GLOW_OUT = 1.8;      // fade out
+// Glow: bloom, brief hold, fade — tightened so user isn't waiting
+const GLOW_START = CLARITY_END + 0.25;
+const GLOW_IN = 1.2;       // brisk ramp up
+const GLOW_HOLD = 0.6;     // brief hold at peak
+const GLOW_OUT = 1.0;      // clean fade out
 const REST_START = CLARITY_END + 0.3; // secondary content starts right after clarity is typed
 
 /* ── Scramble config ──────────────────────────────────────────── */
@@ -98,7 +98,7 @@ interface FrameState {
   showCursor: boolean;
 }
 
-export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }) {
+export default function Hero({ onScrollRef }: { onScrollRef?: (setter: (p: number) => void) => void }) {
   const [frame, setFrame] = useState<FrameState>({
     visibleCount: 0,
     elapsedTime: 0,
@@ -117,10 +117,59 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
   const rafRef = useRef(0);
   const startRef = useRef(0);
 
-  // Refs kept for potential external scroll control
+  // DOM refs for scroll-driven style updates (bypasses React re-render)
   const waterScrollRef = useRef<HTMLDivElement>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const scrollHintRef = useRef<HTMLDivElement>(null);
+  const glowARef = useRef<HTMLDivElement>(null);
+  const glowBRef = useRef<HTMLDivElement>(null);
+  const bloomRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const scrollProgressRef = useRef(0);
+
+  // Register scroll setter — ParallaxWork calls this on every scroll frame
+  useEffect(() => {
+    if (!onScrollRef) return;
+    onScrollRef((p: number) => {
+      scrollProgressRef.current = p;
+      applyScrollStyles(p);
+    });
+  }, [onScrollRef]);
+
+  const applyScrollStyles = (sp: number) => {
+    // Text fade with deceleration
+    const textRaw = Math.min(1, sp / 0.025);
+    const tf = Math.max(0, 1 - easeOutCubic(textRaw));
+    const td = easeOutQuart(textRaw) * 120;
+
+    // Water zoom + blur
+    const wr = Math.min(1, sp / 0.08);
+    const we = easeOutQuart(wr);
+    const ws = 1 + we * 8;
+    const wb = we * 16;
+    const wfr = Math.min(1, Math.max(0, (sp - 0.025) / 0.055));
+    const wf = Math.max(0, 1 - easeOutCubic(wfr));
+
+    if (waterScrollRef.current) {
+      const el = waterScrollRef.current;
+      el.style.transform = `scale(${ws})`;
+      el.style.opacity = String(wf);
+      el.style.filter = wb > 0.5 ? `blur(${wb}px)` : "none";
+      el.style.willChange = sp > 0 ? "transform, opacity, filter" : "auto";
+    }
+    if (contentScrollRef.current) {
+      const el = contentScrollRef.current;
+      el.style.opacity = String(tf);
+      el.style.transform = `translateY(${-td}px)`;
+    }
+    if (scrollHintRef.current) {
+      scrollHintRef.current.style.opacity = String(parseFloat(scrollHintRef.current.dataset.baseOpacity || "0") * tf);
+    }
+    if (glowARef.current) glowARef.current.style.opacity = String(tf);
+    if (glowBRef.current) glowBRef.current.style.opacity = String(tf);
+    if (bloomRef.current) bloomRef.current.style.opacity = String(tf);
+    if (gridRef.current) gridRef.current.style.opacity = String(0.3 * tf);
+  };
 
   useEffect(() => {
     startRef.current = performance.now();
@@ -306,33 +355,25 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
     );
   };
 
-  // Scroll-driven split: text fades fast, water zooms in
-  const textFade = Math.max(0, 1 - Math.min(1, scrollProgress / 0.03));
-  const waterScale = 1 + scrollProgress * 40; // zooms from 1x → ~4x by 8%
-  const waterFade = Math.max(0, 1 - Math.min(1, (scrollProgress - 0.04) / 0.06));
-
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
-      {/* Water surface — zooms in on scroll like diving into the circle */}
+      {/* Water surface — zooms in + blurs on scroll, like diving through the surface */}
       <div
         ref={waterScrollRef}
         className="absolute inset-0 pointer-events-none"
-        style={{
-          transformOrigin: "center center",
-          transform: `scale(${waterScale})`,
-          opacity: waterFade,
-        }}
+        style={{ transformOrigin: "center center" }}
       >
         <WaterSurface chaos={frame.waterChaos} />
       </div>
 
-      {/* Ambient glow — royal blue top-right, light blue bottom-left */}
-      <div className="absolute top-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-lime/[0.12] blur-[120px] pointer-events-none" style={{ opacity: textFade }} />
-      <div className="absolute bottom-[15%] left-[8%] w-[400px] h-[400px] rounded-full bg-dark-700/[0.15] blur-[100px] pointer-events-none" style={{ opacity: textFade }} />
+      {/* Ambient glow */}
+      <div ref={glowARef} className="absolute top-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-lime/[0.12] blur-[120px] pointer-events-none" />
+      <div ref={glowBRef} className="absolute bottom-[15%] left-[8%] w-[400px] h-[400px] rounded-full bg-dark-700/[0.15] blur-[100px] pointer-events-none" />
 
-      {/* Clarity bloom — background glow that swells behind text */}
+      {/* Clarity bloom */}
       {frame.glowIntensity > 0.01 && (
         <div
+          ref={bloomRef}
           className="absolute top-1/2 left-1/2 pointer-events-none"
           style={{
             width: `${500 * frame.glowIntensity}px`,
@@ -340,16 +381,15 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
             transform: "translate(-50%, -50%)",
             background: `radial-gradient(ellipse, rgba(255, 255, 255, ${0.22 * Math.min(1, frame.glowIntensity)}) 0%, rgba(255, 255, 255, ${0.1 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
             filter: `blur(${70 * frame.glowIntensity}px)`,
-            opacity: textFade,
           }}
         />
       )}
 
       {/* Grid */}
-      <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" style={{ opacity: 0.3 * textFade }} />
+      <div ref={gridRef} className="absolute inset-0 grid-bg pointer-events-none" style={{ opacity: 0.3 }} />
 
-      {/* Content — fades out fast on scroll, text disappears before water */}
-      <div ref={contentScrollRef} className="relative z-30 max-w-5xl mx-auto text-center" style={{ opacity: textFade, transform: `translateY(${-scrollProgress * 800}px)` }}>
+      {/* Content — scroll-driven fade + drift applied via applyScrollStyles */}
+      <div ref={contentScrollRef} className="relative z-30 max-w-5xl mx-auto text-center">
         {/* Role line */}
         <div
           className="mb-10"
@@ -395,7 +435,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
             className="group inline-flex items-center gap-3 bg-lime text-dark-950 px-8 py-4 rounded-full text-sm font-semibold tracking-wide glow-lime-sm"
             style={{ transition: "background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
           >
-            <span className="group-hover:brightness-110">Jump in my work</span>
+            <span className="group-hover:brightness-110">Dive into my work</span>
             <svg
               className="w-4 h-4 group-hover:translate-x-1"
               style={{ transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
@@ -428,18 +468,24 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         </div>
       </div>
 
-      {/* Scroll indicator */}
+      {/* Scroll indicator — mouse outline with animated dot */}
       <div
         ref={scrollHintRef}
         className="absolute bottom-10 left-1/2"
+        data-base-opacity={String(frame.scrollOpacity)}
         style={{
-          opacity: frame.scrollOpacity * textFade,
+          opacity: frame.scrollOpacity,
           transform: `translateX(-50%) translateY(${frame.scrollY}px)`,
         }}
       >
-        <div className="flex flex-col items-center gap-3">
-          <span className="text-xs tracking-widest uppercase text-slate-600">Scroll</span>
-          <div className="w-px h-12 bg-gradient-to-b from-lime/30 to-transparent" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-[22px] h-[36px] rounded-full border-[1.5px] border-slate-500/50">
+            <div
+              className="absolute left-1/2 top-[7px] w-[3px] h-[7px] -translate-x-1/2 rounded-full bg-lime"
+              style={{ animation: "scroll-dot 2s ease-in-out infinite" }}
+            />
+          </div>
+          <div className="w-px h-8 bg-gradient-to-b from-slate-500/30 to-transparent" />
         </div>
       </div>
     </div>
