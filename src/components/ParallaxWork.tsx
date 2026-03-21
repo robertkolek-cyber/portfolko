@@ -268,7 +268,7 @@ export default function ParallaxWork() {
                       <img
                         src={project.thumbnail}
                         alt={project.title}
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover object-right-bottom"
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center">
