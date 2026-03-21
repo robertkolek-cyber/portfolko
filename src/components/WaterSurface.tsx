@@ -126,11 +126,15 @@ export default function WaterSurface({
           // During calm: thin bright rings on dark bg (high contrast)
           // During chaos: dense bright soup
           const ringSharpness = 1 - c * 0.5;
+          // Rings blur with distance from centre — sharp core, soft edges
+          const distFromCenter = Math.hypot(nx - 0.5, ny - 0.5);
+          const distBlur = Math.max(0, 1 - distFromCenter * 1.8); // 1 at centre, 0 at ~0.55
+          const effectiveSharpness = ringSharpness * (0.15 + distBlur * 0.85);
           // Sharpen to rings by applying a soft threshold
           const ringed =
             Math.pow(
               Math.abs(Math.sin(clamped * Math.PI * (4 + c * 8))),
-              0.5 + ringSharpness * 1.5
+              0.5 + effectiveSharpness * 1.5
             );
 
           const idx = (py * RES_W + px) * 4;
