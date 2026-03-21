@@ -274,9 +274,9 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
       }
       return groups.map((group, i) => {
         if (group.token === "complexity")
-          return <span key={i} className="text-slate-900 italic">{renderComplexity(group.entries)}</span>;
+          return <span key={i} className="text-slate-900">{renderComplexity(group.entries)}</span>;
         if (group.token === "clarity")
-          return <span key={i} className="text-lime italic" style={{ textShadow: glowShadow }}>{group.entries.map(e => e.char).join("")}</span>;
+          return <span key={i} className="text-lime" style={{ textShadow: glowShadow }}>{group.entries.map(e => e.char).join("")}</span>;
         return <span key={i} className="text-slate-100">{group.entries.map(e => e.char).join("")}</span>;
       });
     };
