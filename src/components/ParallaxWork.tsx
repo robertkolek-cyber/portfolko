@@ -179,7 +179,10 @@ export default function ParallaxWork() {
           const dot = dotItemRefs.current[i];
           if (!dot) continue;
           const isActive = i === activeIndex;
-          dot.style.width           = isActive ? "28px" : "8px";
+          const dotActive = isCompact ? "22px" : "28px";
+          const dotInactive = isCompact ? "6px" : "8px";
+          dot.style.width           = isActive ? dotActive : dotInactive;
+          dot.style.height          = isCompact ? "6px" : "8px";
           dot.style.backgroundColor = isActive ? "#2563eb" : "#94a3b8";
           dot.style.opacity         = isActive ? "1" : "0.45";
         }
@@ -276,8 +279,8 @@ export default function ParallaxWork() {
             }}
           />
           {/* Text content */}
-          <div className="relative z-10 text-center pb-10 md:pb-14 pt-12 md:pt-20">
-            <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium">
+          <div className="relative z-10 text-center pb-8 md:pb-14 lg:pb-8 2xl:pb-14 pt-10 md:pt-20 lg:pt-12 2xl:pt-20">
+            <p className="text-[10px] md:text-xs lg:text-[8px] xl:text-[10px] 2xl:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium">
               Selected Work
             </p>
           </div>
@@ -346,14 +349,14 @@ export default function ParallaxWork() {
                   </div>
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="font-[family-name:var(--font-display)] text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-slate-800 group-hover:text-lime transition-colors duration-300">
+                      <h3 className="font-[family-name:var(--font-display)] text-lg sm:text-xl md:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-semibold text-slate-800 group-hover:text-lime transition-colors duration-300">
                         {project.title}
                       </h3>
-                      <p className="mt-1 md:mt-1.5 text-slate-500 text-xs sm:text-sm md:text-base leading-relaxed">
+                      <p className="mt-1 md:mt-1.5 text-slate-500 text-xs sm:text-sm md:text-base lg:text-xs xl:text-sm 2xl:text-base leading-relaxed">
                         {project.tagline}
                       </p>
                     </div>
-                    <span className="flex-shrink-0 mt-1 text-[10px] md:text-xs tracking-wide uppercase text-slate-400 font-medium">
+                    <span className="flex-shrink-0 mt-1 text-[10px] md:text-xs lg:text-[8px] xl:text-[10px] 2xl:text-xs tracking-wide uppercase text-slate-400 font-medium">
                       {project.category}
                     </span>
                   </div>
@@ -373,14 +376,14 @@ export default function ParallaxWork() {
             <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-4 md:mb-6">
               Let&apos;s collaborate
             </p>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl leading-[1.05] font-bold text-slate-800 mb-6 md:mb-8">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-5xl lg:text-4xl xl:text-5xl 2xl:text-7xl leading-[1.05] font-bold text-slate-800 mb-6 md:mb-8">
               Got a project in mind?
               <br />
               <span className="italic text-lime">Let&apos;s talk.</span>
             </h2>
             <a
               href="mailto:hello@robertkolek.com"
-              className="group inline-flex items-center gap-2 md:gap-3 bg-lime text-dark-950 px-6 md:px-10 py-3 md:py-4 rounded-full text-sm md:text-base font-semibold tracking-wide hover:bg-lime-light transition-colors duration-300 glow-lime mb-8 md:mb-12"
+              className="group inline-flex items-center gap-2 md:gap-3 bg-lime text-dark-950 px-6 md:px-10 lg:px-6 xl:px-8 2xl:px-10 py-3 md:py-4 lg:py-3 2xl:py-4 rounded-full text-sm md:text-base lg:text-xs xl:text-sm 2xl:text-base font-semibold tracking-wide hover:bg-lime-light transition-colors duration-300 glow-lime mb-8 md:mb-12"
             >
               hello@robertkolek.com
               <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -392,7 +395,7 @@ export default function ParallaxWork() {
                 <a
                   key={s.label}
                   href={s.href}
-                  className="text-sm text-slate-400 hover:text-lime transition-colors duration-300 link-underline"
+                  className="text-sm lg:text-xs 2xl:text-sm text-slate-400 hover:text-lime transition-colors duration-300 link-underline"
                 >
                   {s.label}
                 </a>
