@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Hero from "./Hero";
 import { projects } from "@/lib/projects";
@@ -21,7 +21,14 @@ export default function ParallaxWork() {
   const tileRefs        = useRef<(HTMLDivElement | null)[]>([]);
   const ctaRef          = useRef<HTMLDivElement>(null);
 
-  const [heroScroll, setHeroScroll] = useState(0);
+  // Performance: ref-based scroll progress avoids re-rendering Hero every frame
+  const heroScrollRef   = useRef(0);
+  const heroSetScroll   = useRef<((p: number) => void) | null>(null);
+
+  // Hero registers its scroll setter via callback — no React re-renders on scroll
+  const onHeroScrollRef = useCallback((setter: (p: number) => void) => {
+    heroSetScroll.current = setter;
+  }, []);
 
   const total     = projects.length;
   const allItems  = total + 1; // +1 for the CTA slide
@@ -65,20 +72,19 @@ export default function ParallaxWork() {
       const containerH    = rect.height - window.innerHeight;
       const progress      = Math.max(0, Math.min(1, containerTop / containerH));
 
-      // Pass scroll progress to Hero for dive animation
-      setHeroScroll(progress);
+      // Pass scroll progress to Hero — via ref callback, no React re-render
+      heroScrollRef.current = progress;
+      if (heroSetScroll.current) heroSetScroll.current(progress);
 
       // Hero wrapper — pointer events off once scrolling
       if (heroWrapper) {
         heroWrapper.style.pointerEvents = progress > 0.03 ? "none" : "auto";
       }
 
-      // Underwater background — starts lighter, darkens as you scroll through projects
+      // Background fade — syncs with water dive completing
       if (underwaterEl) {
-        const fadeIn = Math.min(1, progress / 0.08);
+        const fadeIn = Math.min(1, progress / 0.06);
         underwaterEl.style.opacity = String(fadeIn);
-
-        underwaterEl.style.background = `rgb(255,255,255)`;
       }
 
       // Depth overlay no longer needed
@@ -103,15 +109,18 @@ export default function ParallaxWork() {
         const { start, center, end } = getTiming(i);
         const isEven = i % 2 === 0;
 
-        const scale   = interpolate(progress, [start, center, end], [0.3, 1, 3.5]);
+        const scale   = interpolate(progress, [start, center, end], [0.35, 1, 2.4]);
         const opIn    = start + (center - start) * 0.3;
-        const opOut   = end   - (end - center)   * 0.2;
+        const opOut   = end   - (end - center)   * 0.25;
         const opacity = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
         const xVw     = interpolate(progress, [start, center, end],
-          isEven ? [-5, -35, -120] : [5, 35, 120]);
+          isEven ? [-3, -30, -90] : [3, 30, 90]);
+        // Subtle rotation sells depth — cards tilt away as they drift
+        const rotate  = interpolate(progress, [start, center, end],
+          isEven ? [2, 0, -1.5] : [-2, 0, 1.5]);
 
         el.style.opacity   = String(opacity);
-        el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
+        el.style.transform = `translateX(${xVw}vw) scale(${scale}) rotate(${rotate}deg)`;
         el.style.zIndex    = String(Math.round(scale * 100));
       }
 
@@ -152,13 +161,13 @@ export default function ParallaxWork() {
     <section id="work" ref={containerRef} className="relative h-[900vh]">
       <div className="sticky top-0 h-screen w-full overflow-hidden">
 
-        {/* Underwater background — dark navy, fades in as hero dives away */}
+        {/* Background — fades in as hero dives away, reveals project space */}
         <div
           ref={underwaterRef}
           className="absolute inset-0 z-0"
           style={{
             opacity: 0,
-            background: "radial-gradient(ellipse at 50% 30%, #0a1628 0%, #050c18 60%, #020810 100%)",
+            background: "rgb(255,255,255)",
           }}
         />
 
@@ -174,7 +183,7 @@ export default function ParallaxWork() {
 
         {/* Hero */}
         <div ref={heroWrapperRef} className="absolute inset-0 z-20">
-          <Hero scrollProgress={heroScroll} />
+          <Hero onScrollRef={onHeroScrollRef} />
         </div>
 
         {/* "Selected Work" heading — centered, visible through project tiles */}
