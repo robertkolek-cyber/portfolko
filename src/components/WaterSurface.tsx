@@ -139,30 +139,54 @@ export default function WaterSurface({
 
           const idx = (py * RES_W + px) * 4;
 
-          // Spatial colour gradient — dreamy mix across the canvas
-          // Top-left: warm rose pink | Top-right: cool silver-grey
-          // Bottom-left: soft peach | Bottom-right: steel blue
-          const pinkR = 235, pinkG = 150, pinkB = 170;    // warm rose (clearly pink, not purple)
-          const greyR = 200, greyG = 210, greyB = 220;    // cool silver-grey (neutral)
-          const peachR = 230, peachG = 180, peachB = 165;  // warm peach
-          const blueR = 100, blueG = 140, blueB = 210;    // steel blue (no purple)
+          // 4 corner colours that slowly rotate around the canvas
+          const corners = [
+            [220, 160, 200],  // dusty pink
+            [170, 190, 230],  // pale grey-blue
+            [75,  90,  200],  // deep indigo
+            [180, 160, 220],  // lavender
+          ];
+
+          // Slow rotation angle — colors drift around corners over time
+          const rotSpeed = 0.06;
+          const angle = time * rotSpeed;
+          // Fractional offset determines which corner gets which color
+          const shift = ((angle % (Math.PI * 2)) / (Math.PI * 2)); // 0–1
+
+          // Pick interpolated corner colors based on shift
+          const pick = (idx0: number) => {
+            const f = (idx0 + shift * 4) % 4;
+            const i0 = Math.floor(f) % 4;
+            const i1 = (i0 + 1) % 4;
+            const t = f - Math.floor(f);
+            return [
+              corners[i0][0] + (corners[i1][0] - corners[i0][0]) * t,
+              corners[i0][1] + (corners[i1][1] - corners[i0][1]) * t,
+              corners[i0][2] + (corners[i1][2] - corners[i0][2]) * t,
+            ];
+          };
+
+          const tl = pick(0); // top-left
+          const tr = pick(1); // top-right
+          const br = pick(2); // bottom-right
+          const bl = pick(3); // bottom-left
 
           // Bilinear interpolation across canvas position
-          const topR = pinkR + (greyR - pinkR) * nx;
-          const topG = pinkG + (greyG - pinkG) * nx;
-          const topB = pinkB + (greyB - pinkB) * nx;
-          const botR = peachR + (blueR - peachR) * nx;
-          const botG = peachG + (blueG - peachG) * nx;
-          const botB = peachB + (blueB - peachB) * nx;
+          const topR = tl[0] + (tr[0] - tl[0]) * nx;
+          const topG = tl[1] + (tr[1] - tl[1]) * nx;
+          const topB = tl[2] + (tr[2] - tl[2]) * nx;
+          const botR = bl[0] + (br[0] - bl[0]) * nx;
+          const botG = bl[1] + (br[1] - bl[1]) * nx;
+          const botB = bl[2] + (br[2] - bl[2]) * nx;
 
           const baseR = topR + (botR - topR) * ny;
           const baseG = topG + (botG - topG) * ny;
           const baseB = topB + (botB - topB) * ny;
 
-          // Chaos deepens colors toward steel blue
-          buf[idx]     = Math.round(baseR + (blueR - baseR) * c * 0.4);
-          buf[idx + 1] = Math.round(baseG + (blueG - baseG) * c * 0.4);
-          buf[idx + 2] = Math.round(baseB + (blueB - baseB) * c * 0.4);
+          // Chaos deepens colors toward indigo
+          buf[idx]     = Math.round(baseR + (75 - baseR) * c * 0.4);
+          buf[idx + 1] = Math.round(baseG + (90 - baseG) * c * 0.4);
+          buf[idx + 2] = Math.round(baseB + (200 - baseB) * c * 0.4);
           buf[idx + 3] = Math.round(ringed * (0.22 + c * 0.15) * 255);
         }
       }
