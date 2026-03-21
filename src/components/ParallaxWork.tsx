@@ -254,51 +254,41 @@ export default function ParallaxWork() {
           <div
             key={project.slug}
             ref={(el) => { tileRefs.current[i] = el; }}
-            className="absolute inset-0 flex items-center justify-center overflow-hidden"
+            className="absolute inset-0 flex items-center justify-center"
             style={{ opacity: 0, pointerEvents: "none" }}
           >
             <div style={{ pointerEvents: "auto" }}>
               <Link href={`/projects/${project.slug}`} className="group block">
-                <article className="w-[80vw] max-w-3xl">
-                  <div
-                    className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6 border border-dark-700/50"
-                    style={{ backgroundColor: project.color }}
-                  >
-                    {project.thumbnail ? (
-                      <img
-                        src={project.thumbnail}
-                        alt={project.title}
-                        className="absolute inset-0 w-full h-full object-cover object-right-bottom"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="font-[family-name:var(--font-display)] text-white/80 text-5xl md:text-7xl font-bold select-none">
-                          {project.title}
-                        </span>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
-                      <span className="text-lime text-sm font-medium tracking-wide">View case study</span>
-                      <svg className="w-5 h-5 text-lime" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-semibold text-slate-800 group-hover:text-lime transition-colors duration-300">
+                <div
+                  className="relative w-[75vw] max-w-2xl aspect-[4/3] rounded-2xl overflow-hidden border border-dark-700/50 shadow-2xl"
+                  style={{ backgroundColor: project.color }}
+                >
+                  {project.thumbnail ? (
+                    <img
+                      src={project.thumbnail}
+                      alt={project.title}
+                      className="absolute inset-0 w-full h-full object-cover object-right-bottom"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="font-[family-name:var(--font-display)] text-white/80 text-5xl md:text-7xl font-bold select-none">
                         {project.title}
-                      </h3>
-                      <p className="mt-1.5 text-slate-500 text-sm md:text-base leading-relaxed">
-                        {project.tagline}
-                      </p>
+                      </span>
                     </div>
-                    <span className="flex-shrink-0 mt-1 text-xs tracking-wide uppercase text-slate-400 font-medium">
-                      {project.category}
-                    </span>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                  <div className="absolute bottom-5 left-6 right-6">
+                    <h3 className="font-[family-name:var(--font-display)] text-xl md:text-2xl font-semibold text-white mb-1">
+                      {project.title}
+                    </h3>
+                    <div className="flex items-center justify-between">
+                      <p className="text-white/60 text-sm">{project.tagline}</p>
+                      <span className="text-xs tracking-wide uppercase text-white/40 font-medium">
+                        {project.category}
+                      </span>
+                    </div>
                   </div>
-                </article>
+                </div>
               </Link>
             </div>
           </div>
