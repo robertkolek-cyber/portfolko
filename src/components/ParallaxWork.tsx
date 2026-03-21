@@ -229,7 +229,7 @@ export default function ParallaxWork() {
         {/* Big title — centered, pushed off screen by first tile */}
         <div
           ref={titleRef}
-          className="absolute inset-0 z-[450] flex items-center justify-center pointer-events-none"
+          className="absolute inset-0 z-[25] flex items-center justify-center pointer-events-none"
           style={{ opacity: 0 }}
         >
           <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800 text-center">
