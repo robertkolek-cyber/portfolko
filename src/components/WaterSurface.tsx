@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type MutableRefObject } from "react";
 
 /**
  * Top-down water surface — circular ripples from wave sources.
@@ -16,11 +16,6 @@ interface WaveSource {
   amplitude: number;
   speed: number;
   phase: number;
-}
-
-interface CalmCenter {
-  x: number; // normalised 0–1
-  y: number;
 }
 
 // Multiple interference sources — active at high chaos
@@ -47,25 +42,16 @@ const CALM_SOURCE: WaveSource = {
 export default function WaterSurface({
   chaos,
   className,
-  calmCenter,
+  mousePosRef,
 }: {
   chaos: number;
   className?: string;
-  calmCenter?: CalmCenter;
+  mousePosRef?: MutableRefObject<{ x: number; y: number } | null>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef(0);
   const chaosRef = useRef(chaos);
   chaosRef.current = chaos;
-
-  // Smoothly interpolated calm center — lerp toward target to avoid jitter
-  const calmCenterRef = useRef<CalmCenter>({ x: CALM_SOURCE.x, y: CALM_SOURCE.y });
-  const targetCenterRef = useRef<CalmCenter>({ x: CALM_SOURCE.x, y: CALM_SOURCE.y });
-  if (calmCenter) {
-    targetCenterRef.current = calmCenter;
-  } else {
-    targetCenterRef.current = { x: CALM_SOURCE.x, y: CALM_SOURCE.y };
-  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -85,16 +71,66 @@ export default function WaterSurface({
 
     let time = 0;
 
+    // Spring-damper state for the calm source position
+    // Gives the ripple origin weight and inertia — it drifts, overshoots, settles
+    const spring = {
+      x: CALM_SOURCE.x, y: CALM_SOURCE.y,  // current position
+      vx: 0, vy: 0,                         // velocity
+      influence: 0,                          // 0–1: how much mouse matters vs default center
+    };
+
+    // Spring constants — tuned for "water has mass" feel
+    const STIFFNESS = 2.2;   // pull toward target (lower = lazier)
+    const DAMPING = 3.8;     // friction (higher = less overshoot)
+    const INFLUENCE_RATE = 0.6; // how fast mouse influence ramps in/out per second
+
+    // Keep the origin from drifting too far to edges (rings stay readable)
+    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
     const draw = () => {
-      time += 0.016;
+      const dt = 0.016;
+      time += dt;
       const c = chaosRef.current;
 
-      // Smoothly lerp calm center toward target (damping factor)
-      const lerpSpeed = 0.06;
-      calmCenterRef.current.x += (targetCenterRef.current.x - calmCenterRef.current.x) * lerpSpeed;
-      calmCenterRef.current.y += (targetCenterRef.current.y - calmCenterRef.current.y) * lerpSpeed;
-      const cx = calmCenterRef.current.x;
-      const cy = calmCenterRef.current.y;
+      // ── Spring physics for calm source position ──
+
+      // Target: mouse position when available, otherwise canvas center
+      const mouse = mousePosRef?.current;
+      const hasTarget = mouse !== null && mouse !== undefined;
+
+      // Smoothly ramp influence — chaos suppresses it, mouse presence enables it
+      // The (1 - c) factor means influence naturally fades during chaos
+      // and only reaches full strength when chaos is fully settled
+      const targetInfluence = hasTarget ? (1 - c) * (1 - c) : 0; // quadratic falloff with chaos
+      const influenceDelta = targetInfluence - spring.influence;
+      spring.influence += influenceDelta * INFLUENCE_RATE * dt * (influenceDelta > 0 ? 1 : 2.5);
+      // Faster ramp-down when mouse leaves — feels like water releasing tension
+
+      // Blend target between mouse and default center based on influence
+      const targetX = hasTarget
+        ? CALM_SOURCE.x + (clamp(mouse!.x, 0.12, 0.88) - CALM_SOURCE.x) * spring.influence
+        : CALM_SOURCE.x;
+      const targetY = hasTarget
+        ? CALM_SOURCE.y + (clamp(mouse!.y, 0.12, 0.88) - CALM_SOURCE.y) * spring.influence
+        : CALM_SOURCE.y;
+
+      // Spring force: F = -k * displacement - damping * velocity
+      const dx = spring.x - targetX;
+      const dy = spring.y - targetY;
+      const ax = -STIFFNESS * dx - DAMPING * spring.vx;
+      const ay = -STIFFNESS * dy - DAMPING * spring.vy;
+
+      spring.vx += ax * dt;
+      spring.vy += ay * dt;
+      spring.x += spring.vx * dt;
+      spring.y += spring.vy * dt;
+
+      // Soft clamp — don't let it escape the visible area even on overshoot
+      spring.x = clamp(spring.x, 0.05, 0.95);
+      spring.y = clamp(spring.y, 0.05, 0.95);
+
+      const cx = spring.x;
+      const cy = spring.y;
 
       for (let py = 0; py < RES_H; py++) {
         for (let px = 0; px < RES_W; px++) {
@@ -104,11 +140,8 @@ export default function WaterSurface({
           // Sum all wave heights at this point
           let height = 0;
 
-          // Calm source — follows mouse when calm, centre when chaotic
-          // Blend between mouse position and default center based on chaos
-          const sourceX = cx + (CALM_SOURCE.x - cx) * c;
-          const sourceY = cy + (CALM_SOURCE.y - cy) * c;
-          const calmDist = Math.hypot(nx - sourceX, ny - sourceY);
+          // Calm source — origin driven by spring physics
+          const calmDist = Math.hypot(nx - cx, ny - cy);
           const calmH =
             Math.sin(
               calmDist * CALM_SOURCE.frequency * RES_W -
@@ -153,7 +186,7 @@ export default function WaterSurface({
           // During chaos: dense bright soup
           const ringSharpness = 1 - c * 0.5;
           // Rings blur with distance from centre — sharp core, soft edges
-          const distFromCenter = Math.hypot(nx - sourceX, ny - sourceY);
+          const distFromCenter = Math.hypot(nx - cx, ny - cy);
           const distBlur = Math.max(0, 1 - distFromCenter * 1.8); // 1 at centre, 0 at ~0.55
           const effectiveSharpness = ringSharpness * (0.15 + distBlur * 0.85);
           // Sharpen to rings by applying a soft threshold
