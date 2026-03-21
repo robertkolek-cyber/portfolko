@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Hero from "./Hero";
 import { projects } from "@/lib/projects";
@@ -20,6 +20,8 @@ export default function ParallaxWork() {
   const headingRef      = useRef<HTMLDivElement>(null);
   const tileRefs        = useRef<(HTMLDivElement | null)[]>([]);
   const ctaRef          = useRef<HTMLDivElement>(null);
+
+  const [heroScroll, setHeroScroll] = useState(0);
 
   const total     = projects.length;
   const allItems  = total + 1; // +1 for the CTA slide
@@ -63,11 +65,11 @@ export default function ParallaxWork() {
       const containerH    = rect.height - window.innerHeight;
       const progress      = Math.max(0, Math.min(1, containerTop / containerH));
 
-      // Hero fades out 0–5% (like breaking the water surface)
+      // Pass scroll progress to Hero for dive animation
+      setHeroScroll(progress);
+
+      // Hero wrapper — pointer events off once scrolling
       if (heroWrapper) {
-        const p = Math.min(1, progress / 0.05);
-        heroWrapper.style.opacity       = String(Math.max(0, 1 - p));
-        heroWrapper.style.transform     = `scale(${1 + p * 0.15}) translateY(${-p * 80}px)`;
         heroWrapper.style.pointerEvents = progress > 0.03 ? "none" : "auto";
       }
 
@@ -172,7 +174,7 @@ export default function ParallaxWork() {
 
         {/* Hero */}
         <div ref={heroWrapperRef} className="absolute inset-0 z-20">
-          <Hero />
+          <Hero scrollProgress={heroScroll} />
         </div>
 
         {/* "Selected Work" heading — centered, visible through project tiles */}
