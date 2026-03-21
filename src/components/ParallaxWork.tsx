@@ -71,16 +71,25 @@ export default function ParallaxWork() {
         heroWrapper.style.pointerEvents = progress > 0.03 ? "none" : "auto";
       }
 
-      // Depth darkening — water gets darker as you scroll, before hero fully fades
-      if (depthEl) {
-        const depth = Math.min(1, progress / 0.05);
-        depthEl.style.opacity = String(depth * 0.85);
+      // Underwater background — starts lighter, darkens as you scroll through projects
+      if (underwaterEl) {
+        const fadeIn = Math.min(1, progress / 0.08);
+        underwaterEl.style.opacity = String(fadeIn);
+
+        // Depth progress across project tiles (0.10 → 0.90 mapped to 0 → 1)
+        const depthT = Math.max(0, Math.min(1, (progress - 0.10) / 0.80));
+
+        // Interpolate from lighter blue to dark navy
+        const r = Math.round(lerp(18, 2, depthT));
+        const g = Math.round(lerp(50, 8, depthT));
+        const b = Math.round(lerp(85, 16, depthT));
+        underwaterEl.style.background = `radial-gradient(ellipse at 50% 30%, rgb(${r},${g},${b}) 0%, rgb(${Math.round(r*0.5)},${Math.round(g*0.5)},${Math.round(b*0.5)}) 60%, rgb(${Math.round(r*0.3)},${Math.round(g*0.3)},${Math.round(b*0.3)}) 100%)`;
       }
 
-      // Underwater background — fades in as hero fades out, giving a dive feel
-      if (underwaterEl) {
-        const depth = Math.min(1, progress / 0.08);
-        underwaterEl.style.opacity = String(depth);
+      // Depth darkening overlay — reinforces the deepening effect
+      if (depthEl) {
+        const depthT = Math.max(0, Math.min(1, (progress - 0.10) / 0.80));
+        depthEl.style.opacity = String(depthT * 0.6);
       }
 
       // "Selected Work" heading — visible while project tiles are running, hides before CTA
