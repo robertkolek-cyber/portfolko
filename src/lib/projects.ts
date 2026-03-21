@@ -37,23 +37,23 @@ export const projects: Project[] = [
     images: [],
   },
   {
-    slug: "terra-sustainability",
-    title: "Terra",
-    tagline: "Making sustainability tangible and actionable",
+    slug: "skoda-app",
+    title: "Škoda App",
+    tagline: "Driving smarter with connected car experiences",
     category: "Brand & Product",
     year: "2025",
     color: "#1a3328",
-    thumbnail: "",
-    heroImage: "",
+    thumbnail: "/images/projects/Slide 4_3 - 2.png",
+    heroImage: "/images/projects/Slide 4_3 - 2.png",
     overview:
-      "Terra is a sustainability tracking platform that helps companies measure, visualize, and reduce their environmental impact through beautiful data storytelling.",
+      "A mobile companion app for Škoda drivers that helps them save both economically and environmentally through smart driving insights and car management.",
     challenge:
-      "Environmental data is complex and often presented in ways that are either too simplified to be useful or too technical to be accessible. Companies needed a tool that told a compelling story with their data.",
+      "Car owners lacked a unified digital experience to manage their vehicle, track driving patterns, and optimize savings. Existing solutions were fragmented and hard to use.",
     approach:
-      "I designed an immersive data visualization system using organic shapes and nature-inspired gradients. Each metric was given a narrative context, transforming raw numbers into meaningful insights.",
+      "I designed an intuitive onboarding flow and a clean, dark-themed interface that guides users through driving analysis, savings tracking, and car management features with clear visual hierarchy.",
     outcome:
-      "Terra was adopted by over 200 companies in its first quarter. Users spent 3x more time engaging with sustainability reports compared to the previous system.",
-    tools: ["Figma", "D3.js", "After Effects", "Webflow"],
+      "The app received positive reception for its user-friendly onboarding and clear data visualization, improving driver engagement with eco-friendly driving habits.",
+    tools: ["Figma", "Protopie", "After Effects", "Illustrator"],
     images: [],
   },
   {
