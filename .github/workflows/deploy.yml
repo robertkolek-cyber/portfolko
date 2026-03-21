@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [claude/redesign-intro-animation-qZS5J]
   workflow_dispatch:
 
 permissions:
