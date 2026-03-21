@@ -18,6 +18,11 @@ interface WaveSource {
   phase: number;
 }
 
+interface CalmCenter {
+  x: number; // normalised 0–1
+  y: number;
+}
+
 // Multiple interference sources — active at high chaos
 const CHAOS_SOURCES: WaveSource[] = [
   { x: 0.15, y: 0.25, frequency: 0.045, amplitude: 1.0, speed: 1.8, phase: 0.0 },
@@ -42,14 +47,25 @@ const CALM_SOURCE: WaveSource = {
 export default function WaterSurface({
   chaos,
   className,
+  calmCenter,
 }: {
   chaos: number;
   className?: string;
+  calmCenter?: CalmCenter;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef(0);
   const chaosRef = useRef(chaos);
   chaosRef.current = chaos;
+
+  // Smoothly interpolated calm center — lerp toward target to avoid jitter
+  const calmCenterRef = useRef<CalmCenter>({ x: CALM_SOURCE.x, y: CALM_SOURCE.y });
+  const targetCenterRef = useRef<CalmCenter>({ x: CALM_SOURCE.x, y: CALM_SOURCE.y });
+  if (calmCenter) {
+    targetCenterRef.current = calmCenter;
+  } else {
+    targetCenterRef.current = { x: CALM_SOURCE.x, y: CALM_SOURCE.y };
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -73,6 +89,13 @@ export default function WaterSurface({
       time += 0.016;
       const c = chaosRef.current;
 
+      // Smoothly lerp calm center toward target (damping factor)
+      const lerpSpeed = 0.06;
+      calmCenterRef.current.x += (targetCenterRef.current.x - calmCenterRef.current.x) * lerpSpeed;
+      calmCenterRef.current.y += (targetCenterRef.current.y - calmCenterRef.current.y) * lerpSpeed;
+      const cx = calmCenterRef.current.x;
+      const cy = calmCenterRef.current.y;
+
       for (let py = 0; py < RES_H; py++) {
         for (let px = 0; px < RES_W; px++) {
           const nx = px / RES_W; // normalised
@@ -81,8 +104,11 @@ export default function WaterSurface({
           // Sum all wave heights at this point
           let height = 0;
 
-          // Calm source — always present, fades slightly at peak chaos
-          const calmDist = Math.hypot(nx - CALM_SOURCE.x, ny - CALM_SOURCE.y);
+          // Calm source — follows mouse when calm, centre when chaotic
+          // Blend between mouse position and default center based on chaos
+          const sourceX = cx + (CALM_SOURCE.x - cx) * c;
+          const sourceY = cy + (CALM_SOURCE.y - cy) * c;
+          const calmDist = Math.hypot(nx - sourceX, ny - sourceY);
           const calmH =
             Math.sin(
               calmDist * CALM_SOURCE.frequency * RES_W -
@@ -127,7 +153,7 @@ export default function WaterSurface({
           // During chaos: dense bright soup
           const ringSharpness = 1 - c * 0.5;
           // Rings blur with distance from centre — sharp core, soft edges
-          const distFromCenter = Math.hypot(nx - 0.5, ny - 0.5);
+          const distFromCenter = Math.hypot(nx - sourceX, ny - sourceY);
           const distBlur = Math.max(0, 1 - distFromCenter * 1.8); // 1 at centre, 0 at ~0.55
           const effectiveSharpness = ringSharpness * (0.15 + distBlur * 0.85);
           // Sharpen to rings by applying a soft threshold
