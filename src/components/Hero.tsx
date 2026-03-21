@@ -76,11 +76,16 @@ const GLOW_HOLD = 1.2;     // hold at peak
 const GLOW_OUT = 1.8;      // fade out
 const REST_START = GLOW_START + 1.0; // secondary content starts during glow
 
+/* ── Scramble config ──────────────────────────────────────────── */
+const SCRAMBLE_CHARS = "!?#@&%*/<>{}|~^+-=\\";
+const SCRAMBLE_DURATION = 0.32; // seconds each complexity char scrambles before resolving
+const SNAP_DURATION = 0.14;     // brief scale-up on resolve
+
 /* ── Component ────────────────────────────────────────────────── */
 
 interface FrameState {
   visibleCount: number;
-  noiseIntensity: number; // 0–1 smooth
+  elapsedTime: number;
   waterChaos: number; // 0–1, drives water surface
   glowIntensity: number; // 0–1+ (overshoot)
   restOpacity: number;
@@ -96,7 +101,7 @@ interface FrameState {
 export default function Hero() {
   const [frame, setFrame] = useState<FrameState>({
     visibleCount: 0,
-    noiseIntensity: 0,
+    elapsedTime: 0,
     waterChaos: 0.15,
     glowIntensity: 0,
     restOpacity: 0,
@@ -109,8 +114,6 @@ export default function Hero() {
     showCursor: true,
   });
 
-  const turbRef = useRef<SVGFETurbulenceElement>(null);
-  const dispRef = useRef<SVGFEDisplacementMapElement>(null);
   const rafRef = useRef(0);
   const startRef = useRef(0);
 
@@ -121,7 +124,6 @@ export default function Hero() {
 
   useEffect(() => {
     startRef.current = performance.now();
-    let seed = 0;
 
     const tick = (now: number) => {
       const t = (now - startRef.current) / 1000; // seconds
@@ -131,14 +133,6 @@ export default function Hero() {
       for (const entry of TIMELINE.chars) {
         if (t >= entry.time) count++;
         else break;
-      }
-
-      // ── Noise intensity: smooth ramp up during complexity, ease down after ──
-      let noise = 0;
-      if (t >= COMPLEXITY_START && t <= CLARITY_END) {
-        const rampUp = smoothstep(COMPLEXITY_START, COMPLEXITY_END, t);
-        const rampDown = 1 - smoothstep(CLARITY_START - 0.15, CLARITY_END, t);
-        noise = easeOutCubic(rampUp) * rampDown;
       }
 
       // ── Water chaos: wider arc than text noise ──
@@ -158,28 +152,6 @@ export default function Hero() {
       } else {
         // Fully settled — single centred source, perfect rings
         waterChaos = 0.0;
-      }
-
-      // ── Drive SVG filter from the same loop ──
-      if (noise > 0.01) {
-        seed += 4;
-        if (turbRef.current) {
-          turbRef.current.setAttribute("seed", String(seed));
-          // High X freq, very low Y freq → horizontal bands/scanlines
-          const freqX = 0.7 + Math.sin(t * 4) * 0.15;
-          const freqY = 0.015 + Math.sin(t * 6.3) * 0.008;
-          turbRef.current.setAttribute(
-            "baseFrequency",
-            `${freqX.toFixed(3)} ${freqY.toFixed(4)}`
-          );
-        }
-        if (dispRef.current) {
-          // Horizontal tear — mostly X displacement, modulated by intensity
-          const scale = noise * (24 + Math.sin(t * 8.5) * 10);
-          dispRef.current.setAttribute("scale", String(scale.toFixed(1)));
-        }
-      } else {
-        if (dispRef.current) dispRef.current.setAttribute("scale", "0");
       }
 
       // ── Glow: slow bloom → hold → fade out ──
@@ -220,7 +192,7 @@ export default function Hero() {
 
       setFrame({
         visibleCount: count,
-        noiseIntensity: noise,
+        elapsedTime: t,
         waterChaos,
         glowIntensity: glow,
         restOpacity: restEased,
@@ -247,93 +219,85 @@ export default function Hero() {
     const visible = TIMELINE.chars.slice(0, frame.visibleCount);
     if (visible.length === 0) return null;
 
-    // Group consecutive chars by token type for single spans
-    const groups: { token: string; text: string }[] = [];
+    const t = frame.elapsedTime;
+    const g = frame.glowIntensity;
+
+    // Soft white glow — large radii, low opacity for smoothness
+    const glowShadow = g > 0.01
+      ? [
+          `0 0 ${50 * g}px rgba(255, 255, 255, ${0.75 * Math.min(1, g)})`,
+          `0 0 ${130 * g}px rgba(255, 255, 255, ${0.45 * Math.min(1, g)})`,
+          `0 0 ${300 * g}px rgba(255, 255, 255, ${0.2 * Math.min(1, g)})`,
+        ].join(", ")
+      : "none";
+
+    // Group consecutive chars by token, keeping CharEntry refs for complexity
+    const groups: { token: string; text: string; entries: CharEntry[] }[] = [];
     for (const entry of visible) {
       const last = groups[groups.length - 1];
       if (last && last.token === entry.token) {
         last.text += entry.char;
+        last.entries.push(entry);
       } else {
-        groups.push({ token: entry.token, text: entry.char });
+        groups.push({ token: entry.token, text: entry.char, entries: [entry] });
       }
     }
 
-    const n = frame.noiseIntensity;
-    const g = frame.glowIntensity;
-
-    const glowShadow = g > 0.01
-      ? [
-          `0 0 ${60 * g}px rgba(37, 99, 235, ${0.8 * Math.min(1, g)})`,
-          `0 0 ${150 * g}px rgba(59, 130, 246, ${0.5 * Math.min(1, g)})`,
-          `0 0 ${280 * g}px rgba(147, 197, 253, ${0.3 * Math.min(1, g)})`,
-        ].join(", ")
-      : "none";
-
     return groups.map((group, i) => {
       if (group.token === "complexity") {
+        // Scramble: each char cycles through random symbols, then snaps to correct letter
         return (
-          <span
-            key={i}
-            className="text-slate-900 italic inline-block"
-            style={{
-              filter: n > 0.01 ? "url(#textNoise)" : "none",
-            }}
-          >
-            {group.text}
+          <span key={i} className="text-slate-900 italic inline-block">
+            {group.entries.map((entry, ci) => {
+              const age = t - entry.time;
+              let displayChar = entry.char;
+              let scale = 1;
+
+              if (age < SCRAMBLE_DURATION) {
+                // Still scrambling — pick a symbol that changes ~20× per second
+                const idx = Math.floor(t * 20 + ci * 7) % SCRAMBLE_CHARS.length;
+                displayChar = SCRAMBLE_CHARS[idx];
+                // Slight fade-in while scrambling
+                const opacity = Math.min(1, age / 0.08);
+                return (
+                  <span
+                    key={ci}
+                    style={{ display: "inline-block", opacity, fontStyle: "italic" }}
+                  >
+                    {displayChar}
+                  </span>
+                );
+              } else if (age < SCRAMBLE_DURATION + SNAP_DURATION) {
+                // Snap moment — brief scale overshoot
+                const snapT = (age - SCRAMBLE_DURATION) / SNAP_DURATION;
+                scale = 1 + 0.12 * Math.sin(snapT * Math.PI);
+              }
+
+              return (
+                <span
+                  key={ci}
+                  style={{ display: "inline-block", transform: `scale(${scale})`, transformOrigin: "bottom center" }}
+                >
+                  {entry.char}
+                </span>
+              );
+            })}
           </span>
         );
       }
       if (group.token === "clarity") {
         return (
-          <span
-            key={i}
-            className="text-lime italic"
-            style={{ textShadow: glowShadow }}
-          >
+          <span key={i} className="text-lime italic" style={{ textShadow: glowShadow }}>
             {group.text}
           </span>
         );
       }
-      return (
-        <span key={i} className="text-slate-100">{group.text}</span>
-      );
+      return <span key={i} className="text-slate-100">{group.text}</span>;
     });
   };
 
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
-      {/* SVG noise filter — driven from the main rAF loop */}
-      <svg className="absolute w-0 h-0" aria-hidden="true">
-        <defs>
-          <filter id="textNoise" x="-15%" y="-5%" width="130%" height="110%">
-            <feTurbulence
-              ref={turbRef}
-              type="fractalNoise"
-              baseFrequency="0.7 0.015"
-              numOctaves="3"
-              seed="0"
-              result="noise"
-            />
-            {/* Zero out the G channel → 0.5 = neutral → no Y displacement */}
-            <feColorMatrix
-              in="noise"
-              type="matrix"
-              values="1 0 0 0 0  0 0 0 0 0.5  0 0 1 0 0  0 0 0 1 0"
-              result="noiseH"
-            />
-            {/* X-only displacement — G is constant 0.5 → pure horizontal tear */}
-            <feDisplacementMap
-              ref={dispRef}
-              in="SourceGraphic"
-              in2="noiseH"
-              scale="0"
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-      </svg>
-
       {/* Water surface — zooms in on scroll */}
       <div ref={waterScrollRef} className="absolute inset-0 pointer-events-none" style={{ transformOrigin: "center center" }}>
         <WaterSurface chaos={frame.waterChaos} />
@@ -351,8 +315,8 @@ export default function Hero() {
             width: `${500 * frame.glowIntensity}px`,
             height: `${250 * frame.glowIntensity}px`,
             transform: "translate(-50%, -50%)",
-            background: `radial-gradient(ellipse, rgba(37, 99, 235, ${0.2 * Math.min(1, frame.glowIntensity)}) 0%, rgba(147, 197, 253, ${0.1 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
-            filter: `blur(${50 * frame.glowIntensity}px)`,
+            background: `radial-gradient(ellipse, rgba(255, 255, 255, ${0.22 * Math.min(1, frame.glowIntensity)}) 0%, rgba(255, 255, 255, ${0.1 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
+            filter: `blur(${70 * frame.glowIntensity}px)`,
           }}
         />
       )}
