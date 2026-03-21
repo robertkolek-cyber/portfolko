@@ -92,6 +92,7 @@ interface FrameState {
   restY: number;
   ctaOpacity: number;
   ctaY: number;
+  ctaBlur: number;
   scrollOpacity: number;
   scrollY: number;
   cursorOpacity: number;
@@ -108,6 +109,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
     restY: 24,
     ctaOpacity: 0,
     ctaY: 20,
+    ctaBlur: 12,
     scrollOpacity: 0,
     scrollY: 12,
     cursorOpacity: 1,
@@ -199,6 +201,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         restY: 40 * (1 - restEased),
         ctaOpacity: ctaEased,
         ctaY: 36 * (1 - ctaEased),
+        ctaBlur: 12 * (1 - ctaEased),
         scrollOpacity: scrollEased,
         scrollY: 24 * (1 - scrollEased),
         cursorOpacity: cursorAlpha,
@@ -388,6 +391,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
           style={{
             opacity: frame.ctaOpacity,
             transform: `translateY(${frame.ctaY}px)`,
+            filter: `blur(${frame.ctaBlur}px)`,
           }}
         >
           <a
