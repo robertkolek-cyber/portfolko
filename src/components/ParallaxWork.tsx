@@ -261,15 +261,15 @@ export default function ParallaxWork() {
           <div
             className="absolute inset-0"
             style={{
-              background: "linear-gradient(to top, rgba(240,243,250,1) 0%, rgba(240,243,250,0.95) 30%, rgba(240,243,250,0.7) 55%, rgba(240,243,250,0) 100%)",
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
-              maskImage: "linear-gradient(to top, black 0%, black 40%, transparent 100%)",
-              WebkitMaskImage: "linear-gradient(to top, black 0%, black 40%, transparent 100%)",
+              background: "linear-gradient(to top, rgba(240,243,250,1) 0%, rgba(240,243,250,0.95) 25%, rgba(240,243,250,0.5) 45%, rgba(240,243,250,0) 65%)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+              maskImage: "linear-gradient(to top, black 0%, black 30%, transparent 65%)",
+              WebkitMaskImage: "linear-gradient(to top, black 0%, black 30%, transparent 65%)",
             }}
           />
           {/* Text content */}
-          <div className="relative z-10 text-center pb-12 md:pb-16 pt-20 md:pt-32">
+          <div className="relative z-10 text-center pb-10 md:pb-14 pt-12 md:pt-20">
             <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium">
               Selected Work
             </p>
@@ -311,7 +311,7 @@ export default function ParallaxWork() {
           >
             <div style={{ pointerEvents: "auto" }}>
               <Link href={`/projects/${project.slug}`} className="group block">
-                <article className="w-[85vw] sm:w-[75vw] md:w-[65vw] lg:w-[70vw] xl:w-[65vw] max-w-3xl">
+                <article className="w-[80vw] sm:w-[65vw] md:w-[55vw] lg:w-[50vw] xl:w-[55vw] max-w-2xl">
                   <div
                     className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-3 md:mb-6 border border-dark-700/50"
                     style={{ backgroundColor: project.color }}

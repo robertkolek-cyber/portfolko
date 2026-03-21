@@ -396,13 +396,13 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         </div>
 
         {/* Headline */}
-        <h1 className="font-[family-name:var(--font-claim)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[0.95] tracking-tight font-semibold min-h-[1.8em]">
+        <h1 className="font-[family-name:var(--font-claim)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl leading-[0.95] tracking-tight font-semibold min-h-[1.8em]">
           {renderText()}
         </h1>
 
         {/* Subtext */}
         <p
-          className="mt-10 md:mt-14 text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed"
+          className="mt-8 md:mt-12 lg:mt-14 text-base md:text-lg lg:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed"
           style={{
             opacity: frame.restOpacity,
             transform: `translateY(${frame.restY}px)`,
@@ -414,7 +414,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
 
         {/* CTAs */}
         <div
-          className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="mt-10 lg:mt-14 flex flex-col sm:flex-row items-center justify-center gap-4"
           style={{
             opacity: frame.ctaOpacity,
             transform: `translateY(${frame.ctaY}px)`,
@@ -457,20 +457,18 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
             Download CV
           </a>
         </div>
-      </div>
 
-      {/* Scroll indicator */}
-      <div
-        ref={scrollHintRef}
-        className="absolute bottom-10 left-1/2 hidden lg:block"
-        style={{
-          opacity: frame.scrollOpacity * textFade,
-          transform: `translateX(-50%) translateY(${frame.scrollY}px)`,
-        }}
-      >
-        <div className="flex flex-col items-center gap-3">
+        {/* Scroll indicator — flows after CTAs with guaranteed spacing */}
+        <div
+          ref={scrollHintRef}
+          className="mt-8 lg:mt-12 hidden lg:flex flex-col items-center gap-3"
+          style={{
+            opacity: frame.scrollOpacity * textFade,
+            transform: `translateY(${frame.scrollY}px)`,
+          }}
+        >
           <span className="text-xs tracking-widest uppercase text-slate-600">Scroll</span>
-          <div className="w-px h-12 bg-gradient-to-b from-lime/30 to-transparent" />
+          <div className="w-px h-10 bg-gradient-to-b from-lime/30 to-transparent" />
         </div>
       </div>
     </div>
