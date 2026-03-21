@@ -3,28 +3,41 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Top-down water surface — actual expanding ring strokes with
- * additive blending. Where rings from different drops overlap
- * they glow brighter, creating natural interference.
- *
- * chaos → many drops, dense luminous collisions
- * calm  → single centred drop, pristine concentric rings
+ * Top-down water surface — circular ripples from wave sources.
+ * chaos=1: many sources interfering (complex, choppy)
+ * chaos=0: single source, clean expanding rings (clarity)
  */
 
-/* ── Drop ───────────────────────────────────────────────────── */
-
-interface Drop {
-  cx: number;
-  cy: number;
-  birth: number;
-  rings: number;
-  spacing: number;
-  speed: number;
+interface WaveSource {
+  // Normalised 0–1 coords
+  x: number;
+  y: number;
+  frequency: number;
   amplitude: number;
-  hue: number;
+  speed: number;
+  phase: number;
 }
 
-/* ── Component ──────────────────────────────────────────────── */
+// Multiple interference sources — active at high chaos
+const CHAOS_SOURCES: WaveSource[] = [
+  { x: 0.15, y: 0.25, frequency: 0.045, amplitude: 1.0, speed: 1.8, phase: 0.0 },
+  { x: 0.75, y: 0.15, frequency: 0.038, amplitude: 0.9, speed: 2.1, phase: 1.3 },
+  { x: 0.55, y: 0.80, frequency: 0.052, amplitude: 0.85, speed: 1.5, phase: 2.7 },
+  { x: 0.20, y: 0.75, frequency: 0.030, amplitude: 0.95, speed: 2.4, phase: 0.8 },
+  { x: 0.85, y: 0.60, frequency: 0.060, amplitude: 0.7, speed: 1.2, phase: 3.5 },
+  { x: 0.45, y: 0.35, frequency: 0.042, amplitude: 0.8, speed: 2.8, phase: 4.2 },
+  { x: 0.10, y: 0.55, frequency: 0.035, amplitude: 0.75, speed: 1.6, phase: 5.1 },
+  { x: 0.90, y: 0.35, frequency: 0.055, amplitude: 0.65, speed: 2.0, phase: 2.1 },
+];
+
+// The one calm source — centre of the canvas
+const CALM_SOURCE: WaveSource = {
+  x: 0.5, y: 0.5,
+  frequency: 0.028,
+  amplitude: 1.0,
+  speed: 0.8,
+  phase: 0.0,
+};
 
 export default function WaterSurface({
   chaos,
@@ -41,146 +54,100 @@ export default function WaterSurface({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    let W = 0;
-    let H = 0;
+    // Internal resolution — low enough to be fast, high enough to be smooth
+    const RES_W = 320;
+    const RES_H = 200;
+    canvas.width = RES_W;
+    canvas.height = RES_H;
+    ctx.imageSmoothingEnabled = true;
 
-    const resize = () => {
-      W = canvas.clientWidth;
-      H = canvas.clientHeight;
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    resize();
-    window.addEventListener("resize", resize, { passive: true });
+    const imageData = ctx.createImageData(RES_W, RES_H);
+    const buf = imageData.data;
 
-    const drops: Drop[] = [];
     let time = 0;
-    let nextChaosDrop = 0;
-    let lastCalmDrop = -10;
-
-    // Seed first calm drop
-    drops.push({
-      cx: W * 0.5,
-      cy: H * 0.5,
-      birth: 0,
-      rings: 8,
-      spacing: 32 + Math.random() * 8,
-      speed: 52,
-      amplitude: 0.9,
-      hue: 0,
-    });
-
-    const MAX_AGE = 7;
 
     const draw = () => {
       time += 0.016;
       const c = chaosRef.current;
 
-      // Chaos: rain of drops
-      if (c > 0.08 && time >= nextChaosDrop) {
-        const interval = 0.04 + (1 - c) * 0.35;
-        nextChaosDrop = time + interval;
+      for (let py = 0; py < RES_H; py++) {
+        for (let px = 0; px < RES_W; px++) {
+          const nx = px / RES_W; // normalised
+          const ny = py / RES_H;
 
-        const burstCount = c > 0.7 && Math.random() < 0.3 ? 2 : 1;
-        for (let b = 0; b < burstCount; b++) {
-          drops.push({
-            cx: W * (0.05 + Math.random() * 0.9),
-            cy: H * (0.05 + Math.random() * 0.9),
-            birth: time + b * 0.02,
-            rings: 5 + Math.floor(Math.random() * 4),
-            spacing: 22 + Math.random() * 18,
-            speed: 38 + Math.random() * 30 + c * 15,
-            amplitude: 0.3 + c * 0.5 + Math.random() * 0.2,
-            hue: Math.random() * 30 - 15,
-          });
+          // Sum all wave heights at this point
+          let height = 0;
+
+          // Calm source — always present, fades slightly at peak chaos
+          const calmDist = Math.hypot(nx - CALM_SOURCE.x, ny - CALM_SOURCE.y);
+          const calmH =
+            Math.sin(
+              calmDist * CALM_SOURCE.frequency * RES_W -
+              time * CALM_SOURCE.speed +
+              CALM_SOURCE.phase
+            ) *
+            CALM_SOURCE.amplitude *
+            (1 - c * 0.6); // calm wave dims during chaos
+          height += calmH;
+
+          // Chaos sources — each fades in with staggered threshold
+          for (let i = 0; i < CHAOS_SOURCES.length; i++) {
+            const src = CHAOS_SOURCES[i];
+            // Stagger: later sources need higher chaos to appear
+            const threshold = (i / CHAOS_SOURCES.length) * 0.7;
+            const intensity = Math.max(
+              0,
+              Math.min(1, (c - threshold) / 0.35)
+            );
+            if (intensity < 0.01) continue;
+
+            const dist = Math.hypot(nx - src.x, ny - src.y);
+            // Wave attenuates with distance
+            const attenuation = Math.max(0.1, 1 - dist * 0.8);
+            const h =
+              Math.sin(
+                dist * src.frequency * RES_W -
+                time * src.speed +
+                src.phase
+              ) *
+              src.amplitude *
+              intensity *
+              attenuation;
+            height += h;
+          }
+
+          // Map height to colour — lime green with alpha from wave height
+          const normalised = (height + 1.5) / 3.0; // 0–1 range (rough)
+          const clamped = Math.max(0, Math.min(1, normalised));
+
+          // During calm: thin bright rings on dark bg (high contrast)
+          // During chaos: dense bright soup
+          const ringSharpness = 1 - c * 0.5;
+          // Sharpen to rings by applying a soft threshold
+          const ringed =
+            Math.pow(
+              Math.abs(Math.sin(clamped * Math.PI * (4 + c * 8))),
+              0.5 + ringSharpness * 1.5
+            );
+
+          const idx = (py * RES_W + px) * 4;
+          // Blend light blue → royal blue based on chaos level
+          buf[idx]     = Math.round(147 + (37  - 147) * c * 0.7); // R
+          buf[idx + 1] = Math.round(197 + (99  - 197) * c * 0.7); // G
+          buf[idx + 2] = Math.round(253 + (235 - 253) * c * 0.7); // B
+          buf[idx + 3] = Math.round(ringed * (0.20 + c * 0.15) * 255);
         }
       }
 
-      // Calm: slow centred drops
-      if (c < 0.12) {
-        const calmInterval = 2.6 + (1 - c) * 0.5;
-        if (time - lastCalmDrop > calmInterval) {
-          lastCalmDrop = time;
-          drops.push({
-            cx: W * 0.5 + (Math.random() - 0.5) * 4,
-            cy: H * 0.5 + (Math.random() - 0.5) * 3,
-            birth: time,
-            rings: 8,
-            spacing: 30 + Math.random() * 10,
-            speed: 48 + Math.random() * 8,
-            amplitude: 0.85,
-            hue: Math.random() * 10 - 5,
-          });
-        }
-      }
-
-      // Prune
-      while (drops.length > 0 && time - drops[0].birth > MAX_AGE) {
-        drops.shift();
-      }
-      if (drops.length > 80) drops.splice(0, drops.length - 80);
-
-      // ── Draw ──
-      ctx.clearRect(0, 0, W, H);
-      ctx.globalCompositeOperation = "lighter";
-
-      for (const drop of drops) {
-        const age = time - drop.birth;
-        if (age < 0) continue;
-
-        const ageFade = Math.max(0, 1 - age / MAX_AGE);
-        const ageFactor = ageFade * ageFade;
-        if (ageFactor < 0.005) continue;
-
-        const baseAlpha = drop.amplitude * ageFactor;
-
-        for (let r = 0; r < drop.rings; r++) {
-          const radius = age * drop.speed + r * drop.spacing;
-          if (radius < 1) continue;
-
-          const ringFade = 1 - (r / drop.rings) * 0.6;
-          const distAtten = 1 / Math.sqrt(1 + radius * 0.008);
-          const pulse = 0.85 + Math.sin(age * 2.2 - r * 0.7) * 0.15;
-
-          const alpha = baseAlpha * ringFade * distAtten * pulse;
-          if (alpha < 0.003) continue;
-
-          const lw = Math.max(0.5, 1.8 - r * 0.12 - radius * 0.001);
-
-          const hue = 210 + drop.hue + ringFade * 8;
-          const sat = 70 + (1 - ringFade) * 20;
-          const light = 60 + ringFade * 15;
-
-          // Crisp ring
-          ctx.beginPath();
-          ctx.arc(drop.cx, drop.cy, radius, 0, Math.PI * 2);
-          ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${light}%, ${Math.min(1, alpha * 0.6)})`;
-          ctx.lineWidth = lw;
-          ctx.stroke();
-
-          // Soft glow ring
-          ctx.beginPath();
-          ctx.arc(drop.cx, drop.cy, radius, 0, Math.PI * 2);
-          ctx.strokeStyle = `hsla(${hue + 5}, ${sat - 10}%, ${light + 10}%, ${Math.min(1, alpha * 0.15)})`;
-          ctx.lineWidth = lw * 5;
-          ctx.stroke();
-        }
-      }
-
-      ctx.globalCompositeOperation = "source-over";
+      ctx.putImageData(imageData, 0, 0);
       frameRef.current = requestAnimationFrame(draw);
     };
 
     frameRef.current = requestAnimationFrame(draw);
-    return () => {
-      cancelAnimationFrame(frameRef.current);
-      window.removeEventListener("resize", resize);
-    };
+    return () => cancelAnimationFrame(frameRef.current);
   }, []);
 
   return (
@@ -190,6 +157,7 @@ export default function WaterSurface({
       style={{
         width: "100%",
         height: "100%",
+        imageRendering: "auto",
       }}
     />
   );

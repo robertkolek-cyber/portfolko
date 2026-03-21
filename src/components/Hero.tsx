@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import WaterSurface from "./WaterSurface";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -10,15 +10,19 @@ import WaterSurface from "./WaterSurface";
 
 /* ── Easing library ───────────────────────────────────────────── */
 
+// Smooth deceleration — fast start, gentle stop
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
-const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
-const easeOutQuint = (t: number) => 1 - Math.pow(1 - t, 5);
 
-const easeOutElastic = (t: number) => {
-  if (t === 0 || t === 1) return t;
-  return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1;
+// Dramatic deceleration — even snappier
+const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
+
+// Overshoot then settle — for the glow bloom
+const easeOutBack = (t: number) => {
+  const c = 1.7;
+  return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
 };
 
+// Smooth step — nice for interpolating curves
 const smoothstep = (edge0: number, edge1: number, x: number) => {
   const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
   return t * t * (3 - 2 * t);
@@ -28,19 +32,19 @@ const smoothstep = (edge0: number, edge1: number, x: number) => {
 
 interface CharEntry {
   char: string;
-  time: number;
+  time: number; // exact second this character appears
   token: "normal" | "complexity" | "clarity";
 }
 
 function buildTimeline(): { chars: CharEntry[]; totalDuration: number } {
   const tokens: { text: string; type: "normal" | "complexity" | "clarity"; msPerChar: number }[] = [
-    { text: "I turn ", type: "normal", msPerChar: 55 },
-    { text: "complexity", type: "complexity", msPerChar: 72 },
-    { text: " into ", type: "normal", msPerChar: 45 },
-    { text: "clarity", type: "clarity", msPerChar: 140 },
+    { text: "I turn ", type: "normal", msPerChar: 60 },
+    { text: "complexity", type: "complexity", msPerChar: 80 },
+    { text: " into ", type: "normal", msPerChar: 50 },
+    { text: "clarity", type: "clarity", msPerChar: 155 },
   ];
 
-  const startDelay = 0.8;
+  const startDelay = 0.6; // seconds before first char
   const chars: CharEntry[] = [];
   let cursor = startDelay;
 
@@ -49,43 +53,36 @@ function buildTimeline(): { chars: CharEntry[]; totalDuration: number } {
       chars.push({ char, time: cursor, token: token.type });
       cursor += token.msPerChar / 1000;
     }
-    // Deliberate beats between semantic tokens
-    if (token.type === "complexity") cursor += 0.08;
-    if (token.text === " into ") cursor += 0.05;
   }
 
-  const totalDuration = cursor + 3.0;
+  // Beat after last char before glow
+  const totalDuration = cursor + 2.5;
   return { chars, totalDuration };
 }
 
 const TIMELINE = buildTimeline();
 const LAST_CHAR_TIME = TIMELINE.chars[TIMELINE.chars.length - 1].time;
 
+// When does each phase start/end?
 const COMPLEXITY_START = TIMELINE.chars.find((c) => c.token === "complexity")!.time;
 const COMPLEXITY_END = TIMELINE.chars.filter((c) => c.token === "complexity").pop()!.time;
 const CLARITY_START = TIMELINE.chars.find((c) => c.token === "clarity")!.time;
 const CLARITY_END = LAST_CHAR_TIME;
 
-// Glow bloom
-const GLOW_START = CLARITY_END + 0.4;
-const GLOW_IN = 1.8;
-const GLOW_HOLD = 1.0;
-const GLOW_OUT = 2.0;
-const REST_START = GLOW_START + 0.8;
-
-// Ring pulse — expands outward on bloom
-const RING_PULSE_START = GLOW_START + 0.5;
-const RING_PULSE_DURATION = 2.2;
+// Glow: slow bloom, hold, then fade out
+const GLOW_START = CLARITY_END + 0.35;
+const GLOW_IN = 2.0;       // slow ramp up
+const GLOW_HOLD = 1.2;     // hold at peak
+const GLOW_OUT = 1.8;      // fade out
+const REST_START = GLOW_START + 1.0; // secondary content starts during glow
 
 /* ── Component ────────────────────────────────────────────────── */
 
 interface FrameState {
-  unveilOpacity: number;
   visibleCount: number;
-  noiseIntensity: number;
-  waterChaos: number;
-  glowIntensity: number;
-  ringPulseProgress: number;
+  noiseIntensity: number; // 0–1 smooth
+  waterChaos: number; // 0–1, drives water surface
+  glowIntensity: number; // 0–1+ (overshoot)
   restOpacity: number;
   restY: number;
   ctaOpacity: number;
@@ -98,18 +95,16 @@ interface FrameState {
 
 export default function Hero() {
   const [frame, setFrame] = useState<FrameState>({
-    unveilOpacity: 0,
     visibleCount: 0,
     noiseIntensity: 0,
-    waterChaos: 0.12,
+    waterChaos: 0.15,
     glowIntensity: 0,
-    ringPulseProgress: -1,
     restOpacity: 0,
-    restY: 28,
+    restY: 24,
     ctaOpacity: 0,
-    ctaY: 22,
+    ctaY: 20,
     scrollOpacity: 0,
-    scrollY: 14,
+    scrollY: 12,
     cursorOpacity: 1,
     showCursor: true,
   });
@@ -119,20 +114,7 @@ export default function Hero() {
   const rafRef = useRef(0);
   const startRef = useRef(0);
 
-  // Mouse parallax
-  const mouseRef = useRef({ x: 0, y: 0 });
-  const smoothMouseRef = useRef({ x: 0, y: 0 });
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    mouseRef.current.x = (e.clientX / window.innerWidth - 0.5) * 2;
-    mouseRef.current.y = (e.clientY / window.innerHeight - 0.5) * 2;
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [handleMouseMove]);
-
+  // Refs kept for potential external scroll control
   const waterScrollRef = useRef<HTMLDivElement>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const scrollHintRef = useRef<HTMLDivElement>(null);
@@ -142,16 +124,7 @@ export default function Hero() {
     let seed = 0;
 
     const tick = (now: number) => {
-      const t = (now - startRef.current) / 1000;
-
-      // ── Smooth mouse interpolation ──
-      const m = smoothMouseRef.current;
-      const target = mouseRef.current;
-      m.x += (target.x - m.x) * 0.06;
-      m.y += (target.y - m.y) * 0.06;
-
-      // ── Unveil ──
-      const unveil = Math.min(1, t / 0.5);
+      const t = (now - startRef.current) / 1000; // seconds
 
       // ── Visible characters ──
       let count = 0;
@@ -160,7 +133,7 @@ export default function Hero() {
         else break;
       }
 
-      // ── Noise intensity ──
+      // ── Noise intensity: smooth ramp up during complexity, ease down after ──
       let noise = 0;
       if (t >= COMPLEXITY_START && t <= CLARITY_END) {
         const rampUp = smoothstep(COMPLEXITY_START, COMPLEXITY_END, t);
@@ -168,89 +141,94 @@ export default function Hero() {
         noise = easeOutCubic(rampUp) * rampDown;
       }
 
-      // ── Water chaos ──
-      let waterChaos = 0.12;
+      // ── Water chaos: wider arc than text noise ──
+      // Starts calm, builds before complexity, peaks during, settles after clarity
+      let waterChaos = 0.15; // base: gentle ripple
       if (t < COMPLEXITY_START) {
-        waterChaos = 0.12 + smoothstep(COMPLEXITY_START - 0.5, COMPLEXITY_START, t) * 0.18;
+        // Anticipation — slight build before complexity starts typing
+        waterChaos = 0.15 + smoothstep(COMPLEXITY_START - 0.4, COMPLEXITY_START, t) * 0.2;
       } else if (t <= COMPLEXITY_END + 0.3) {
-        const ramp = smoothstep(COMPLEXITY_START, COMPLEXITY_START + 0.5, t);
-        waterChaos = 0.30 + easeOutCubic(ramp) * 0.70;
+        // Full chaos during complexity
+        const ramp = smoothstep(COMPLEXITY_START, COMPLEXITY_START + 0.4, t);
+        waterChaos = 0.35 + easeOutCubic(ramp) * 0.65;
       } else if (t <= CLARITY_START) {
+        // Settle hard to 0 during " into " — perfectly circular by the time clarity types
         const settle = smoothstep(COMPLEXITY_END + 0.05, CLARITY_START, t);
-        waterChaos = 1.0 - easeOutQuart(settle);
+        waterChaos = 1.0 - easeOutCubic(settle);
       } else {
+        // Clarity and beyond — single centered source, perfect rings
         waterChaos = 0.0;
       }
 
-      // ── Drive SVG filter ──
+      // ── Drive SVG filter from the same loop ──
       if (noise > 0.01) {
         seed += 4;
         if (turbRef.current) {
           turbRef.current.setAttribute("seed", String(seed));
-          const freqX = 0.65 + Math.sin(t * 4.5) * 0.18;
-          const freqY = 0.012 + Math.sin(t * 6.8) * 0.006;
-          turbRef.current.setAttribute("baseFrequency", `${freqX.toFixed(3)} ${freqY.toFixed(4)}`);
+          // High X freq, very low Y freq → horizontal bands/scanlines
+          const freqX = 0.7 + Math.sin(t * 4) * 0.15;
+          const freqY = 0.015 + Math.sin(t * 6.3) * 0.008;
+          turbRef.current.setAttribute(
+            "baseFrequency",
+            `${freqX.toFixed(3)} ${freqY.toFixed(4)}`
+          );
         }
         if (dispRef.current) {
-          const scale = noise * (28 + Math.sin(t * 9.5) * 12);
+          // Horizontal tear — mostly X displacement, modulated by intensity
+          const scale = noise * (24 + Math.sin(t * 8.5) * 10);
           dispRef.current.setAttribute("scale", String(scale.toFixed(1)));
         }
       } else {
         if (dispRef.current) dispRef.current.setAttribute("scale", "0");
       }
 
-      // ── Glow bloom (elastic) ──
+      // ── Glow: slow bloom → hold → fade out ──
       let glow = 0;
       if (t >= GLOW_START) {
         const elapsed = t - GLOW_START;
         if (elapsed < GLOW_IN) {
-          glow = easeOutElastic(Math.min(1, elapsed / GLOW_IN));
+          // Ramp up with overshoot
+          glow = easeOutBack(elapsed / GLOW_IN);
         } else if (elapsed < GLOW_IN + GLOW_HOLD) {
-          glow = 1 + Math.sin((elapsed - GLOW_IN) * 2.2) * 0.04;
+          // Hold at peak with subtle breath
+          glow = 1 + Math.sin((elapsed - GLOW_IN) * 2.5) * 0.06;
         } else {
+          // Fade out
           const fadeT = (elapsed - GLOW_IN - GLOW_HOLD) / GLOW_OUT;
           glow = Math.max(0, 1 - easeOutCubic(Math.min(1, fadeT)));
         }
       }
 
-      // ── Ring pulse ──
-      let ringPulse = -1;
-      if (t >= RING_PULSE_START) {
-        const rp = (t - RING_PULSE_START) / RING_PULSE_DURATION;
-        if (rp < 1) ringPulse = rp;
-      }
+      // ── Secondary content: staggered ease-out ──
+      const restRaw = Math.min(1, Math.max(0, (t - REST_START) / 0.9));
+      const restEased = easeOutQuart(restRaw);
 
-      // ── Secondary content stagger ──
-      const restRaw = Math.min(1, Math.max(0, (t - REST_START) / 1.0));
-      const restEased = easeOutQuint(restRaw);
+      const ctaRaw = Math.min(1, Math.max(0, (t - REST_START - 0.2) / 0.9));
+      const ctaEased = easeOutQuart(ctaRaw);
 
-      const ctaRaw = Math.min(1, Math.max(0, (t - REST_START - 0.25) / 1.0));
-      const ctaEased = easeOutQuint(ctaRaw);
-
-      const scrollRaw = Math.min(1, Math.max(0, (t - REST_START - 0.55) / 1.0));
+      const scrollRaw = Math.min(1, Math.max(0, (t - REST_START - 0.45) / 0.9));
       const scrollEased = easeOutQuart(scrollRaw);
 
-      // ── Cursor ──
-      const typing = t < CLARITY_END + 0.12;
-      const cursorVisible = t < REST_START + 0.4;
-      const blinkPhase = Math.sin(t * 3.0);
+      // ── Cursor: smooth sine blink, not CSS ──
+      const typing = t < CLARITY_END + 0.1;
+      const cursorVisible = t < REST_START + 0.3;
+      // Blink with eased sine — holds at extremes, quick transition
+      const blinkPhase = Math.sin(t * 3.2);
       const cursorAlpha = cursorVisible
-        ? typing ? 0.9 : smoothstep(-0.25, 0.25, blinkPhase)
+        ? (typing ? 0.85 : smoothstep(-0.3, 0.3, blinkPhase))
         : 0;
 
       setFrame({
-        unveilOpacity: unveil,
         visibleCount: count,
         noiseIntensity: noise,
         waterChaos,
         glowIntensity: glow,
-        ringPulseProgress: ringPulse,
         restOpacity: restEased,
-        restY: 28 * (1 - restEased),
+        restY: 24 * (1 - restEased),
         ctaOpacity: ctaEased,
-        ctaY: 22 * (1 - ctaEased),
+        ctaY: 20 * (1 - ctaEased),
         scrollOpacity: scrollEased,
-        scrollY: 14 * (1 - scrollEased),
+        scrollY: 12 * (1 - scrollEased),
         cursorOpacity: cursorAlpha,
         showCursor: cursorVisible,
       });
@@ -262,11 +240,14 @@ export default function Hero() {
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  // ── Render text ──
+  // No wheel hijack — scroll is handled by the parent parallax container
+
+  // ── Render visible text with styling ──
   const renderText = () => {
     const visible = TIMELINE.chars.slice(0, frame.visibleCount);
     if (visible.length === 0) return null;
 
+    // Group consecutive chars by token type for single spans
     const groups: { token: string; text: string }[] = [];
     for (const entry of visible) {
       const last = groups[groups.length - 1];
@@ -282,10 +263,9 @@ export default function Hero() {
 
     const glowShadow = g > 0.01
       ? [
-          `0 0 ${50 * g}px rgba(37, 99, 235, ${0.9 * Math.min(1, g)})`,
-          `0 0 ${120 * g}px rgba(59, 130, 246, ${0.55 * Math.min(1, g)})`,
-          `0 0 ${240 * g}px rgba(147, 197, 253, ${0.25 * Math.min(1, g)})`,
-          `0 0 ${400 * g}px rgba(219, 234, 254, ${0.1 * Math.min(1, g)})`,
+          `0 0 ${60 * g}px rgba(37, 99, 235, ${0.8 * Math.min(1, g)})`,
+          `0 0 ${150 * g}px rgba(59, 130, 246, ${0.5 * Math.min(1, g)})`,
+          `0 0 ${280 * g}px rgba(147, 197, 253, ${0.3 * Math.min(1, g)})`,
         ].join(", ")
       : "none";
 
@@ -308,10 +288,7 @@ export default function Hero() {
           <span
             key={i}
             className="text-lime italic"
-            style={{
-              textShadow: glowShadow,
-              letterSpacing: g > 0.01 ? `${0.02 * g}em` : undefined,
-            }}
+            style={{ textShadow: glowShadow }}
           >
             {group.text}
           </span>
@@ -323,103 +300,60 @@ export default function Hero() {
     });
   };
 
-  const mx = smoothMouseRef.current.x;
-  const my = smoothMouseRef.current.y;
-
   return (
-    <div
-      className="absolute inset-0 flex items-center justify-center overflow-hidden px-6"
-      style={{ opacity: frame.unveilOpacity }}
-    >
-      {/* SVG noise filter */}
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
+      {/* SVG noise filter — driven from the main rAF loop */}
       <svg className="absolute w-0 h-0" aria-hidden="true">
         <defs>
-          <filter id="textNoise" x="-15%" y="-15%" width="130%" height="130%">
+          <filter id="textNoise" x="-15%" y="-5%" width="130%" height="110%">
             <feTurbulence
               ref={turbRef}
               type="fractalNoise"
-              baseFrequency="0.65 0.012"
+              baseFrequency="0.7 0.015"
               numOctaves="3"
               seed="0"
               result="noise"
             />
+            {/* X-only displacement → horizontal tear/scanline effect */}
             <feDisplacementMap
               ref={dispRef}
               in="SourceGraphic"
               in2="noise"
               scale="0"
               xChannelSelector="R"
-              yChannelSelector="G"
+              yChannelSelector="R"
             />
           </filter>
         </defs>
       </svg>
 
-      {/* Water surface */}
+      {/* Water surface — zooms in on scroll */}
       <div ref={waterScrollRef} className="absolute inset-0 pointer-events-none" style={{ transformOrigin: "center center" }}>
         <WaterSurface chaos={frame.waterChaos} />
       </div>
 
-      {/* Ambient glow — parallax with mouse */}
-      <div
-        className="absolute top-[8%] right-[12%] w-[550px] h-[550px] rounded-full bg-lime/[0.10] blur-[140px] pointer-events-none"
-        style={{ transform: `translate(${mx * -18}px, ${my * -12}px)` }}
-      />
-      <div
-        className="absolute bottom-[12%] left-[6%] w-[450px] h-[450px] rounded-full bg-dark-700/[0.12] blur-[110px] pointer-events-none"
-        style={{ transform: `translate(${mx * 14}px, ${my * 10}px)` }}
-      />
-      {/* Centre glow — blooms with clarity */}
-      <div
-        className="absolute top-1/2 left-1/2 w-[300px] h-[300px] rounded-full pointer-events-none"
-        style={{
-          transform: `translate(-50%, -50%) translate(${mx * -6}px, ${my * -4}px)`,
-          background: `radial-gradient(circle, rgba(37, 99, 235, ${0.08 * frame.glowIntensity}) 0%, transparent 70%)`,
-          filter: `blur(${60 + frame.glowIntensity * 40}px)`,
-          opacity: Math.min(1, frame.glowIntensity * 1.5),
-        }}
-      />
+      {/* Ambient glow — royal blue top-right, light blue bottom-left */}
+      <div className="absolute top-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-lime/[0.12] blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[15%] left-[8%] w-[400px] h-[400px] rounded-full bg-dark-700/[0.15] blur-[100px] pointer-events-none" />
 
-      {/* Ring pulse — expanding circle on bloom */}
-      {frame.ringPulseProgress >= 0 && frame.ringPulseProgress < 1 && (
-        <div
-          className="absolute top-1/2 left-1/2 pointer-events-none rounded-full"
-          style={{
-            width: `${easeOutCubic(frame.ringPulseProgress) * 900}px`,
-            height: `${easeOutCubic(frame.ringPulseProgress) * 500}px`,
-            transform: "translate(-50%, -50%)",
-            border: `1.5px solid rgba(37, 99, 235, ${0.25 * (1 - frame.ringPulseProgress)})`,
-            boxShadow: `0 0 ${30 * (1 - frame.ringPulseProgress)}px rgba(59, 130, 246, ${0.12 * (1 - frame.ringPulseProgress)})`,
-          }}
-        />
-      )}
-
-      {/* Clarity bloom — background radial */}
+      {/* Clarity bloom — background glow that swells behind text */}
       {frame.glowIntensity > 0.01 && (
         <div
           className="absolute top-1/2 left-1/2 pointer-events-none"
           style={{
-            width: `${600 * frame.glowIntensity}px`,
-            height: `${300 * frame.glowIntensity}px`,
+            width: `${500 * frame.glowIntensity}px`,
+            height: `${250 * frame.glowIntensity}px`,
             transform: "translate(-50%, -50%)",
-            background: `radial-gradient(ellipse, rgba(37, 99, 235, ${0.18 * Math.min(1, frame.glowIntensity)}) 0%, rgba(147, 197, 253, ${0.08 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
-            filter: `blur(${55 * frame.glowIntensity}px)`,
+            background: `radial-gradient(ellipse, rgba(37, 99, 235, ${0.2 * Math.min(1, frame.glowIntensity)}) 0%, rgba(147, 197, 253, ${0.1 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
+            filter: `blur(${50 * frame.glowIntensity}px)`,
           }}
         />
       )}
 
       {/* Grid */}
-      <div className="absolute inset-0 grid-bg opacity-25 pointer-events-none" />
+      <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
 
-      {/* Vignette */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse 80% 70% at 50% 50%, transparent 50%, rgba(240, 246, 255, 0.5) 100%)",
-        }}
-      />
-
-      {/* Content */}
+      {/* Content — fades out + drifts up on scroll */}
       <div ref={contentScrollRef} className="relative z-30 max-w-5xl mx-auto text-center">
         {/* Role line */}
         <div
@@ -441,7 +375,7 @@ export default function Hero() {
           {renderText()}
           {frame.showCursor && (
             <span
-              className="inline-block w-[3px] md:w-[4px] h-[0.82em] bg-lime ml-1 align-middle rounded-full"
+              className="inline-block w-[3px] md:w-[5px] h-[0.8em] bg-lime ml-1 align-middle"
               style={{ opacity: frame.cursorOpacity }}
             />
           )}
