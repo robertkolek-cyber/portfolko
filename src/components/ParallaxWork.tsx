@@ -111,11 +111,23 @@ export default function ParallaxWork() {
           ? 0.3 + 0.7 * Math.pow(t / tCenter, 1.6)
           : 1.0 + 2.5 * Math.pow((t - tCenter) / (1 - tCenter), 1.4);
 
-        // ── Curved trajectory — swooping arc downward + sideways ──
-        // Like a pendulum: tile starts center, sweeps sideways first,
-        // then the curve bends downward — exiting at the bottom-corner.
-        const xVw = sign * Math.pow(t, 1.6) * 180;       // lateral sweep (leads)
-        const yVh = Math.pow(t, 2.8) * 120;              // downward pull (lags, then accelerates)
+        // ── Curved trajectory matching reference arc ──
+        // Enter: tile arrives from the side, almost horizontal, gentle curve into center
+        // Exit:  tile swoops from center downward + to the opposite side, accelerating
+        let xVw: number;
+        let yVh: number;
+
+        if (t <= tCenter) {
+          // ENTER phase: t goes from 0 (off-screen) to tCenter (center)
+          const enterT = 1 - t / tCenter;  // 1 at start → 0 at center
+          xVw = -sign * enterT * 100;                      // come from the side
+          yVh = -Math.pow(enterT, 2.5) * 12;               // slight upward offset that flattens at center
+        } else {
+          // EXIT phase: t goes from tCenter (center) to 1 (off-screen)
+          const exitT = (t - tCenter) / (1 - tCenter);  // 0 at center → 1 at exit
+          xVw = sign * Math.pow(exitT, 1.4) * 140;        // sweep to opposite side, accelerating
+          yVh = Math.pow(exitT, 2.2) * 110;               // drop downward, slow start → fast exit
+        }
 
         // Opacity: smoothstep in, hold, smoothstep out
         const opIn  = smoothstep(0, 0.15, t);
