@@ -151,12 +151,12 @@ export default function Hero() {
         // Full chaos during complexity
         const ramp = smoothstep(COMPLEXITY_START, COMPLEXITY_START + 0.4, t);
         waterChaos = 0.35 + easeOutCubic(ramp) * 0.65;
-      } else if (t <= CLARITY_START) {
-        // Settle hard to 0 during " into " — perfectly circular by the time clarity types
-        const settle = smoothstep(COMPLEXITY_END + 0.05, CLARITY_START, t);
+      } else if (t <= CLARITY_START + 1.8) {
+        // Long smooth settle — begins overlapping end of complexity, finishes deep into clarity
+        const settle = smoothstep(COMPLEXITY_END - 0.2, CLARITY_START + 1.8, t);
         waterChaos = 1.0 - easeOutCubic(settle);
       } else {
-        // Clarity and beyond — single centered source, perfect rings
+        // Fully settled — single centred source, perfect rings
         waterChaos = 0.0;
       }
 
