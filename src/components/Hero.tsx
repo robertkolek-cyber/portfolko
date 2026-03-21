@@ -224,9 +224,9 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
 
     const glowShadow = g > 0.01
       ? [
-          `0 0 ${50 * g}px rgba(255, 245, 230, ${0.75 * Math.min(1, g)})`,
-          `0 0 ${130 * g}px rgba(255, 245, 230, ${0.45 * Math.min(1, g)})`,
-          `0 0 ${300 * g}px rgba(255, 245, 230, ${0.2 * Math.min(1, g)})`,
+          `0 0 ${50 * g}px rgba(200, 210, 235, ${0.75 * Math.min(1, g)})`,
+          `0 0 ${130 * g}px rgba(200, 210, 235, ${0.45 * Math.min(1, g)})`,
+          `0 0 ${300 * g}px rgba(200, 210, 235, ${0.2 * Math.min(1, g)})`,
         ].join(", ")
       : "none";
 
@@ -338,7 +338,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
             width: `${500 * frame.glowIntensity}px`,
             height: `${250 * frame.glowIntensity}px`,
             transform: "translate(-50%, -50%)",
-            background: `radial-gradient(ellipse, rgba(255, 245, 230, ${0.22 * Math.min(1, frame.glowIntensity)}) 0%, rgba(255, 245, 230, ${0.1 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
+            background: `radial-gradient(ellipse, rgba(200, 210, 235, ${0.22 * Math.min(1, frame.glowIntensity)}) 0%, rgba(200, 210, 235, ${0.1 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
             filter: `blur(${70 * frame.glowIntensity}px)`,
             opacity: textFade,
           }}
