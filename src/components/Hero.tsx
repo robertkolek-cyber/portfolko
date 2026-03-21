@@ -378,8 +378,8 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
             transform: `translateY(${frame.restY}px)`,
           }}
         >
-          Good design isn't visible — it's felt. I craft products where complexity
-          dissolves into clarity, so people move forward without thinking twice.
+          Where business logic meets human instinct. Shaping products that turn
+          complexity into confidence and decisions into second nature.
         </p>
 
         {/* CTAs */}
