@@ -2,9 +2,23 @@ export interface ProjectSection {
   title: string;
   content: string;
   image?: string;
-  layout?: "text" | "text-image" | "image-text" | "full-image" | "highlight" | "stats";
+  layout?:
+    | "text"
+    | "text-image"
+    | "image-text"
+    | "full-image"
+    | "highlight"
+    | "stats"
+    | "dark-block"
+    | "phones"
+    | "wide-photo"
+    | "two-column"
+    | "hmw";
   highlight?: boolean;
   stats?: { label: string; value: string }[];
+  items?: string[];
+  phoneScreens?: { title: string; items: string[] }[];
+  bgDark?: boolean;
 }
 
 export interface Project {
@@ -69,31 +83,30 @@ export const projects: Project[] = [
       {
         title: "The Business Case",
         content:
-          "Škoda is actively investing in making cars greener for the future. With growing pressure on sustainability and shifting consumer expectations, there's a real need to connect drivers with the environmental and financial impact of how they drive.",
-        layout: "text-image",
-        image: "/portfolko/images/projects/Slide skoda.png",
+          "With growing global efforts to make cars greener, Škoda is actively exploring how to make sustainability feel personal — not just for the planet, but for the driver's wallet too.",
+        layout: "dark-block",
+        bgDark: true,
       },
       {
         title: "So What's Behind?",
-        content:
-          "Two core pillars drive the concept: direct savings — how much money drivers keep by driving efficiently — and impact — the measurable environmental benefit of reduced emissions and fuel consumption.",
-        layout: "stats",
-        stats: [
-          { label: "Direct Savings", value: "Money saved per ride" },
-          { label: "CO2 Reduced", value: "Environmental impact" },
-          { label: "Fuel Efficiency", value: "Optimized consumption" },
+        content: "",
+        layout: "two-column",
+        items: [
+          "Direct — How much money can drivers save by changing the way they drive? The app quantifies fuel savings per ride.",
+          "Impact — What's the real environmental benefit? CO2 reduction measured and visualized for every journey.",
         ],
       },
       {
         title: "Incentive Shift",
         content:
-          "Traditional car loyalty programs rely on external rewards like discounts and points. This app shifts the incentive model toward intrinsic motivation — drivers change their behavior not for a coupon, but because they can see exactly how much they're saving and how they're helping the environment.",
-        layout: "text",
+          "Shifting from traditional loyalty programs and external rewards to intrinsic motivation. Drivers change behavior not for coupons — but because they see real savings and real environmental impact in numbers they understand.",
+        layout: "dark-block",
+        bgDark: true,
       },
       {
         title: "This Is a Design Opportunity",
         content:
-          "The gap between eco-awareness and actual behavior change is where design can make the biggest difference. Drivers care about the environment, but they need tools that make the abstract tangible.",
+          "The gap between eco-awareness and actual behavior change is where design makes the biggest difference. People care — they just need the right tools to act on it.",
         layout: "highlight",
         highlight: true,
       },
@@ -101,64 +114,80 @@ export const projects: Project[] = [
         title: "How Might We",
         content:
           "How might we create a tool that quantifies the benefits and simplifies the impact of efficient driving — making it feel personal, rewarding, and easy to understand?",
-        layout: "highlight",
-        highlight: true,
+        layout: "hmw",
       },
       {
         title: "Objectives",
-        content:
-          "Define a clear savings calculation framework. Give users personal goals to work toward. Demonstrate real-time impact on both their wallet and the environment. Provide a structured path from understanding to action through ride analysis and improvement tips.",
-        layout: "stats",
-        stats: [
-          { label: "Goal #1", value: "Savings framework" },
-          { label: "Goal #2", value: "Personal targets" },
-          { label: "Goal #3", value: "Real-time impact" },
-          { label: "Goal #4", value: "Actionable path" },
+        content: "Create a clear, engaging experience that:",
+        layout: "two-column",
+        items: [
+          "Demonstrates real savings through a calculation framework",
+          "Gives users personal goals to work toward",
+          "Shows real-time impact on wallet and environment",
+          "Provides a structured path from understanding to action",
         ],
       },
       {
-        title: "Personal Goals",
+        title: "Personal Goals — Part's Objectives",
         content:
-          "Users set their own savings objectives — for example, saving enough to buy a bigger car for their family. The app acts as a budget advisor, showing how much they could realistically save by driving more efficiently. Being budget-conscious, the app should serve as a guide that shows potential savings and tracks progress over time.",
-        layout: "image-text",
-        image: "/portfolko/images/projects/skoda-app.png",
+          "Take, for example, Martin. He'd like to buy a bigger car for his family. Being budget-conscious, the app should serve as a budget advisor — showing how much he could realistically save by driving more efficiently, and tracking his progress over time.",
+        layout: "phones",
+        phoneScreens: [
+          { title: "Set Goal", items: ["Target amount", "Timeline", "Monthly saving target"] },
+          { title: "Track", items: ["Current savings", "Progress bar", "Projected date"] },
+          { title: "Achieve", items: ["Milestone reached", "Total saved", "Next goal"] },
+        ],
       },
       {
         title: "Following the Progress",
         content:
-          "The app tracks personal milestones over time, giving users a clear picture of how far they've come and how close they are to reaching their goals. Visual progress indicators keep motivation high.",
-        layout: "text",
+          "The app tracks personal milestones over time — clear progress indicators show how far the driver has come and how close they are to their goals.",
+        layout: "phones",
+        phoneScreens: [
+          { title: "Overview", items: ["Monthly summary", "Savings graph", "CO2 reduced"] },
+          { title: "Timeline", items: ["Ride history", "Weekly trends", "Best rides"] },
+        ],
       },
       {
         title: "How Does It Make Calculations?",
-        content:
-          "The framework works in phases: first, setting the parameters — vehicle type, driving patterns, fuel costs. Then the structure layer calculates CO2 reduction and cost savings per ride. The system compares efficient driving against baseline habits to show exactly where savings come from.",
-        layout: "stats",
-        stats: [
-          { label: "Phase 1", value: "Set parameters" },
-          { label: "Phase 2", value: "Track CO2 & costs" },
-          { label: "Phase 3", value: "Compare & optimize" },
+        content: "",
+        layout: "two-column",
+        items: [
+          "1st phase — the framework: Define the calculation model based on vehicle type, fuel consumption, and driving patterns.",
+          "Structure — set parameters: Users input their car details, driving frequency, and fuel costs to personalize the experience.",
+          "Result — real numbers: The system compares efficient driving against baseline habits to show exactly where savings come from — per ride and cumulatively.",
         ],
       },
       {
         title: "Analyzing Rides",
         content:
-          "Each ride gets a detailed breakdown — efficiency score, fuel consumption, route analysis, and comparison against the driver's personal average. The ride analysis helps users understand which habits cost them money and which ones save.",
-        layout: "text-image",
-        image: "/portfolko/images/projects/skoda-app.png",
+          "Each ride gets a detailed breakdown with efficiency scores, fuel consumption analysis, route evaluation, and comparison against personal averages. Drivers see exactly which habits cost money and which ones save.",
+        layout: "phones",
+        phoneScreens: [
+          { title: "Ride Score", items: ["Efficiency rating", "Speed analysis", "Braking score"] },
+          { title: "Breakdown", items: ["Fuel used", "Cost per km", "CO2 output"] },
+          { title: "Compare", items: ["vs. Average", "vs. Best ride", "Improvement"] },
+        ],
       },
       {
         title: "Tips How to Improve",
         content:
-          "Based on ride analysis, the app provides actionable, personalized tips — from optimal speed ranges to braking patterns and route suggestions. Tips are concrete and tied directly to potential savings.",
-        layout: "text",
+          "Based on ride analysis, the app delivers personalized, actionable tips — optimal speed ranges, braking patterns, route alternatives. Each tip is tied directly to potential savings in euros and CO2.",
+        layout: "phones",
+        phoneScreens: [
+          { title: "Speed", items: ["Optimal range", "Current avg", "Potential saving"] },
+          { title: "Routes", items: ["Suggested route", "Distance diff", "Fuel saving"] },
+        ],
       },
       {
         title: "Profile",
         content:
-          "The profile brings everything together — cumulative savings, environmental impact, driving score history, and goal progress. It's the driver's personal dashboard for smarter mobility.",
-        layout: "image-text",
-        image: "/portfolko/images/projects/Slide skoda.png",
+          "Everything comes together in the driver's personal dashboard — cumulative savings, environmental impact, driving score history, achievements, and goal progress. One place to see the full picture.",
+        layout: "phones",
+        phoneScreens: [
+          { title: "Dashboard", items: ["Total saved", "CO2 reduced", "Driving score"] },
+          { title: "History", items: ["All rides", "Monthly stats", "Achievements"] },
+        ],
       },
     ],
   },
