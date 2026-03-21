@@ -81,7 +81,7 @@ export default function ParallaxWork() {
         const fadeIn = Math.min(1, progress / 0.08);
         underwaterEl.style.opacity = String(fadeIn);
 
-        underwaterEl.style.background = `rgb(255,255,255)`;
+        underwaterEl.style.background = `rgb(255,245,230)`;
       }
 
       // Depth overlay no longer needed
