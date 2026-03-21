@@ -210,18 +210,32 @@ export default function ParallaxWork() {
           <Hero scrollProgress={heroScroll} />
         </div>
 
-        {/* "Selected Work" heading — centered, always above project tiles */}
+        {/* Soft white fog behind heading — tiles disappear behind it */}
         <div
           ref={headingRef}
-          className="absolute inset-x-0 bottom-12 z-[500] text-center pointer-events-none"
+          className="absolute inset-x-0 bottom-0 z-[400] pointer-events-none"
           style={{ opacity: 0 }}
         >
-          <p className="text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-2">
-            Selected Work
-          </p>
-          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800">
-            Projects that <span className="italic text-lime">define</span> my craft.
-          </h2>
+          {/* Blurry gradient backdrop */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(to top, rgba(240,243,250,1) 0%, rgba(240,243,250,0.95) 30%, rgba(240,243,250,0.7) 55%, rgba(240,243,250,0) 100%)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              maskImage: "linear-gradient(to top, black 0%, black 40%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to top, black 0%, black 40%, transparent 100%)",
+            }}
+          />
+          {/* Text content */}
+          <div className="relative z-10 text-center pb-16 pt-32">
+            <p className="text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-2">
+              Selected Work
+            </p>
+            <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800">
+              Projects that <span className="italic text-lime">define</span> my craft.
+            </h2>
+          </div>
         </div>
 
         {/* Project indicator — bottom center, dots + counter */}
