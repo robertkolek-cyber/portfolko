@@ -457,20 +457,18 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
             Download CV
           </a>
         </div>
-      </div>
 
-      {/* Scroll indicator */}
-      <div
-        ref={scrollHintRef}
-        className="absolute bottom-10 left-1/2 hidden lg:block"
-        style={{
-          opacity: frame.scrollOpacity * textFade,
-          transform: `translateX(-50%) translateY(${frame.scrollY}px)`,
-        }}
-      >
-        <div className="flex flex-col items-center gap-3">
+        {/* Scroll indicator — flows after CTAs with guaranteed spacing */}
+        <div
+          ref={scrollHintRef}
+          className="mt-8 lg:mt-12 hidden lg:flex flex-col items-center gap-3"
+          style={{
+            opacity: frame.scrollOpacity * textFade,
+            transform: `translateY(${frame.scrollY}px)`,
+          }}
+        >
           <span className="text-xs tracking-widest uppercase text-slate-600">Scroll</span>
-          <div className="w-px h-12 bg-gradient-to-b from-lime/30 to-transparent" />
+          <div className="w-px h-10 bg-gradient-to-b from-lime/30 to-transparent" />
         </div>
       </div>
     </div>
