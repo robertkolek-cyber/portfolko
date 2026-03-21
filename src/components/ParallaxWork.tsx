@@ -50,10 +50,16 @@ export default function ParallaxWork() {
 
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-    // Smoothstep for opacity fades — no sharp edges
-    const smoothstep = (edge0: number, edge1: number, x: number) => {
-      const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
-      return t * t * (3 - 2 * t);
+    const interpolate = (progress: number, inputs: number[], outputs: number[]) => {
+      if (progress <= inputs[0]) return outputs[0];
+      if (progress >= inputs[inputs.length - 1]) return outputs[outputs.length - 1];
+      for (let i = 0; i < inputs.length - 1; i++) {
+        if (progress >= inputs[i] && progress <= inputs[i + 1]) {
+          const t = (progress - inputs[i]) / (inputs[i + 1] - inputs[i]);
+          return lerp(outputs[i], outputs[i + 1], t);
+        }
+      }
+      return outputs[outputs.length - 1];
     };
 
     const update = () => {
@@ -92,50 +98,23 @@ export default function ParallaxWork() {
         heading.style.display = fadeIn === 0 ? "none" : "block";
       }
 
-      // Project tiles — continuous parametric curves, no piecewise keyframes
+      // Project tiles
       for (let i = 0; i < total; i++) {
         const el = tileRefs.current[i];
         if (!el) continue;
 
         const { start, center, end } = getTiming(i);
         const isEven = i % 2 === 0;
-        const sign = isEven ? -1 : 1;
 
-        // Normalized 0→1 over the tile's full lifetime
-        const t = Math.max(0, Math.min(1, (progress - start) / (end - start)));
-        // Where center falls in normalized time
-        const tCenter = (center - start) / (end - start);
-
-        // Scale: continuous curve peaking at 1 at center, growing to 3.5 at exit
-        const scale = t < tCenter
-          ? 0.3 + 0.7 * Math.pow(t / tCenter, 1.6)
-          : 1.0 + 2.5 * Math.pow((t - tCenter) / (1 - tCenter), 1.4);
-
-        // ── Curved trajectory matching reference arc ──
-        // Enter: tile arrives from the side, almost horizontal, gentle curve into center
-        // Exit:  tile swoops from center downward + to the opposite side, accelerating
-        let xVw: number;
-        let yVh: number;
-
-        if (t <= tCenter) {
-          // ENTER phase: t goes from 0 (off-screen) to tCenter (center)
-          const enterT = 1 - t / tCenter;  // 1 at start → 0 at center
-          xVw = -sign * enterT * 100;                      // come from the side
-          yVh = -Math.pow(enterT, 2.5) * 12;               // slight upward offset that flattens at center
-        } else {
-          // EXIT phase: t goes from tCenter (center) to 1 (off-screen)
-          const exitT = (t - tCenter) / (1 - tCenter);  // 0 at center → 1 at exit
-          xVw = sign * Math.pow(exitT, 1.4) * 140;        // sweep to opposite side, accelerating
-          yVh = Math.pow(exitT, 2.2) * 110;               // drop downward, slow start → fast exit
-        }
-
-        // Opacity: smoothstep in, hold, smoothstep out
-        const opIn  = smoothstep(0, 0.15, t);
-        const opOut = 1 - smoothstep(0.7, 0.92, t);
-        const opacity = opIn * opOut;
+        const scale   = interpolate(progress, [start, center, end], [0.3, 1, 3.5]);
+        const opIn    = start + (center - start) * 0.3;
+        const opOut   = end   - (end - center)   * 0.2;
+        const opacity = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
+        const xVw     = interpolate(progress, [start, center, end],
+          isEven ? [-5, -20, -250] : [5, 20, 250]);
 
         el.style.opacity   = String(opacity);
-        el.style.transform = `translate(${xVw}vw, ${yVh}vh) scale(${scale})`;
+        el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
         el.style.zIndex    = String(Math.round(scale * 100));
       }
 
@@ -169,12 +148,13 @@ export default function ParallaxWork() {
         }
       }
 
-      // CTA slide — last item, stays centered (no lateral drift)
+      // CTA slide — last item, same fly-through but stays centered (no lateral drift)
       if (ctaEl) {
         const { start, center, end } = getTiming(total);
-        const tCta = Math.max(0, Math.min(1, (progress - start) / (end - start)));
-        const scale   = lerp(0.85, 1, smoothstep(0, 0.5, tCta));
-        const opacity = smoothstep(0, 0.25, tCta) * (1 - smoothstep(0.75, 1, tCta));
+        const scale   = interpolate(progress, [start, center, end], [0.85, 1, 1]);
+        const opIn    = start + (center - start) * 0.3;
+        const opOut   = end   - (end - center)   * 0.2;
+        const opacity = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
 
         ctaEl.style.opacity   = String(opacity);
         ctaEl.style.transform = `scale(${scale})`;
@@ -203,7 +183,7 @@ export default function ParallaxWork() {
 
   return (
     <section id="work" ref={containerRef} className="relative h-[900vh]">
-      <div className="sticky top-0 h-screen w-full overflow-hidden" style={{ contain: "paint" }}>
+      <div className="sticky top-0 h-screen w-full overflow-hidden">
 
         {/* Underwater background — dark navy, fades in as hero dives away */}
         <div
@@ -236,10 +216,10 @@ export default function ParallaxWork() {
           className="absolute inset-x-0 bottom-12 z-[500] text-center pointer-events-none"
           style={{ opacity: 0 }}
         >
-          <p className="text-[9px] sm:text-[10px] md:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-1">
+          <p className="text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-2">
             Selected Work
           </p>
-          <h2 className="font-[family-name:var(--font-display)] text-sm sm:text-base md:text-lg lg:text-2xl leading-[1.15] font-bold text-slate-800">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800">
             Projects that <span className="italic text-lime">define</span> my craft.
           </h2>
         </div>
@@ -279,9 +259,9 @@ export default function ParallaxWork() {
           >
             <div style={{ pointerEvents: "auto" }}>
               <Link href={`/projects/${project.slug}`} className="group block">
-                <article className="w-[65vw] max-w-2xl">
+                <article className="w-[80vw] max-w-3xl">
                   <div
-                    className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-dark-700/50 shadow-2xl mb-4"
+                    className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6 border border-dark-700/50"
                     style={{ backgroundColor: project.color }}
                   >
                     {project.thumbnail ? (
@@ -307,14 +287,14 @@ export default function ParallaxWork() {
                   </div>
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="font-[family-name:var(--font-display)] text-xl md:text-2xl font-semibold text-slate-800 group-hover:text-lime transition-colors duration-300">
+                      <h3 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-semibold text-slate-800 group-hover:text-lime transition-colors duration-300">
                         {project.title}
                       </h3>
-                      <p className="mt-1 text-slate-500 text-xs md:text-sm leading-relaxed">
+                      <p className="mt-1.5 text-slate-500 text-sm md:text-base leading-relaxed">
                         {project.tagline}
                       </p>
                     </div>
-                    <span className="flex-shrink-0 mt-1 text-[10px] md:text-xs tracking-wide uppercase text-slate-400 font-medium">
+                    <span className="flex-shrink-0 mt-1 text-xs tracking-wide uppercase text-slate-400 font-medium">
                       {project.category}
                     </span>
                   </div>
