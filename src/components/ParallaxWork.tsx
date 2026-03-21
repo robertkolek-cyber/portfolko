@@ -50,21 +50,10 @@ export default function ParallaxWork() {
 
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-    // Smooth ease-in-out for curving motion
-    const easeInOut = (t: number) => t * t * (3 - 2 * t);
-    const easeIn    = (t: number) => t * t;
-
-    const interpolate = (progress: number, inputs: number[], outputs: number[], ease?: (t: number) => number) => {
-      if (progress <= inputs[0]) return outputs[0];
-      if (progress >= inputs[inputs.length - 1]) return outputs[outputs.length - 1];
-      for (let i = 0; i < inputs.length - 1; i++) {
-        if (progress >= inputs[i] && progress <= inputs[i + 1]) {
-          let t = (progress - inputs[i]) / (inputs[i + 1] - inputs[i]);
-          if (ease) t = ease(t);
-          return lerp(outputs[i], outputs[i + 1], t);
-        }
-      }
-      return outputs[outputs.length - 1];
+    // Smoothstep for opacity fades — no sharp edges
+    const smoothstep = (edge0: number, edge1: number, x: number) => {
+      const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+      return t * t * (3 - 2 * t);
     };
 
     const update = () => {
@@ -103,23 +92,35 @@ export default function ParallaxWork() {
         heading.style.display = fadeIn === 0 ? "none" : "block";
       }
 
-      // Project tiles
+      // Project tiles — continuous parametric curves, no piecewise keyframes
       for (let i = 0; i < total; i++) {
         const el = tileRefs.current[i];
         if (!el) continue;
 
         const { start, center, end } = getTiming(i);
         const isEven = i % 2 === 0;
+        const sign = isEven ? -1 : 1;
 
-        // Smooth arc: lateral drift starts immediately and curves outward
-        const mid1 = start + (center - start) * 0.5;
-        const mid2 = center + (end - center) * 0.4;
-        const scale   = interpolate(progress, [start, center, end], [0.3, 1, 3.5], easeInOut);
-        const opIn    = start + (center - start) * 0.3;
-        const opOut   = end   - (end - center)   * 0.2;
-        const opacity = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
-        const xVw     = interpolate(progress, [start, mid1, center, mid2, end],
-          isEven ? [0, -8, -25, -90, -250] : [0, 8, 25, 90, 250], easeIn);
+        // Normalized 0→1 over the tile's full lifetime
+        const t = Math.max(0, Math.min(1, (progress - start) / (end - start)));
+        // Where center falls in normalized time
+        const tCenter = (center - start) / (end - start);
+
+        // Scale: smooth growth — slow approach, then accelerates past
+        // Uses a single cubic curve, no segments
+        const scale = 0.3 + 3.2 * (t < tCenter
+          ? 0.7 * Math.pow(t / tCenter, 1.8) * (1 / 3.2)  // gentle rise to ~1
+          : (0.7 / 3.2) + (1 - 0.7 / 3.2) * Math.pow((t - tCenter) / (1 - tCenter), 1.6)
+        );
+
+        // X drift: single power curve — starts gentle, accelerates smoothly
+        // No keyframe boundaries = no wobble
+        const xVw = sign * Math.pow(t, 2.2) * 220;
+
+        // Opacity: smoothstep in, hold around center, smoothstep out
+        const opIn  = smoothstep(0, 0.2, t);
+        const opOut = 1 - smoothstep(0.75, 0.95, t);
+        const opacity = opIn * opOut;
 
         el.style.opacity   = String(opacity);
         el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
@@ -156,13 +157,12 @@ export default function ParallaxWork() {
         }
       }
 
-      // CTA slide — last item, same fly-through but stays centered (no lateral drift)
+      // CTA slide — last item, stays centered (no lateral drift)
       if (ctaEl) {
         const { start, center, end } = getTiming(total);
-        const scale   = interpolate(progress, [start, center, end], [0.85, 1, 1]);
-        const opIn    = start + (center - start) * 0.3;
-        const opOut   = end   - (end - center)   * 0.2;
-        const opacity = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
+        const tCta = Math.max(0, Math.min(1, (progress - start) / (end - start)));
+        const scale   = lerp(0.85, 1, smoothstep(0, 0.5, tCta));
+        const opacity = smoothstep(0, 0.25, tCta) * (1 - smoothstep(0.75, 1, tCta));
 
         ctaEl.style.opacity   = String(opacity);
         ctaEl.style.transform = `scale(${scale})`;
@@ -224,10 +224,10 @@ export default function ParallaxWork() {
           className="absolute inset-x-0 bottom-12 z-[500] text-center pointer-events-none"
           style={{ opacity: 0 }}
         >
-          <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-1 md:mb-2">
+          <p className="text-[9px] sm:text-[10px] md:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-1">
             Selected Work
           </p>
-          <h2 className="font-[family-name:var(--font-display)] text-base sm:text-lg md:text-2xl lg:text-3xl leading-[1.1] font-bold text-slate-800">
+          <h2 className="font-[family-name:var(--font-display)] text-sm sm:text-base md:text-lg lg:text-2xl leading-[1.15] font-bold text-slate-800">
             Projects that <span className="italic text-lime">define</span> my craft.
           </h2>
         </div>
