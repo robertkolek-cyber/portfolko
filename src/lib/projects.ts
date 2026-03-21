@@ -37,6 +37,7 @@ export interface Project {
   tools: string[];
   images: string[];
   sections?: ProjectSection[];
+  presentationImage?: string;
 }
 
 export const projects: Project[] = [
@@ -79,6 +80,7 @@ export const projects: Project[] = [
       "The app follows the user's progress through personal milestones, analyzes individual rides with detailed breakdowns, and provides actionable tips for improvement. It transforms abstract eco-driving concepts into tangible financial numbers that keep drivers motivated and engaged.",
     tools: ["Figma", "Protopie", "After Effects", "Illustrator"],
     images: [],
+    presentationImage: "/portfolko/images/projects/Slide 16_9 - 855.png",
     sections: [
       {
         title: "The Business Case",

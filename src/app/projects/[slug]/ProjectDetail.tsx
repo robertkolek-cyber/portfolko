@@ -401,6 +401,21 @@ export default function ProjectDetail({
           </div>
         </section>
 
+        {/* Presentation image */}
+        {project.presentationImage && (
+          <section className="px-6 pb-16">
+            <div className="max-w-6xl mx-auto">
+              <div className="rounded-3xl overflow-hidden border border-dark-700/50">
+                <img
+                  src={project.presentationImage}
+                  alt={`${project.title} case study`}
+                  className="w-full h-auto"
+                />
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Sections */}
         {hasSections ? (
           <div className="space-y-0">
