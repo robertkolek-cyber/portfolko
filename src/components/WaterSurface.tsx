@@ -138,11 +138,10 @@ export default function WaterSurface({
             );
 
           const idx = (py * RES_W + px) * 4;
-          // Blend light blue → royal blue based on chaos level
-          // Warm cream tones: calm = soft cream, chaos = deeper amber
-          buf[idx]     = Math.round(255 + (220 - 255) * c * 0.7); // R
-          buf[idx + 1] = Math.round(230 + (180 - 230) * c * 0.7); // G
-          buf[idx + 2] = Math.round(200 + (140 - 200) * c * 0.7); // B
+          // Pale cool tones: calm = pale light blue/grey, chaos = deeper indigo
+          buf[idx]     = Math.round(180 + (75  - 180) * c * 0.7); // R: pale grey → indigo
+          buf[idx + 1] = Math.round(200 + (85  - 200) * c * 0.7); // G: light blue → deep blue
+          buf[idx + 2] = Math.round(235 + (200 - 235) * c * 0.7); // B: stays blue-ish
           buf[idx + 3] = Math.round(ringed * (0.20 + c * 0.15) * 255);
         }
       }
