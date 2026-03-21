@@ -74,7 +74,7 @@ const GLOW_START = CLARITY_END + 0.35;
 const GLOW_IN = 2.0;       // slow ramp up
 const GLOW_HOLD = 1.2;     // hold at peak
 const GLOW_OUT = 1.8;      // fade out
-const REST_START = GLOW_START + 1.0; // secondary content starts during glow
+const REST_START = CLARITY_END + 0.3; // secondary content starts right after clarity is typed
 
 /* ── Scramble config ──────────────────────────────────────────── */
 const SCRAMBLE_CHARS = "!?#@&%*/<>{}|~^+-=\\";
