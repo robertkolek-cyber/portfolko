@@ -222,7 +222,6 @@ export default function Hero() {
     const t = frame.elapsedTime;
     const g = frame.glowIntensity;
 
-    // Soft white glow — large radii, low opacity for smoothness
     const glowShadow = g > 0.01
       ? [
           `0 0 ${50 * g}px rgba(255, 255, 255, ${0.75 * Math.min(1, g)})`,
@@ -231,69 +230,71 @@ export default function Hero() {
         ].join(", ")
       : "none";
 
-    // Group consecutive chars by token, keeping CharEntry refs for complexity
-    const groups: { token: string; text: string; entries: CharEntry[] }[] = [];
+    // Split into two fixed lines so the layout never reflows during typing:
+    // Line 1: "I turn " + "complexity"
+    // Line 2: " into " + "clarity"
+    const line1: CharEntry[] = [];
+    const line2: CharEntry[] = [];
+    let passedComplexity = false;
+    let inLine2 = false;
     for (const entry of visible) {
-      const last = groups[groups.length - 1];
-      if (last && last.token === entry.token) {
-        last.text += entry.char;
-        last.entries.push(entry);
-      } else {
-        groups.push({ token: entry.token, text: entry.char, entries: [entry] });
-      }
+      if (entry.token === "complexity") passedComplexity = true;
+      else if (passedComplexity && entry.token === "normal") inLine2 = true;
+      (inLine2 ? line2 : line1).push(entry);
     }
 
-    return groups.map((group, i) => {
-      if (group.token === "complexity") {
-        // Scramble: each char cycles through random symbols, then snaps to correct letter
+    // Render complexity chars with scramble
+    const renderComplexity = (chars: CharEntry[]) =>
+      chars.map((entry, ci) => {
+        const age = t - entry.time;
+        if (age < SCRAMBLE_DURATION) {
+          const idx = Math.floor(t * 20 + ci * 7) % SCRAMBLE_CHARS.length;
+          return (
+            <span key={ci} style={{ display: "inline-block", opacity: Math.min(1, age / 0.08) }}>
+              {SCRAMBLE_CHARS[idx]}
+            </span>
+          );
+        }
+        const snapProgress = Math.min(1, (age - SCRAMBLE_DURATION) / SNAP_DURATION);
+        const scale = 1 + 0.12 * Math.sin(snapProgress * Math.PI);
         return (
-          <span key={i} className="text-slate-900 italic inline-block">
-            {group.entries.map((entry, ci) => {
-              const age = t - entry.time;
-              let displayChar = entry.char;
-              let scale = 1;
-
-              if (age < SCRAMBLE_DURATION) {
-                // Still scrambling — pick a symbol that changes ~20× per second
-                const idx = Math.floor(t * 20 + ci * 7) % SCRAMBLE_CHARS.length;
-                displayChar = SCRAMBLE_CHARS[idx];
-                // Slight fade-in while scrambling
-                const opacity = Math.min(1, age / 0.08);
-                return (
-                  <span
-                    key={ci}
-                    style={{ display: "inline-block", opacity, fontStyle: "italic" }}
-                  >
-                    {displayChar}
-                  </span>
-                );
-              } else if (age < SCRAMBLE_DURATION + SNAP_DURATION) {
-                // Snap moment — brief scale overshoot
-                const snapT = (age - SCRAMBLE_DURATION) / SNAP_DURATION;
-                scale = 1 + 0.12 * Math.sin(snapT * Math.PI);
-              }
-
-              return (
-                <span
-                  key={ci}
-                  style={{ display: "inline-block", transform: `scale(${scale})`, transformOrigin: "bottom center" }}
-                >
-                  {entry.char}
-                </span>
-              );
-            })}
+          <span key={ci} style={{ display: "inline-block", transform: `scale(${scale})`, transformOrigin: "bottom center" }}>
+            {entry.char}
           </span>
         );
+      });
+
+    // Render a line's chars, grouping by token
+    const renderLine = (chars: CharEntry[]) => {
+      const groups: { token: string; entries: CharEntry[] }[] = [];
+      for (const entry of chars) {
+        const last = groups[groups.length - 1];
+        if (last && last.token === entry.token) last.entries.push(entry);
+        else groups.push({ token: entry.token, entries: [entry] });
       }
-      if (group.token === "clarity") {
-        return (
-          <span key={i} className="text-lime italic" style={{ textShadow: glowShadow }}>
-            {group.text}
+      return groups.map((group, i) => {
+        if (group.token === "complexity")
+          return <span key={i} className="text-slate-900 italic">{renderComplexity(group.entries)}</span>;
+        if (group.token === "clarity")
+          return <span key={i} className="text-lime italic" style={{ textShadow: glowShadow }}>{group.entries.map(e => e.char).join("")}</span>;
+        return <span key={i} className="text-slate-100">{group.entries.map(e => e.char).join("")}</span>;
+      });
+    };
+
+    return (
+      <>
+        {/* Line 1 — nowrap so complexity never breaks mid-word */}
+        <span style={{ display: "block", whiteSpace: "nowrap" }}>
+          {renderLine(line1)}
+        </span>
+        {/* Line 2 — only rendered once " into " starts */}
+        {line2.length > 0 && (
+          <span style={{ display: "block" }}>
+            {renderLine(line2)}
           </span>
-        );
-      }
-      return <span key={i} className="text-slate-100">{group.text}</span>;
-    });
+        )}
+      </>
+    );
   };
 
   return (
