@@ -264,11 +264,19 @@ export default function ParallaxWork() {
                     className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-6 border border-dark-700/50"
                     style={{ backgroundColor: project.color }}
                   >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="font-[family-name:var(--font-display)] text-white/80 text-5xl md:text-7xl font-bold select-none">
-                        {project.title}
-                      </span>
-                    </div>
+                    {project.thumbnail ? (
+                      <img
+                        src={project.thumbnail}
+                        alt={project.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="font-[family-name:var(--font-display)] text-white/80 text-5xl md:text-7xl font-bold select-none">
+                          {project.title}
+                        </span>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
                       <span className="text-lime text-sm font-medium tracking-wide">View case study</span>
