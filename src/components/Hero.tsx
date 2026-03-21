@@ -366,7 +366,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         </div>
 
         {/* Headline */}
-        <h1 className="font-[family-name:var(--font-claim)] text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.92] tracking-tight font-extrabold min-h-[1.8em]">
+        <h1 className="font-[family-name:var(--font-claim)] text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.92] tracking-tight font-semibold min-h-[1.8em]">
           {renderText()}
         </h1>
 
