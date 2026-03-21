@@ -382,7 +382,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
       <div ref={contentScrollRef} className="relative z-30 max-w-5xl mx-auto text-center" style={{ opacity: textFade, transform: `translateY(${-scrollProgress * 800}px)` }}>
         {/* Role line */}
         <div
-          className="mb-10"
+          className="mb-6 lg:mb-8 xl:mb-10"
           style={{
             opacity: frame.restOpacity,
             transform: `translateY(${frame.restY}px)`,
@@ -396,13 +396,13 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         </div>
 
         {/* Headline */}
-        <h1 className="font-[family-name:var(--font-claim)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl leading-[0.95] tracking-tight font-semibold min-h-[1.8em]">
+        <h1 className="font-[family-name:var(--font-claim)] text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] xl:text-5xl 2xl:text-7xl leading-[0.95] tracking-tight font-semibold min-h-[1.8em]">
           {renderText()}
         </h1>
 
         {/* Subtext */}
         <p
-          className="mt-8 md:mt-12 lg:mt-14 text-base md:text-lg lg:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed"
+          className="mt-6 md:mt-8 lg:mt-10 xl:mt-12 text-sm md:text-base lg:text-lg 2xl:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed"
           style={{
             opacity: frame.restOpacity,
             transform: `translateY(${frame.restY}px)`,
@@ -414,7 +414,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
 
         {/* CTAs */}
         <div
-          className="mt-10 lg:mt-14 flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="mt-6 md:mt-8 lg:mt-10 xl:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 lg:gap-4"
           style={{
             opacity: frame.ctaOpacity,
             transform: `translateY(${frame.ctaY}px)`,
@@ -423,7 +423,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         >
           <a
             href="#work"
-            className="group inline-flex items-center gap-3 bg-lime text-dark-950 px-8 py-4 rounded-full text-sm font-semibold tracking-wide glow-lime-sm"
+            className="group inline-flex items-center gap-2 lg:gap-3 bg-lime text-dark-950 px-6 lg:px-8 py-3 lg:py-4 rounded-full text-xs lg:text-sm font-semibold tracking-wide glow-lime-sm"
             style={{ transition: "background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
           >
             <span className="group-hover:brightness-110">Jump in my work</span>
@@ -440,7 +440,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
           </a>
           <a
             href="#contact"
-            className="inline-flex items-center gap-2 text-slate-300 px-8 py-4 rounded-full text-sm font-medium tracking-wide border border-dark-600 hover:border-lime/50 hover:text-lime"
+            className="inline-flex items-center gap-2 text-slate-300 px-6 lg:px-8 py-3 lg:py-4 rounded-full text-xs lg:text-sm font-medium tracking-wide border border-dark-600 hover:border-lime/50 hover:text-lime"
             style={{ transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
           >
             Get in touch
@@ -448,7 +448,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
           <a
             href="/cv.pdf"
             download
-            className="inline-flex items-center gap-2 text-slate-400 px-6 py-4 rounded-full text-sm font-medium tracking-wide hover:text-slate-100"
+            className="inline-flex items-center gap-2 text-slate-400 px-4 lg:px-6 py-3 lg:py-4 rounded-full text-xs lg:text-sm font-medium tracking-wide hover:text-slate-100"
             style={{ transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -461,14 +461,14 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         {/* Scroll indicator — flows after CTAs with guaranteed spacing */}
         <div
           ref={scrollHintRef}
-          className="mt-8 lg:mt-12 hidden lg:flex flex-col items-center gap-3"
+          className="mt-6 xl:mt-10 hidden lg:flex flex-col items-center gap-2"
           style={{
             opacity: frame.scrollOpacity * textFade,
             transform: `translateY(${frame.scrollY}px)`,
           }}
         >
-          <span className="text-xs tracking-widest uppercase text-slate-600">Scroll</span>
-          <div className="w-px h-10 bg-gradient-to-b from-lime/30 to-transparent" />
+          <span className="text-[10px] lg:text-xs tracking-widest uppercase text-slate-600">Scroll</span>
+          <div className="w-px h-8 bg-gradient-to-b from-lime/30 to-transparent hidden xl:block" />
         </div>
       </div>
     </div>
