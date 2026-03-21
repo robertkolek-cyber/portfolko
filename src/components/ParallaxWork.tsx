@@ -18,6 +18,7 @@ export default function ParallaxWork() {
   const depthRef        = useRef<HTMLDivElement>(null);
   const underwaterRef   = useRef<HTMLDivElement>(null);
   const headingRef      = useRef<HTMLDivElement>(null);
+  const titleRef        = useRef<HTMLDivElement>(null);
   const tileRefs        = useRef<(HTMLDivElement | null)[]>([]);
   const ctaRef          = useRef<HTMLDivElement>(null);
   const indicatorRef    = useRef<HTMLDivElement>(null);
@@ -34,6 +35,7 @@ export default function ParallaxWork() {
     const depthEl      = depthRef.current;
     const underwaterEl = underwaterRef.current;
     const heading      = headingRef.current;
+    const titleEl      = titleRef.current;
     const ctaEl        = ctaRef.current;
     const indicatorEl  = indicatorRef.current;
     if (!container) return;
@@ -87,6 +89,20 @@ export default function ParallaxWork() {
       // Depth overlay no longer needed
       if (depthEl) {
         depthEl.style.opacity = "0";
+      }
+
+      // Big title — appears early, first tile pushes it off screen
+      if (titleEl) {
+        const firstTiming = getTiming(0);
+        // Fade in between 0.04 and 0.08
+        const fadeIn  = Math.min(1, Math.max(0, (progress - 0.04) / 0.04));
+        // Push up and fade out as first tile approaches center
+        const pushT   = Math.max(0, Math.min(1, (progress - firstTiming.start) / (firstTiming.center - firstTiming.start)));
+        const yOffset = -pushT * 120; // slide up 120vh worth
+        const fadeOut = pushT;
+
+        titleEl.style.opacity   = String(fadeIn * (1 - fadeOut));
+        titleEl.style.transform = `translateY(${yOffset}%)`;
       }
 
       // "Selected Work" heading — visible while project tiles are running, hides before CTA
@@ -208,6 +224,17 @@ export default function ParallaxWork() {
         {/* Hero */}
         <div ref={heroWrapperRef} className="absolute inset-0 z-20">
           <Hero scrollProgress={heroScroll} />
+        </div>
+
+        {/* Big title — centered, pushed off screen by first tile */}
+        <div
+          ref={titleRef}
+          className="absolute inset-0 z-[450] flex items-center justify-center pointer-events-none"
+          style={{ opacity: 0 }}
+        >
+          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800 text-center">
+            Projects that <span className="italic text-lime">define</span> my craft.
+          </h2>
         </div>
 
         {/* Soft white fog behind heading — tiles disappear behind it */}
