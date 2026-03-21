@@ -50,12 +50,17 @@ export default function ParallaxWork() {
 
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-    const interpolate = (progress: number, inputs: number[], outputs: number[]) => {
+    // Smooth ease-in-out for curving motion
+    const easeInOut = (t: number) => t * t * (3 - 2 * t);
+    const easeIn    = (t: number) => t * t;
+
+    const interpolate = (progress: number, inputs: number[], outputs: number[], ease?: (t: number) => number) => {
       if (progress <= inputs[0]) return outputs[0];
       if (progress >= inputs[inputs.length - 1]) return outputs[outputs.length - 1];
       for (let i = 0; i < inputs.length - 1; i++) {
         if (progress >= inputs[i] && progress <= inputs[i + 1]) {
-          const t = (progress - inputs[i]) / (inputs[i + 1] - inputs[i]);
+          let t = (progress - inputs[i]) / (inputs[i + 1] - inputs[i]);
+          if (ease) t = ease(t);
           return lerp(outputs[i], outputs[i + 1], t);
         }
       }
@@ -106,12 +111,15 @@ export default function ParallaxWork() {
         const { start, center, end } = getTiming(i);
         const isEven = i % 2 === 0;
 
-        const scale   = interpolate(progress, [start, center, end], [0.3, 1, 3.5]);
+        // Smooth arc: lateral drift starts immediately and curves outward
+        const mid1 = start + (center - start) * 0.5;
+        const mid2 = center + (end - center) * 0.4;
+        const scale   = interpolate(progress, [start, center, end], [0.3, 1, 3.5], easeInOut);
         const opIn    = start + (center - start) * 0.3;
         const opOut   = end   - (end - center)   * 0.2;
         const opacity = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
-        const xVw     = interpolate(progress, [start, center, end],
-          isEven ? [-5, -20, -250] : [5, 20, 250]);
+        const xVw     = interpolate(progress, [start, mid1, center, mid2, end],
+          isEven ? [0, -8, -25, -90, -250] : [0, 8, 25, 90, 250], easeIn);
 
         el.style.opacity   = String(opacity);
         el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
@@ -216,10 +224,10 @@ export default function ParallaxWork() {
           className="absolute inset-x-0 bottom-12 z-[500] text-center pointer-events-none"
           style={{ opacity: 0 }}
         >
-          <p className="text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-2">
+          <p className="text-[10px] md:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-1 md:mb-2">
             Selected Work
           </p>
-          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800">
+          <h2 className="font-[family-name:var(--font-display)] text-base sm:text-lg md:text-2xl lg:text-3xl leading-[1.1] font-bold text-slate-800">
             Projects that <span className="italic text-lime">define</span> my craft.
           </h2>
         </div>
@@ -259,36 +267,46 @@ export default function ParallaxWork() {
           >
             <div style={{ pointerEvents: "auto" }}>
               <Link href={`/projects/${project.slug}`} className="group block">
-                <div
-                  className="relative w-[75vw] max-w-2xl aspect-[4/3] rounded-2xl overflow-hidden border border-dark-700/50 shadow-2xl"
-                  style={{ backgroundColor: project.color }}
-                >
-                  {project.thumbnail ? (
-                    <img
-                      src={project.thumbnail}
-                      alt={project.title}
-                      className="absolute inset-0 w-full h-full object-cover object-right-bottom"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="font-[family-name:var(--font-display)] text-white/80 text-5xl md:text-7xl font-bold select-none">
-                        {project.title}
-                      </span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                  <div className="absolute bottom-5 left-6 right-6">
-                    <h3 className="font-[family-name:var(--font-display)] text-xl md:text-2xl font-semibold text-white mb-1">
-                      {project.title}
-                    </h3>
-                    <div className="flex items-center justify-between">
-                      <p className="text-white/60 text-sm">{project.tagline}</p>
-                      <span className="text-xs tracking-wide uppercase text-white/40 font-medium">
-                        {project.category}
-                      </span>
+                <article className="w-[65vw] max-w-2xl">
+                  <div
+                    className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-dark-700/50 shadow-2xl mb-4"
+                    style={{ backgroundColor: project.color }}
+                  >
+                    {project.thumbnail ? (
+                      <img
+                        src={project.thumbnail}
+                        alt={project.title}
+                        className="absolute inset-0 w-full h-full object-cover object-right-bottom"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="font-[family-name:var(--font-display)] text-white/80 text-5xl md:text-7xl font-bold select-none">
+                          {project.title}
+                        </span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
+                      <span className="text-lime text-sm font-medium tracking-wide">View case study</span>
+                      <svg className="w-5 h-5 text-lime" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                      </svg>
                     </div>
                   </div>
-                </div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="font-[family-name:var(--font-display)] text-xl md:text-2xl font-semibold text-slate-800 group-hover:text-lime transition-colors duration-300">
+                        {project.title}
+                      </h3>
+                      <p className="mt-1 text-slate-500 text-xs md:text-sm leading-relaxed">
+                        {project.tagline}
+                      </p>
+                    </div>
+                    <span className="flex-shrink-0 mt-1 text-[10px] md:text-xs tracking-wide uppercase text-slate-400 font-medium">
+                      {project.category}
+                    </span>
+                  </div>
+                </article>
               </Link>
             </div>
           </div>
