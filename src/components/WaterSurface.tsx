@@ -139,10 +139,11 @@ export default function WaterSurface({
 
           const idx = (py * RES_W + px) * 4;
 
-          // 4 corner colours that slowly rotate around the canvas
+          // 5 colours that slowly rotate around the canvas corners
           const corners = [
             [220, 160, 200],  // dusty pink
             [170, 190, 230],  // pale grey-blue
+            [150, 210, 245],  // light blue
             [75,  90,  200],  // deep indigo
             [180, 160, 220],  // lavender
           ];
@@ -154,10 +155,11 @@ export default function WaterSurface({
           const shift = ((angle % (Math.PI * 2)) / (Math.PI * 2)); // 0–1
 
           // Pick interpolated corner colors based on shift
+          const nColors = corners.length;
           const pick = (idx0: number) => {
-            const f = (idx0 + shift * 4) % 4;
-            const i0 = Math.floor(f) % 4;
-            const i1 = (i0 + 1) % 4;
+            const f = (idx0 + shift * nColors) % nColors;
+            const i0 = Math.floor(f) % nColors;
+            const i1 = (i0 + 1) % nColors;
             const t = f - Math.floor(f);
             return [
               corners[i0][0] + (corners[i1][0] - corners[i0][0]) * t,
