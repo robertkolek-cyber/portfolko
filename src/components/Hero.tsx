@@ -431,7 +431,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
       {/* Scroll indicator */}
       <div
         ref={scrollHintRef}
-        className="absolute bottom-10 left-1/2"
+        className="absolute bottom-10 left-1/2 hidden lg:block"
         style={{
           opacity: frame.scrollOpacity * textFade,
           transform: `translateX(-50%) translateY(${frame.scrollY}px)`,
