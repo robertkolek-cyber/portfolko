@@ -96,20 +96,27 @@ export default function ParallaxWork() {
         const firstTiming = getTiming(0);
         const fadeIn  = Math.min(1, Math.max(0, (progress - 0.04) / 0.04));
 
-        // Compute the first tile's current scale (same formula as tile loop)
-        const tileScale = interpolate(progress, [firstTiming.start, firstTiming.center, firstTiming.end], [0.3, 1, 3.5]);
-        // The tile is an 80vw article with 4:3 aspect, centered in viewport.
-        // Half-height in vh ≈ (80vw * 0.75) / 2 scaled, converted to vh approx
-        // We use a simpler approach: the tile's top edge offset from center = -halfHeight * scale
-        // Title sits above that. As scale grows, it gets pushed further up.
-        const tileHalfHeightVh = 22; // approximate half-height of tile at scale=1
-        const titleOffsetVh = -tileScale * tileHalfHeightVh - 6; // 6vh gap above tile
+        // Read the first tile's actual rendered position
+        const firstTileEl = tileRefs.current[0];
+        const article = firstTileEl?.querySelector("article");
+        if (article) {
+          const tileRect = article.getBoundingClientRect();
+          const gap = 24; // px gap between title bottom and tile top
+          // Position title so its bottom edge sits `gap` px above tile's top
+          const titleBottom = tileRect.top - gap;
+          // Title is absolutely positioned; set bottom of title to this Y
+          titleEl.style.left   = `${tileRect.left}px`;
+          titleEl.style.width  = `${tileRect.width}px`;
+          titleEl.style.top    = "auto";
+          titleEl.style.bottom = `${window.innerHeight - titleBottom}px`;
 
-        // Fade out once title goes off screen (roughly when offset < -50vh)
-        const fadeOut = Math.min(1, Math.max(0, (-titleOffsetVh - 42) / 10));
+          // Fade out once title top goes above viewport
+          const titleH = titleEl.getBoundingClientRect().height;
+          const titleTop = titleBottom - titleH;
+          const fadeOut = Math.min(1, Math.max(0, -titleTop / 40));
 
-        titleEl.style.opacity   = String(fadeIn * (1 - fadeOut));
-        titleEl.style.transform = `translateY(${titleOffsetVh}vh)`;
+          titleEl.style.opacity = String(fadeIn * (1 - fadeOut));
+        }
       }
 
       // "Selected Work" heading — visible while project tiles are running, hides before CTA
@@ -233,10 +240,10 @@ export default function ParallaxWork() {
           <Hero scrollProgress={heroScroll} />
         </div>
 
-        {/* Big title — centered, pushed off screen by first tile */}
+        {/* Big title — magnetized above first tile */}
         <div
           ref={titleRef}
-          className="absolute inset-0 z-[25] flex items-center justify-center pointer-events-none"
+          className="absolute z-[25] pointer-events-none"
           style={{ opacity: 0 }}
         >
           <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800 text-center">
