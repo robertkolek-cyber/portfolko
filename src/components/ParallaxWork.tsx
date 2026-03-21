@@ -111,14 +111,11 @@ export default function ParallaxWork() {
           ? 0.3 + 0.7 * Math.pow(t / tCenter, 1.6)
           : 1.0 + 2.5 * Math.pow((t - tCenter) / (1 - tCenter), 1.4);
 
-        // ── Curved trajectory ──
-        // The tile follows a parametric arc, not a straight line.
-        // X: accelerating sideways (power curve)
-        // Y: sinusoidal arc — rises upward, peaks mid-flight, descends as it exits
-        // Together they trace a smooth parabolic sweep.
-        const xVw = sign * Math.pow(t, 2.0) * 200;
-        const yVh = -Math.sin(t * Math.PI) * 18          // arc: 0 → -18vh → 0
-                     + Math.pow(t, 3) * 10;               // slight downward pull at exit
+        // ── Curved trajectory — swooping arc downward + sideways ──
+        // Like a pendulum: tile starts center, sweeps sideways first,
+        // then the curve bends downward — exiting at the bottom-corner.
+        const xVw = sign * Math.pow(t, 1.6) * 180;       // lateral sweep (leads)
+        const yVh = Math.pow(t, 2.8) * 120;              // downward pull (lags, then accelerates)
 
         // Opacity: smoothstep in, hold, smoothstep out
         const opIn  = smoothstep(0, 0.15, t);
