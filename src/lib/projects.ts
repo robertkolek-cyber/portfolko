@@ -39,20 +39,20 @@ export const projects: Project[] = [
   {
     slug: "skoda-app",
     title: "Škoda App",
-    tagline: "Driving smarter with connected car experiences",
-    category: "Brand & Product",
+    tagline: "Helping drivers save money and the environment",
+    category: "Product Design",
     year: "2025",
     color: "#1a3328",
     thumbnail: "/portfolko/images/projects/Slide skoda.png",
     heroImage: "/portfolko/images/projects/Slide skoda.png",
     overview:
-      "A mobile companion app for Škoda drivers that helps them save both economically and environmentally through smart driving insights and car management.",
+      "A companion app for Škoda drivers that shifts the incentive from traditional loyalty programs to real behavioral change — helping users save economically and environmentally by analyzing their driving habits and setting personal goals.",
     challenge:
-      "Car owners lacked a unified digital experience to manage their vehicle, track driving patterns, and optimize savings. Existing solutions were fragmented and hard to use.",
+      "Drivers lacked motivation to change their habits. Traditional car apps focused on vehicle management but missed the opportunity to connect eco-friendly driving with tangible financial savings. The design opportunity was to reframe saving as a personal, rewarding experience.",
     approach:
-      "I designed an intuitive onboarding flow and a clean, dark-themed interface that guides users through driving analysis, savings tracking, and car management features with clear visual hierarchy.",
+      "Framed around 'How might we make eco-driving feel personally rewarding?' — I designed a goal-based system where users set personal savings objectives, track progress through ride analysis, and receive actionable tips to improve. The app calculates real savings using driving data, visualizes ride efficiency, and provides a clear profile with cumulative impact.",
     outcome:
-      "The app received positive reception for its user-friendly onboarding and clear data visualization, improving driver engagement with eco-friendly driving habits.",
+      "The app turns abstract eco-driving into concrete numbers — showing users exactly how much they save per ride and over time. The ride analysis and improvement tips create a feedback loop that keeps drivers engaged with smarter driving habits.",
     tools: ["Figma", "Protopie", "After Effects", "Illustrator"],
     images: [],
   },
