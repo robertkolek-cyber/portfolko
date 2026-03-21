@@ -111,7 +111,7 @@ export default function ParallaxWork() {
         const opOut   = end   - (end - center)   * 0.2;
         const opacity = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
         const xVw     = interpolate(progress, [start, center, end],
-          isEven ? [-5, -35, -120] : [5, 35, 120]);
+          isEven ? [-5, -20, -250] : [5, 20, 250]);
 
         el.style.opacity   = String(opacity);
         el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
