@@ -76,20 +76,18 @@ export default function ParallaxWork() {
         const fadeIn = Math.min(1, progress / 0.08);
         underwaterEl.style.opacity = String(fadeIn);
 
-        // Depth progress across project tiles (0.10 → 0.90 mapped to 0 → 1)
-        const depthT = Math.max(0, Math.min(1, (progress - 0.10) / 0.80));
+        // Depth progress: white → dark navy as you dive deeper
+        const depthT = Math.max(0, Math.min(1, (progress - 0.02) / 0.15));
 
-        // Interpolate from bright teal/cyan to deep dark navy
-        const r = Math.round(lerp(40, 2, depthT));
-        const g = Math.round(lerp(130, 8, depthT));
-        const b = Math.round(lerp(180, 16, depthT));
-        underwaterEl.style.background = `radial-gradient(ellipse at 50% 30%, rgb(${r},${g},${b}) 0%, rgb(${Math.round(r*0.5)},${Math.round(g*0.5)},${Math.round(b*0.5)}) 60%, rgb(${Math.round(r*0.3)},${Math.round(g*0.3)},${Math.round(b*0.3)}) 100%)`;
+        const r = Math.round(lerp(255, 5, depthT));
+        const g = Math.round(lerp(255, 12, depthT));
+        const b = Math.round(lerp(255, 24, depthT));
+        underwaterEl.style.background = `rgb(${r},${g},${b})`;
       }
 
-      // Depth darkening overlay — reinforces the deepening effect
+      // Depth overlay no longer needed
       if (depthEl) {
-        const depthT = Math.max(0, Math.min(1, (progress - 0.10) / 0.80));
-        depthEl.style.opacity = String(depthT * 0.6);
+        depthEl.style.opacity = "0";
       }
 
       // "Selected Work" heading — visible while project tiles are running, hides before CTA
