@@ -59,19 +59,20 @@ function smoothstep(t: number) {
 function Card({ exp }: { exp: (typeof experiences)[0] }) {
   return (
     <div className="w-[300px]">
-      <p className="text-[10px] tracking-[0.28em] uppercase font-medium mb-3 text-[#94a3b8]">
+      <p className="text-[10px] tracking-[0.28em] uppercase font-medium mb-3" style={{ color: "#64748b" }}>
         {exp.period}
       </p>
-      <h3 className="font-[family-name:var(--font-display)] text-xl font-bold leading-snug mb-1 text-[#e2e8f0]">
+      <h3 className="font-[family-name:var(--font-display)] text-xl font-bold leading-snug mb-1" style={{ color: "#e2e8f0" }}>
         {exp.role}
       </h3>
-      <p className="text-sm font-semibold mb-4 text-[#60a5fa]">{exp.company}</p>
-      <p className="text-sm leading-relaxed mb-5 text-[#94a3b8]">{exp.description}</p>
+      <p className="text-sm font-semibold mb-4" style={{ color: "#60a5fa" }}>{exp.company}</p>
+      <p className="text-sm leading-relaxed mb-5" style={{ color: "#94a3b8" }}>{exp.description}</p>
       <div className="flex flex-wrap gap-2">
         {exp.tags.map((tag) => (
           <span
             key={tag}
-            className="text-[10px] tracking-widest uppercase px-2.5 py-[3px] rounded-full text-[#94a3b8] border border-[rgba(148,163,184,0.15)]"
+            className="text-[10px] tracking-widest uppercase px-2.5 py-[3px] rounded-full"
+            style={{ color: "#64748b", borderColor: "rgba(148,163,184,0.2)", borderWidth: 1 }}
           >
             {tag}
           </span>
@@ -206,11 +207,8 @@ export default function CVTimeline() {
       ref={containerRef}
       id="cv"
       className="relative"
-      style={{ backgroundColor: "#0f1d3d" }}
+      style={{ backgroundColor: "#0f1d3d", marginTop: "-2rem" }}
     >
-      {/* Gradient bleed — smooth transition from white into dark */}
-      <div className="absolute -top-32 left-0 right-0 h-32 pointer-events-none" style={{ background: "linear-gradient(to bottom, var(--color-dark-950), #0f1d3d)" }} />
-
       <div className="sticky top-0 h-screen overflow-hidden">
         {/* Content wrapper — fades in quietly, no sliding */}
         <div
@@ -269,7 +267,7 @@ export default function CVTimeline() {
               className="absolute top-1/2 left-0 h-px pointer-events-none"
               style={{
                 width: `${experiences.length * 450 + 400}px`,
-                background: "linear-gradient(to right, transparent, rgba(255,255,255,0.12) 5%, rgba(255,255,255,0.12) 95%, transparent)",
+                background: "linear-gradient(to right, transparent, rgba(255,255,255,0.08) 5%, rgba(255,255,255,0.08) 95%, transparent)",
                 transform: "scaleX(0)",
                 transformOrigin: "left center",
               }}
