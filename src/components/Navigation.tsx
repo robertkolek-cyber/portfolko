@@ -49,9 +49,9 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-20">
           <Link
             href="/"
-            className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-slate-100"
+            className="font-[family-name:var(--font-display)] text-lg font-bold tracking-widest text-slate-100"
           >
-            RK<span className="text-lime">.</span>
+            ROBERT KOLEK<span className="text-lime">.</span>
           </Link>
 
           {/* Desktop nav */}
