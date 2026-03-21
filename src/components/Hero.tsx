@@ -381,7 +381,7 @@ export default function Hero() {
             className="group inline-flex items-center gap-3 bg-lime text-dark-950 px-8 py-4 rounded-full text-sm font-semibold tracking-wide glow-lime-sm"
             style={{ transition: "background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
           >
-            <span className="group-hover:brightness-110">View my work</span>
+            <span className="group-hover:brightness-110">Jump in my work</span>
             <svg
               className="w-4 h-4 group-hover:translate-x-1"
               style={{ transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
