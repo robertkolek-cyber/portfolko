@@ -23,8 +23,8 @@ export const projects: Project[] = [
     category: "Product Design",
     year: "2025",
     color: "#0040ff",
-    thumbnail: "/images/projects/Slide 16_9 - 1115 (2).png",
-    heroImage: "/images/projects/Slide 16_9 - 1115 (2).png",
+    thumbnail: "/portfolko/images/projects/Slide 16_9 - 1115 (2).png",
+    heroImage: "/portfolko/images/projects/Slide 16_9 - 1115 (2).png",
     overview:
       "Meridian is a next-generation digital banking platform designed for millennials and Gen Z. The goal was to create an experience that feels less like a bank and more like a trusted financial companion.",
     challenge:
