@@ -20,8 +20,9 @@ export default function ParallaxWork() {
   const headingRef      = useRef<HTMLDivElement>(null);
   const tileRefs        = useRef<(HTMLDivElement | null)[]>([]);
   const ctaRef          = useRef<HTMLDivElement>(null);
-  const dotsRef         = useRef<HTMLDivElement>(null);
+  const indicatorRef    = useRef<HTMLDivElement>(null);
   const dotItemRefs     = useRef<(HTMLDivElement | null)[]>([]);
+  const counterRef      = useRef<HTMLSpanElement>(null);
 
   const [heroScroll, setHeroScroll] = useState(0);
 
@@ -35,7 +36,7 @@ export default function ParallaxWork() {
     const underwaterEl = underwaterRef.current;
     const heading      = headingRef.current;
     const ctaEl        = ctaRef.current;
-    const dotsEl       = dotsRef.current;
+    const indicatorEl  = indicatorRef.current;
     if (!container) return;
 
     const step = 0.75 / allItems;
@@ -118,31 +119,41 @@ export default function ParallaxWork() {
         el.style.zIndex    = String(Math.round(scale * 100));
       }
 
-      // Project dots — fade in with projects, highlight active one
-      if (dotsEl) {
+      // Project indicator — fade in/out, update dots + counter
+      {
         const firstTiming = getTiming(0);
         const ctaTiming   = getTiming(total);
-        const dotsIn  = Math.min(1, Math.max(0, (progress - firstTiming.start) / 0.04));
-        const dotsOut = Math.min(1, Math.max(0, (progress - ctaTiming.start) / 0.04));
-        dotsEl.style.opacity = String(dotsIn * (1 - dotsOut));
-      }
-      for (let i = 0; i < total; i++) {
-        const dot = dotItemRefs.current[i];
-        if (!dot) continue;
-        const { start, center, end } = getTiming(i);
-        // Active when this tile is closest to center stage
-        const distFromCenter = Math.abs(progress - center);
-        const maxDist = (end - start) / 2;
-        const active = Math.max(0, 1 - distFromCenter / maxDist);
-        // Dot: small dim circle → larger bright filled circle
-        const size   = 4 + active * 4;       // 4px → 8px
-        const op     = 0.25 + active * 0.75; // dim → full
-        dot.style.width   = `${size}px`;
-        dot.style.height  = `${size}px`;
-        dot.style.opacity = String(op);
-        dot.style.backgroundColor = active > 0.5
-          ? "#2563eb"   // lime accent
-          : "#475569";  // slate-400
+        const indIn  = Math.min(1, Math.max(0, (progress - firstTiming.start) / 0.04));
+        const indOut = Math.min(1, Math.max(0, (progress - ctaTiming.start)   / 0.04));
+        const indOp  = indIn * (1 - indOut);
+        if (indicatorEl) indicatorEl.style.opacity = String(indOp);
+
+        // Find which project is most "on stage" (highest opacity)
+        let activeIndex = 0;
+        let maxOp = -1;
+        for (let i = 0; i < total; i++) {
+          const { start, center, end } = getTiming(i);
+          const opIn  = start + (center - start) * 0.3;
+          const opOut = end   - (end - center)   * 0.2;
+          const op = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
+          if (op > maxOp) { maxOp = op; activeIndex = i; }
+        }
+
+        // Update dots
+        for (let i = 0; i < total; i++) {
+          const dot = dotItemRefs.current[i];
+          if (!dot) continue;
+          const isActive = i === activeIndex && maxOp > 0.3;
+          dot.style.width           = isActive ? "28px" : "8px";
+          dot.style.backgroundColor = isActive ? "#2563eb" : "#94a3b8";
+          dot.style.opacity         = isActive ? "1" : "0.45";
+        }
+
+        // Update counter
+        if (counterRef.current && maxOp > 0.3) {
+          counterRef.current.textContent =
+            `${String(activeIndex + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
+        }
       }
 
       // CTA slide — last item, same fly-through but stays centered (no lateral drift)
@@ -221,25 +232,36 @@ export default function ParallaxWork() {
           </h2>
         </div>
 
-        {/* Project progress dots — right edge, visible during project tiles */}
+        {/* Project indicator — bottom center, dots + counter */}
         <div
-          ref={dotsRef}
-          className="absolute right-8 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-3"
+          ref={indicatorRef}
+          className="absolute bottom-8 inset-x-0 z-40 flex items-center justify-center gap-6"
           style={{ opacity: 0 }}
         >
-          {projects.map((project, i) => (
-            <div
-              key={project.slug}
-              ref={(el) => { dotItemRefs.current[i] = el; }}
-              className="rounded-full transition-none"
-              style={{
-                width: 4,
-                height: 4,
-                backgroundColor: "#475569",
-                opacity: 0.25,
-              }}
-            />
-          ))}
+          {/* Dots */}
+          <div className="flex items-center gap-2">
+            {projects.map((project, i) => (
+              <div
+                key={project.slug}
+                ref={(el) => { dotItemRefs.current[i] = el; }}
+                className="rounded-full"
+                style={{
+                  width: 8,
+                  height: 8,
+                  backgroundColor: "#94a3b8",
+                  opacity: 0.45,
+                  transition: "width 0.3s cubic-bezier(0.16,1,0.3,1), background-color 0.3s ease, opacity 0.3s ease",
+                }}
+              />
+            ))}
+          </div>
+          {/* Counter */}
+          <span
+            ref={counterRef}
+            className="text-xs font-medium tracking-[0.2em] text-slate-500 tabular-nums"
+          >
+            01 / {String(total).padStart(2, "0")}
+          </span>
         </div>
 
         {/* Project tiles */}
