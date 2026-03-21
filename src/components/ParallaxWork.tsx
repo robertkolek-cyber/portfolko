@@ -141,8 +141,8 @@ export default function ParallaxWork() {
         dot.style.height  = `${size}px`;
         dot.style.opacity = String(op);
         dot.style.backgroundColor = active > 0.5
-          ? "var(--color-lime)"
-          : "var(--color-slate-400)";
+          ? "#2563eb"   // lime accent
+          : "#475569";  // slate-400
       }
 
       // CTA slide — last item, same fly-through but stays centered (no lateral drift)
@@ -235,7 +235,7 @@ export default function ParallaxWork() {
               style={{
                 width: 4,
                 height: 4,
-                backgroundColor: "var(--color-slate-400)",
+                backgroundColor: "#475569",
                 opacity: 0.25,
               }}
             />
