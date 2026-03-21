@@ -281,16 +281,25 @@ export default function Hero() {
       });
     };
 
+    const cursor = frame.showCursor && (
+      <span
+        className="inline-block w-[3px] md:w-[5px] h-[0.8em] bg-lime ml-1 align-middle"
+        style={{ opacity: frame.cursorOpacity }}
+      />
+    );
+
     return (
       <>
         {/* Line 1 — nowrap so complexity never breaks mid-word */}
         <span style={{ display: "block", whiteSpace: "nowrap" }}>
           {renderLine(line1)}
+          {line2.length === 0 && cursor}
         </span>
         {/* Line 2 — only rendered once " into " starts */}
         {line2.length > 0 && (
           <span style={{ display: "block" }}>
             {renderLine(line2)}
+            {cursor}
           </span>
         )}
       </>
@@ -345,12 +354,6 @@ export default function Hero() {
         {/* Headline */}
         <h1 className="font-[family-name:var(--font-display)] text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[0.92] tracking-tight font-bold min-h-[1.8em]">
           {renderText()}
-          {frame.showCursor && (
-            <span
-              className="inline-block w-[3px] md:w-[5px] h-[0.8em] bg-lime ml-1 align-middle"
-              style={{ opacity: frame.cursorOpacity }}
-            />
-          )}
         </h1>
 
         {/* Subtext */}
