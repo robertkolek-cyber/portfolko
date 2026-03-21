@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import WaterSurface from "./WaterSurface";
+import HoleGrid from "./HoleGrid";
 
 /* ═══════════════════════════════════════════════════════════════
    ONE TIMELINE. ONE rAF LOOP. EVERY VALUE IS A SMOOTH FUNCTION
@@ -323,7 +323,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
           opacity: waterFade,
         }}
       >
-        <WaterSurface chaos={frame.waterChaos} />
+        <HoleGrid chaos={frame.waterChaos} />
       </div>
 
       {/* Ambient glow — royal blue top-right, light blue bottom-left */}
