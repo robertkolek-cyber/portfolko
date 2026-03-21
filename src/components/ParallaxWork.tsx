@@ -210,10 +210,10 @@ export default function ParallaxWork() {
           <Hero scrollProgress={heroScroll} />
         </div>
 
-        {/* "Selected Work" heading — centered, visible through project tiles */}
+        {/* "Selected Work" heading — centered, always above project tiles */}
         <div
           ref={headingRef}
-          className="absolute inset-x-0 bottom-12 z-10 text-center"
+          className="absolute inset-x-0 bottom-12 z-[500] text-center pointer-events-none"
           style={{ opacity: 0 }}
         >
           <p className="text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-2">
