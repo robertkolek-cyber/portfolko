@@ -76,13 +76,7 @@ export default function ParallaxWork() {
         const fadeIn = Math.min(1, progress / 0.08);
         underwaterEl.style.opacity = String(fadeIn);
 
-        // Depth progress: white → dark navy as you dive deeper
-        const depthT = Math.max(0, Math.min(1, (progress - 0.02) / 0.15));
-
-        const r = Math.round(lerp(255, 5, depthT));
-        const g = Math.round(lerp(255, 12, depthT));
-        const b = Math.round(lerp(255, 24, depthT));
-        underwaterEl.style.background = `rgb(${r},${g},${b})`;
+        underwaterEl.style.background = `rgb(255,255,255)`;
       }
 
       // Depth overlay no longer needed
@@ -187,10 +181,10 @@ export default function ParallaxWork() {
           className="absolute inset-x-0 bottom-12 z-10 text-center"
           style={{ opacity: 0 }}
         >
-          <p className="text-xs tracking-[0.3em] uppercase text-slate-500 font-medium mb-2">
+          <p className="text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-2">
             Selected Work
           </p>
-          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-100">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800">
             Projects that <span className="italic text-lime">define</span> my craft.
           </h2>
         </div>
@@ -225,14 +219,14 @@ export default function ParallaxWork() {
                   </div>
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-semibold text-slate-100 group-hover:text-lime transition-colors duration-300">
+                      <h3 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-semibold text-slate-800 group-hover:text-lime transition-colors duration-300">
                         {project.title}
                       </h3>
-                      <p className="mt-1.5 text-slate-400 text-sm md:text-base leading-relaxed">
+                      <p className="mt-1.5 text-slate-500 text-sm md:text-base leading-relaxed">
                         {project.tagline}
                       </p>
                     </div>
-                    <span className="flex-shrink-0 mt-1 text-xs tracking-wide uppercase text-slate-500 font-medium">
+                    <span className="flex-shrink-0 mt-1 text-xs tracking-wide uppercase text-slate-400 font-medium">
                       {project.category}
                     </span>
                   </div>
@@ -249,10 +243,10 @@ export default function ParallaxWork() {
           style={{ opacity: 0, pointerEvents: "none" }}
         >
           <div className="w-[80vw] max-w-2xl text-center">
-            <p className="text-xs tracking-[0.3em] uppercase text-slate-500 font-medium mb-6">
+            <p className="text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-6">
               Let&apos;s collaborate
             </p>
-            <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-6xl lg:text-7xl leading-[1.05] font-bold mb-8">
+            <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-6xl lg:text-7xl leading-[1.05] font-bold text-slate-800 mb-8">
               Got a project in mind?
               <br />
               <span className="italic text-lime">Let&apos;s talk.</span>
@@ -271,7 +265,7 @@ export default function ParallaxWork() {
                 <a
                   key={s.label}
                   href={s.href}
-                  className="text-sm text-slate-500 hover:text-lime transition-colors duration-300 link-underline"
+                  className="text-sm text-slate-400 hover:text-lime transition-colors duration-300 link-underline"
                 >
                   {s.label}
                 </a>
