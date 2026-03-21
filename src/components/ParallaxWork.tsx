@@ -15,6 +15,7 @@ const SOCIALS = [
 export default function ParallaxWork() {
   const containerRef    = useRef<HTMLDivElement>(null);
   const heroWrapperRef  = useRef<HTMLDivElement>(null);
+  const depthRef        = useRef<HTMLDivElement>(null);
   const underwaterRef   = useRef<HTMLDivElement>(null);
   const headingRef      = useRef<HTMLDivElement>(null);
   const tileRefs        = useRef<(HTMLDivElement | null)[]>([]);
@@ -26,6 +27,7 @@ export default function ParallaxWork() {
   useEffect(() => {
     const container    = containerRef.current;
     const heroWrapper  = heroWrapperRef.current;
+    const depthEl      = depthRef.current;
     const underwaterEl = underwaterRef.current;
     const heading      = headingRef.current;
     const ctaEl        = ctaRef.current;
@@ -67,6 +69,12 @@ export default function ParallaxWork() {
         heroWrapper.style.opacity       = String(Math.max(0, 1 - p));
         heroWrapper.style.transform     = `scale(${1 + p * 0.15}) translateY(${-p * 80}px)`;
         heroWrapper.style.pointerEvents = progress > 0.03 ? "none" : "auto";
+      }
+
+      // Depth darkening — water gets darker as you scroll, before hero fully fades
+      if (depthEl) {
+        const depth = Math.min(1, progress / 0.05);
+        depthEl.style.opacity = String(depth * 0.85);
       }
 
       // Underwater background — fades in as hero fades out, giving a dive feel
@@ -148,6 +156,16 @@ export default function ParallaxWork() {
           style={{
             opacity: 0,
             background: "radial-gradient(ellipse at 50% 30%, #0a1628 0%, #050c18 60%, #020810 100%)",
+          }}
+        />
+
+        {/* Depth darkening — sits on top of water, deepens as you scroll down */}
+        <div
+          ref={depthRef}
+          className="absolute inset-0 z-10 pointer-events-none"
+          style={{
+            opacity: 0,
+            background: "linear-gradient(to bottom, rgba(2, 8, 20, 0.3) 0%, rgba(3, 10, 28, 0.7) 50%, rgba(5, 12, 24, 0.95) 100%)",
           }}
         />
 
