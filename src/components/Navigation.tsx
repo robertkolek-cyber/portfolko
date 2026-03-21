@@ -5,21 +5,45 @@ import Link from "next/link";
 
 export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
+    let lastY = window.scrollY;
+
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 50);
+
+      // Check if we're inside the #work section
+      const workEl = document.getElementById("work");
+      if (workEl) {
+        const rect = workEl.getBoundingClientRect();
+        const inWork = rect.top < 0 && rect.bottom > window.innerHeight;
+        const scrollingDown = y > lastY;
+        setHidden(inWork && scrollingDown);
+      }
+
+      lastY = y;
+    };
+
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <nav
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
         scrolled
           ? "bg-dark-950/80 backdrop-blur-xl border-b border-dark-700/50"
           : "bg-transparent"
       }`}
+      style={{
+        transform: hidden && !hovered ? "translateY(-100%)" : "translateY(0)",
+      }}
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-12">
         <div className="flex items-center justify-between h-20">
