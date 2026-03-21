@@ -15,6 +15,7 @@ const SOCIALS = [
 export default function ParallaxWork() {
   const containerRef    = useRef<HTMLDivElement>(null);
   const heroWrapperRef  = useRef<HTMLDivElement>(null);
+  const underwaterRef   = useRef<HTMLDivElement>(null);
   const headingRef      = useRef<HTMLDivElement>(null);
   const tileRefs        = useRef<(HTMLDivElement | null)[]>([]);
   const ctaRef          = useRef<HTMLDivElement>(null);
@@ -23,10 +24,11 @@ export default function ParallaxWork() {
   const allItems  = total + 1; // +1 for the CTA slide
 
   useEffect(() => {
-    const container  = containerRef.current;
-    const heroWrapper = heroWrapperRef.current;
-    const heading    = headingRef.current;
-    const ctaEl      = ctaRef.current;
+    const container    = containerRef.current;
+    const heroWrapper  = heroWrapperRef.current;
+    const underwaterEl = underwaterRef.current;
+    const heading      = headingRef.current;
+    const ctaEl        = ctaRef.current;
     if (!container) return;
 
     const step = 0.75 / allItems;
@@ -59,12 +61,18 @@ export default function ParallaxWork() {
       const containerH    = rect.height - window.innerHeight;
       const progress      = Math.max(0, Math.min(1, containerTop / containerH));
 
-      // Hero fades out 0–5%
+      // Hero fades out 0–5% (like breaking the water surface)
       if (heroWrapper) {
         const p = Math.min(1, progress / 0.05);
         heroWrapper.style.opacity       = String(Math.max(0, 1 - p));
         heroWrapper.style.transform     = `scale(${1 + p * 0.15}) translateY(${-p * 80}px)`;
         heroWrapper.style.pointerEvents = progress > 0.03 ? "none" : "auto";
+      }
+
+      // Underwater background — fades in as hero fades out, giving a dive feel
+      if (underwaterEl) {
+        const depth = Math.min(1, progress / 0.08);
+        underwaterEl.style.opacity = String(depth);
       }
 
       // "Selected Work" heading — visible while project tiles are running, hides before CTA
@@ -132,6 +140,16 @@ export default function ParallaxWork() {
   return (
     <section id="work" ref={containerRef} className="relative h-[900vh]">
       <div className="sticky top-0 h-screen w-full overflow-hidden">
+
+        {/* Underwater background — dark navy, fades in as hero dives away */}
+        <div
+          ref={underwaterRef}
+          className="absolute inset-0 z-0"
+          style={{
+            opacity: 0,
+            background: "radial-gradient(ellipse at 50% 30%, #0a1628 0%, #050c18 60%, #020810 100%)",
+          }}
+        />
 
         {/* Hero */}
         <div ref={heroWrapperRef} className="absolute inset-0 z-20">
