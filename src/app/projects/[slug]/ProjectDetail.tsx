@@ -10,6 +10,8 @@ export default function ProjectDetail({
   project: Project;
   nextProject: Project;
 }) {
+  const hasSections = project.sections && project.sections.length > 0;
+
   return (
     <>
       {/* Back nav */}
@@ -59,7 +61,7 @@ export default function ProjectDetail({
           </div>
         </section>
 
-        {/* Overview */}
+        {/* Meta bar */}
         <section className="py-24 md:py-32 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-3 gap-12 mb-20 animate-fade-up delay-100">
@@ -94,64 +96,98 @@ export default function ProjectDetail({
           </div>
         </section>
 
-        {/* Image placeholder */}
-        <section className="px-6 mb-24">
-          <div
-            className="max-w-6xl mx-auto h-[40vh] md:h-[50vh] rounded-3xl flex items-center justify-center border border-dark-700/50"
-            style={{
-              backgroundColor: project.color,
-              opacity: 0.8,
-            }}
-          >
-            <span className="font-[family-name:var(--font-display)] text-white/30 text-4xl font-bold">
-              Project imagery
-            </span>
-          </div>
-        </section>
-
-        {/* Challenge / Approach / Outcome */}
-        <section className="py-16 px-6">
-          <div className="max-w-4xl mx-auto space-y-24">
-            {[
-              { title: "The Challenge", content: project.challenge },
-              { title: "The Approach", content: project.approach },
-              { title: "The Outcome", content: project.outcome },
-            ].map((block, i) => (
-              <div key={block.title} className="grid md:grid-cols-5 gap-8">
-                <div className="md:col-span-2">
-                  <span className="text-xs tracking-[0.2em] uppercase text-lime font-medium">
-                    0{i + 1}
-                  </span>
-                  <h2 className="font-[family-name:var(--font-display)] text-3xl md:text-4xl font-bold text-slate-100 mt-2">
-                    {block.title}
-                  </h2>
+        {/* Custom sections (if project has them) */}
+        {hasSections ? (
+          <section className="px-6 pb-16">
+            <div className="max-w-4xl mx-auto space-y-20">
+              {project.sections!.map((section, i) => (
+                <div key={i} className="grid md:grid-cols-5 gap-8">
+                  <div className="md:col-span-2">
+                    <span className="text-xs tracking-[0.2em] uppercase text-lime font-medium">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold text-slate-100 mt-2">
+                      {section.title}
+                    </h2>
+                  </div>
+                  <div className="md:col-span-3">
+                    <p className="text-lg text-slate-300 leading-relaxed">
+                      {section.content}
+                    </p>
+                    {section.image && (
+                      <div className="mt-8 rounded-2xl overflow-hidden border border-dark-700/50">
+                        <img
+                          src={section.image}
+                          alt={section.title}
+                          className="w-full"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="md:col-span-3">
-                  <p className="text-lg text-slate-300 leading-relaxed">
-                    {block.content}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* More image placeholders */}
-        <section className="px-6 py-16">
-          <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-6">
-            {[1, 2].map((n) => (
+              ))}
+            </div>
+          </section>
+        ) : (
+          <>
+            {/* Fallback: original layout for projects without sections */}
+            <section className="px-6 mb-24">
               <div
-                key={n}
-                className="aspect-[4/3] rounded-2xl flex items-center justify-center border border-dark-700/50"
-                style={{ backgroundColor: project.color, opacity: 0.6 }}
+                className="max-w-6xl mx-auto h-[40vh] md:h-[50vh] rounded-3xl flex items-center justify-center border border-dark-700/50"
+                style={{
+                  backgroundColor: project.color,
+                  opacity: 0.8,
+                }}
               >
-                <span className="font-[family-name:var(--font-display)] text-white/30 text-2xl font-bold">
-                  Detail {n}
+                <span className="font-[family-name:var(--font-display)] text-white/30 text-4xl font-bold">
+                  Project imagery
                 </span>
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
+
+            <section className="py-16 px-6">
+              <div className="max-w-4xl mx-auto space-y-24">
+                {[
+                  { title: "The Challenge", content: project.challenge },
+                  { title: "The Approach", content: project.approach },
+                  { title: "The Outcome", content: project.outcome },
+                ].map((block, i) => (
+                  <div key={block.title} className="grid md:grid-cols-5 gap-8">
+                    <div className="md:col-span-2">
+                      <span className="text-xs tracking-[0.2em] uppercase text-lime font-medium">
+                        0{i + 1}
+                      </span>
+                      <h2 className="font-[family-name:var(--font-display)] text-3xl md:text-4xl font-bold text-slate-100 mt-2">
+                        {block.title}
+                      </h2>
+                    </div>
+                    <div className="md:col-span-3">
+                      <p className="text-lg text-slate-300 leading-relaxed">
+                        {block.content}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="px-6 py-16">
+              <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-6">
+                {[1, 2].map((n) => (
+                  <div
+                    key={n}
+                    className="aspect-[4/3] rounded-2xl flex items-center justify-center border border-dark-700/50"
+                    style={{ backgroundColor: project.color, opacity: 0.6 }}
+                  >
+                    <span className="font-[family-name:var(--font-display)] text-white/30 text-2xl font-bold">
+                      Detail {n}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
 
         {/* Next project */}
         <section className="py-32 px-6 bg-dark-800/50 border-t border-dark-700/50">
