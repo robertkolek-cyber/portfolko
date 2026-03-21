@@ -17,14 +17,14 @@ export interface Project {
 
 export const projects: Project[] = [
   {
-    slug: "meridian-banking",
-    title: "Meridian",
+    slug: "codebridge-college",
+    title: "CodeBridge College",
     tagline: "Reimagining digital banking for a new generation",
     category: "Product Design",
     year: "2025",
-    color: "#132e35",
-    thumbnail: "",
-    heroImage: "",
+    color: "#0040ff",
+    thumbnail: "/images/projects/codebridgecollege.jpg",
+    heroImage: "/images/projects/codebridgecollege.jpg",
     overview:
       "Meridian is a next-generation digital banking platform designed for millennials and Gen Z. The goal was to create an experience that feels less like a bank and more like a trusted financial companion.",
     challenge:
