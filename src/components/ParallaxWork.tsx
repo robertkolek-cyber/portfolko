@@ -106,24 +106,27 @@ export default function ParallaxWork() {
         // Where center falls in normalized time
         const tCenter = (center - start) / (end - start);
 
-        // Scale: smooth growth — slow approach, then accelerates past
-        // Uses a single cubic curve, no segments
-        const scale = 0.3 + 3.2 * (t < tCenter
-          ? 0.7 * Math.pow(t / tCenter, 1.8) * (1 / 3.2)  // gentle rise to ~1
-          : (0.7 / 3.2) + (1 - 0.7 / 3.2) * Math.pow((t - tCenter) / (1 - tCenter), 1.6)
-        );
+        // Scale: continuous curve peaking at 1 at center, growing to 3.5 at exit
+        const scale = t < tCenter
+          ? 0.3 + 0.7 * Math.pow(t / tCenter, 1.6)
+          : 1.0 + 2.5 * Math.pow((t - tCenter) / (1 - tCenter), 1.4);
 
-        // X drift: single power curve — starts gentle, accelerates smoothly
-        // No keyframe boundaries = no wobble
-        const xVw = sign * Math.pow(t, 2.2) * 220;
+        // ── Curved trajectory ──
+        // The tile follows a parametric arc, not a straight line.
+        // X: accelerating sideways (power curve)
+        // Y: sinusoidal arc — rises upward, peaks mid-flight, descends as it exits
+        // Together they trace a smooth parabolic sweep.
+        const xVw = sign * Math.pow(t, 2.0) * 200;
+        const yVh = -Math.sin(t * Math.PI) * 18          // arc: 0 → -18vh → 0
+                     + Math.pow(t, 3) * 10;               // slight downward pull at exit
 
-        // Opacity: smoothstep in, hold around center, smoothstep out
-        const opIn  = smoothstep(0, 0.2, t);
-        const opOut = 1 - smoothstep(0.75, 0.95, t);
+        // Opacity: smoothstep in, hold, smoothstep out
+        const opIn  = smoothstep(0, 0.15, t);
+        const opOut = 1 - smoothstep(0.7, 0.92, t);
         const opacity = opIn * opOut;
 
         el.style.opacity   = String(opacity);
-        el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
+        el.style.transform = `translate(${xVw}vw, ${yVh}vh) scale(${scale})`;
         el.style.zIndex    = String(Math.round(scale * 100));
       }
 
