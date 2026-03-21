@@ -39,20 +39,20 @@ export const projects: Project[] = [
   {
     slug: "skoda-app",
     title: "Škoda App",
-    tagline: "Helping drivers save money and the environment",
+    tagline: "A smarter ride — saving money and the planet",
     category: "Product Design",
     year: "2025",
     color: "#1a3328",
     thumbnail: "/portfolko/images/projects/Slide skoda.png",
     heroImage: "/portfolko/images/projects/Slide skoda.png",
     overview:
-      "A companion app for Škoda drivers that shifts the incentive from traditional loyalty programs to real behavioral change — helping users save economically and environmentally by analyzing their driving habits and setting personal goals.",
+      "Škoda is investing in making cars greener for the future. This app is part of that effort — a companion tool that helps drivers save both economically and environmentally by quantifying the real impact of their driving behavior and turning it into direct, personal savings.",
     challenge:
-      "Drivers lacked motivation to change their habits. Traditional car apps focused on vehicle management but missed the opportunity to connect eco-friendly driving with tangible financial savings. The design opportunity was to reframe saving as a personal, rewarding experience.",
+      "Traditional incentive models relied on loyalty programs and discounts — they didn't change how people actually drive. The incentive shift here is from external rewards to intrinsic motivation. The design opportunity: how might we create a tool that quantifies the benefits and simplifies the impact of electric and efficient mobility?",
     approach:
-      "Framed around 'How might we make eco-driving feel personally rewarding?' — I designed a goal-based system where users set personal savings objectives, track progress through ride analysis, and receive actionable tips to improve. The app calculates real savings using driving data, visualizes ride efficiency, and provides a clear profile with cumulative impact.",
+      "Users set personal savings goals — for example, saving enough to buy a bigger car for their family. The app acts as a budget advisor, showing how much they could save by driving more efficiently. It calculates savings using a structured framework: first setting parameters, then tracking CO2 reduction and fuel costs per ride. Each ride is analyzed with efficiency scores, and users get concrete tips on how to improve. A profile view shows cumulative progress toward their personal milestones.",
     outcome:
-      "The app turns abstract eco-driving into concrete numbers — showing users exactly how much they save per ride and over time. The ride analysis and improvement tips create a feedback loop that keeps drivers engaged with smarter driving habits.",
+      "The app follows the user's progress through personal milestones, analyzes individual rides with detailed breakdowns, and provides actionable tips for improvement. It transforms abstract eco-driving concepts into tangible financial numbers that keep drivers motivated and engaged.",
     tools: ["Figma", "Protopie", "After Effects", "Illustrator"],
     images: [],
   },
