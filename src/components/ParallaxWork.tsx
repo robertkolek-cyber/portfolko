@@ -69,6 +69,7 @@ export default function ParallaxWork() {
       const containerTop  = -rect.top;
       const containerH    = rect.height - window.innerHeight;
       const progress      = Math.max(0, Math.min(1, containerTop / containerH));
+      const isCompact     = window.innerWidth < 1440;
 
       // Pass scroll progress to Hero for dive animation
       setHeroScroll(progress);
@@ -140,8 +141,14 @@ export default function ParallaxWork() {
         const opIn    = start + (center - start) * 0.3;
         const opOut   = end   - (end - center)   * 0.2;
         const opacity = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
-        const xVw     = interpolate(progress, [start, center, end],
-          isEven ? [-5, -20, -250] : [5, 20, 250]);
+
+        // On compact screens (13"), tiles drift sideways sooner with a mid-point kick
+        const midOut  = center + (end - center) * (isCompact ? 0.25 : 0.5);
+        const xVw     = isCompact
+          ? interpolate(progress, [start, center, midOut, end],
+              isEven ? [-3, -12, -120, -250] : [3, 12, 120, 250])
+          : interpolate(progress, [start, center, end],
+              isEven ? [-5, -20, -250] : [5, 20, 250]);
 
         el.style.opacity   = String(opacity);
         el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
