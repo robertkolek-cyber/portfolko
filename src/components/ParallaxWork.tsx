@@ -91,18 +91,25 @@ export default function ParallaxWork() {
         depthEl.style.opacity = "0";
       }
 
-      // Big title — appears early, first tile pushes it off screen
+      // Big title — magnetized above the first tile's top edge
       if (titleEl) {
         const firstTiming = getTiming(0);
-        // Fade in between 0.04 and 0.08
         const fadeIn  = Math.min(1, Math.max(0, (progress - 0.04) / 0.04));
-        // Push up and fade out as first tile approaches center
-        const pushT   = Math.max(0, Math.min(1, (progress - firstTiming.start) / (firstTiming.center - firstTiming.start)));
-        const yOffset = -pushT * 120; // slide up 120vh worth
-        const fadeOut = pushT;
+
+        // Compute the first tile's current scale (same formula as tile loop)
+        const tileScale = interpolate(progress, [firstTiming.start, firstTiming.center, firstTiming.end], [0.3, 1, 3.5]);
+        // The tile is an 80vw article with 4:3 aspect, centered in viewport.
+        // Half-height in vh ≈ (80vw * 0.75) / 2 scaled, converted to vh approx
+        // We use a simpler approach: the tile's top edge offset from center = -halfHeight * scale
+        // Title sits above that. As scale grows, it gets pushed further up.
+        const tileHalfHeightVh = 22; // approximate half-height of tile at scale=1
+        const titleOffsetVh = -tileScale * tileHalfHeightVh - 6; // 6vh gap above tile
+
+        // Fade out once title goes off screen (roughly when offset < -50vh)
+        const fadeOut = Math.min(1, Math.max(0, (-titleOffsetVh - 42) / 10));
 
         titleEl.style.opacity   = String(fadeIn * (1 - fadeOut));
-        titleEl.style.transform = `translateY(${yOffset}%)`;
+        titleEl.style.transform = `translateY(${titleOffsetVh}vh)`;
       }
 
       // "Selected Work" heading — visible while project tiles are running, hides before CTA
