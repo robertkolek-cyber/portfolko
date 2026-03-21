@@ -27,8 +27,8 @@
   --color-lime-dark:  #1d4ed8;
   --color-lime-dim:   #1e40af;
 
-  --font-display: "Unbounded", system-ui, sans-serif;
-  --font-claim: "Unbounded", system-ui, sans-serif;
+  --font-display: "Lexend Giga", system-ui, sans-serif;
+  --font-claim: "Lexend Giga", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
 
   --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
