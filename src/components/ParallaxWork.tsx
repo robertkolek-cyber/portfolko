@@ -229,19 +229,16 @@ export default function ParallaxWork() {
           />
           {/* Text content */}
           <div className="relative z-10 text-center pb-16 pt-32">
-            <p className="text-xs tracking-[0.3em] uppercase text-slate-400 font-medium mb-2">
+            <p className="text-xs tracking-[0.3em] uppercase text-slate-400 font-medium">
               Selected Work
             </p>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl leading-[1.1] font-bold text-slate-800">
-              Projects that <span className="italic text-lime">define</span> my craft.
-            </h2>
           </div>
         </div>
 
         {/* Project indicator — bottom center, dots + counter */}
         <div
           ref={indicatorRef}
-          className="absolute bottom-8 inset-x-0 z-40 flex items-center justify-center gap-6"
+          className="absolute bottom-8 inset-x-0 z-[500] flex items-center justify-center gap-6"
           style={{ opacity: 0 }}
         >
           {/* Dots */}
