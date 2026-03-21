@@ -22,7 +22,6 @@ export default function ParallaxWork() {
   const ctaRef          = useRef<HTMLDivElement>(null);
   const indicatorRef    = useRef<HTMLDivElement>(null);
   const dotItemRefs     = useRef<(HTMLDivElement | null)[]>([]);
-  const counterRef      = useRef<HTMLSpanElement>(null);
 
   const [heroScroll, setHeroScroll] = useState(0);
 
@@ -128,31 +127,23 @@ export default function ParallaxWork() {
         const indOp  = indIn * (1 - indOut);
         if (indicatorEl) indicatorEl.style.opacity = String(indOp);
 
-        // Find which project is most "on stage" (highest opacity)
+        // Active dot switches at the midpoint between project centers — snappy, early
         let activeIndex = 0;
-        let maxOp = -1;
+        let minDist = Infinity;
         for (let i = 0; i < total; i++) {
-          const { start, center, end } = getTiming(i);
-          const opIn  = start + (center - start) * 0.3;
-          const opOut = end   - (end - center)   * 0.2;
-          const op = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
-          if (op > maxOp) { maxOp = op; activeIndex = i; }
+          const { center } = getTiming(i);
+          const dist = Math.abs(progress - center);
+          if (dist < minDist) { minDist = dist; activeIndex = i; }
         }
 
         // Update dots
         for (let i = 0; i < total; i++) {
           const dot = dotItemRefs.current[i];
           if (!dot) continue;
-          const isActive = i === activeIndex && maxOp > 0.3;
+          const isActive = i === activeIndex;
           dot.style.width           = isActive ? "28px" : "8px";
           dot.style.backgroundColor = isActive ? "#2563eb" : "#94a3b8";
           dot.style.opacity         = isActive ? "1" : "0.45";
-        }
-
-        // Update counter
-        if (counterRef.current && maxOp > 0.3) {
-          counterRef.current.textContent =
-            `${String(activeIndex + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
         }
       }
 
@@ -255,13 +246,6 @@ export default function ParallaxWork() {
               />
             ))}
           </div>
-          {/* Counter */}
-          <span
-            ref={counterRef}
-            className="text-xs font-medium tracking-[0.2em] text-slate-500 tabular-nums"
-          >
-            01 / {String(total).padStart(2, "0")}
-          </span>
         </div>
 
         {/* Project tiles */}
