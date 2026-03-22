@@ -35,6 +35,25 @@ const CALM_SOURCE: WaveSource = {
   phase: 0.0,
 };
 
+// ── Color blobs that drift across the canvas ──
+// Each has an orbit center, radius, speed, phase, and two color sets (muted / neon)
+const COLOR_BLOBS = [
+  { cx: 0.3,  cy: 0.3,  rx: 0.25, ry: 0.20, speed: 0.13, phase: 0.0,   radius: 0.55,
+    muted: [175, 155, 180], neon: [255, 30, 120] },   // mauve → magenta
+  { cx: 0.7,  cy: 0.25, rx: 0.22, ry: 0.18, speed: 0.09, phase: 2.1,   radius: 0.50,
+    muted: [140, 170, 200], neon: [0, 180, 255] },    // slate → cyan
+  { cx: 0.5,  cy: 0.65, rx: 0.30, ry: 0.22, speed: 0.11, phase: 4.2,   radius: 0.60,
+    muted: [155, 185, 170], neon: [0, 255, 160] },    // sage → mint
+  { cx: 0.2,  cy: 0.7,  rx: 0.18, ry: 0.25, speed: 0.15, phase: 1.0,   radius: 0.45,
+    muted: [160, 140, 185], neon: [200, 50, 255] },   // lavender → violet
+  { cx: 0.8,  cy: 0.7,  rx: 0.20, ry: 0.15, speed: 0.07, phase: 3.3,   radius: 0.50,
+    muted: [185, 175, 150], neon: [255, 220, 0] },    // khaki → yellow
+  { cx: 0.5,  cy: 0.2,  rx: 0.28, ry: 0.16, speed: 0.12, phase: 5.5,   radius: 0.48,
+    muted: [165, 150, 165], neon: [255, 80, 200] },   // grey-pink → hot pink
+  { cx: 0.4,  cy: 0.5,  rx: 0.15, ry: 0.28, speed: 0.10, phase: 0.7,   radius: 0.52,
+    muted: [150, 175, 185], neon: [60, 220, 255] },   // steel → sky blue
+];
+
 export default function WaterSurface({
   chaos,
   className,
@@ -91,6 +110,31 @@ export default function WaterSurface({
         finger.y += (mouse!.y - finger.y) * 6.0 * dt;
       }
 
+      // ── Pre-compute drifting blob positions for this frame ──
+      const blobPositions: { bx: number; by: number; r: number; g: number; b: number; rad: number }[] = [];
+      const blend = c * c * (3 - 2 * c); // smoothstep for muted→neon
+
+      for (const blob of COLOR_BLOBS) {
+        // Orbit: elliptical path around center, drift speed increases with chaos
+        const speedMul = 1 + c * 2.5; // faster drift during chaos
+        const t = time * blob.speed * speedMul + blob.phase;
+        // Add secondary wobble for organic feel
+        const wobbleX = Math.sin(t * 1.7 + blob.phase * 3) * 0.06;
+        const wobbleY = Math.cos(t * 2.3 + blob.phase * 2) * 0.05;
+        const bx = blob.cx + Math.cos(t) * blob.rx + wobbleX;
+        const by = blob.cy + Math.sin(t * 0.7 + 0.3) * blob.ry + wobbleY;
+
+        // Blend color between muted and neon
+        const r = blob.muted[0] + (blob.neon[0] - blob.muted[0]) * blend;
+        const g = blob.muted[1] + (blob.neon[1] - blob.muted[1]) * blend;
+        const b = blob.muted[2] + (blob.neon[2] - blob.muted[2]) * blend;
+
+        // Blob influence radius — expands slightly during chaos for more overlap
+        const rad = blob.radius + c * 0.15;
+
+        blobPositions.push({ bx, by, r, g, b, rad });
+      }
+
       for (let py = 0; py < RES_H; py++) {
         for (let px = 0; px < RES_W; px++) {
           const nx = px / RES_W; // normalised
@@ -110,6 +154,9 @@ export default function WaterSurface({
             CALM_SOURCE.amplitude *
             (1 - c * 0.6); // calm wave dims during chaos
           height += calmH;
+
+          // Track per-source contributions for blur variation
+          let chaosContrib = 0;
 
           // Chaos sources — each fades in with staggered threshold
           for (let i = 0; i < CHAOS_SOURCES.length; i++) {
@@ -135,6 +182,7 @@ export default function WaterSurface({
               intensity *
               attenuation;
             height += h;
+            chaosContrib += Math.abs(h);
           }
 
           // ── Finger-in-water disruption ──
@@ -158,88 +206,72 @@ export default function WaterSurface({
           const normalised = (height + 1.5) / 3.0; // 0–1 range (rough)
           const clamped = Math.max(0, Math.min(1, normalised));
 
-          // During calm: thin bright rings on dark bg (high contrast)
-          // During chaos: dense bright soup
-          const ringSharpness = 1 - c * 0.5;
-          // Rings blur with distance from centre — sharp core, soft edges
+          // ── Variable ring blur ──
+          // Base sharpness decreases with chaos
+          const baseSharpness = 1 - c * 0.55;
+          // Distance from calm center softens rings
           const distFromCenter = Math.hypot(nx - cx, ny - cy);
-          const distBlur = Math.max(0, 1 - distFromCenter * 1.8); // 1 at centre, 0 at ~0.55
-          const effectiveSharpness = ringSharpness * (0.15 + distBlur * 0.85);
-          // Sharpen to rings by applying a soft threshold
+          const distBlur = Math.max(0, 1 - distFromCenter * 1.8);
+          // Chaos wave interference creates local blur zones
+          const localChaosBlur = Math.min(1, chaosContrib * 0.7);
+          // Combine: sharp near center when calm, blurry where chaos waves overlap
+          const effectiveSharpness = baseSharpness *
+            (0.12 + distBlur * 0.88) *
+            (1 - localChaosBlur * 0.6);
+
+          // Ring frequency varies: more rings during chaos for denser pattern
+          const ringFreq = 4 + c * 4.5;
+          // Power controls how "thin" the bright lines are
+          const ringPower = 0.4 + effectiveSharpness * 2.0;
           const ringed =
             Math.pow(
-              Math.abs(Math.sin(clamped * Math.PI * (4 + c * 3.5))),
-              0.5 + effectiveSharpness * 1.5
+              Math.abs(Math.sin(clamped * Math.PI * ringFreq)),
+              ringPower
             );
+
+          // ── Drifting blob color mixing ──
+          // Accumulate color from all blobs weighted by proximity
+          let totalWeight = 0;
+          let mixR = 0, mixG = 0, mixB = 0;
+
+          for (const blob of blobPositions) {
+            const dx = nx - blob.bx;
+            const dy = ny - blob.by;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // Soft gaussian-like falloff
+            const falloff = dist / blob.rad;
+            // Cubic falloff for smoother blending than linear
+            const w = Math.max(0, 1 - falloff * falloff);
+            const weight = w * w; // quartic = very soft edges
+
+            if (weight < 0.001) continue;
+
+            mixR += blob.r * weight;
+            mixG += blob.g * weight;
+            mixB += blob.b * weight;
+            totalWeight += weight;
+          }
+
+          // Normalize and add a subtle base tint so no pixel is pure black
+          if (totalWeight > 0.001) {
+            mixR /= totalWeight;
+            mixG /= totalWeight;
+            mixB /= totalWeight;
+          } else {
+            // Fallback: gentle neutral
+            mixR = 160; mixG = 165; mixB = 175;
+          }
 
           const idx = (py * RES_W + px) * 4;
 
-          // Muted palette (calm / clarity)
-          const muted = [
-            [180, 140, 170],  // dusty mauve
-            [140, 160, 190],  // slate blue
-            [150, 180, 195],  // muted teal
-            [130, 120, 170],  // soft purple
-            [170, 160, 140],  // warm grey
-          ];
-          // Neon palette (chaos / complexity)
-          const neon = [
-            [255, 30, 120],   // neon magenta
-            [0, 200, 255],    // electric cyan
-            [0, 255, 160],    // neon green-mint
-            [200, 50, 255],   // bright violet
-            [255, 220, 0],    // blazing yellow
-          ];
-          // Ease-in-out cubic for smooth non-linear blend
-          const blend = c * c * (3 - 2 * c); // smoothstep 0→1
-          const corners = muted.map((m, i) => [
-            m[0] + (neon[i][0] - m[0]) * blend,
-            m[1] + (neon[i][1] - m[1]) * blend,
-            m[2] + (neon[i][2] - m[2]) * blend,
-          ]);
-
-          // Color rotation — much faster during chaos so drift is clearly visible
-          const rotSpeed = 0.06 + c * 0.6;
-          const angle = time * rotSpeed;
-          // Fractional offset determines which corner gets which color
-          const shift = ((angle % (Math.PI * 2)) / (Math.PI * 2)); // 0–1
-
-          // Pick interpolated corner colors based on shift
-          const nColors = corners.length;
-          const pick = (idx0: number) => {
-            const f = (idx0 + shift * nColors) % nColors;
-            const i0 = Math.floor(f) % nColors;
-            const i1 = (i0 + 1) % nColors;
-            const t = f - Math.floor(f);
-            return [
-              corners[i0][0] + (corners[i1][0] - corners[i0][0]) * t,
-              corners[i0][1] + (corners[i1][1] - corners[i0][1]) * t,
-              corners[i0][2] + (corners[i1][2] - corners[i0][2]) * t,
-            ];
-          };
-
-          const tl = pick(0); // top-left
-          const tr = pick(1); // top-right
-          const br = pick(2); // bottom-right
-          const bl = pick(3); // bottom-left
-
-          // Bilinear interpolation across canvas position
-          const topR = tl[0] + (tr[0] - tl[0]) * nx;
-          const topG = tl[1] + (tr[1] - tl[1]) * nx;
-          const topB = tl[2] + (tr[2] - tl[2]) * nx;
-          const botR = bl[0] + (br[0] - bl[0]) * nx;
-          const botG = bl[1] + (br[1] - bl[1]) * nx;
-          const botB = bl[2] + (br[2] - bl[2]) * nx;
-
-          const baseR = topR + (botR - topR) * ny;
-          const baseG = topG + (botG - topG) * ny;
-          const baseB = topB + (botB - topB) * ny;
-
-          // Use gradient colors directly — no indigo crush
-          buf[idx]     = Math.round(baseR);
-          buf[idx + 1] = Math.round(baseG);
-          buf[idx + 2] = Math.round(baseB);
-          buf[idx + 3] = Math.round(ringed * (0.22 + c * 0.095) * 255);
+          buf[idx]     = Math.round(mixR);
+          buf[idx + 1] = Math.round(mixG);
+          buf[idx + 2] = Math.round(mixB);
+          // Alpha: rings modulate visibility, slight base alpha so color field is always gently visible
+          const baseAlpha = 0.08 + c * 0.04; // subtle wash even without rings
+          const ringAlpha = ringed * (0.18 + c * 0.10);
+          buf[idx + 3] = Math.round(Math.min(1, baseAlpha + ringAlpha) * 255);
         }
       }
 
