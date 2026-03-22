@@ -71,66 +71,29 @@ export default function WaterSurface({
 
     let time = 0;
 
-    // Spring-damper state for the calm source position
-    // Gives the ripple origin weight and inertia — it drifts, overshoots, settles
-    const spring = {
-      x: CALM_SOURCE.x, y: CALM_SOURCE.y,  // current position
-      vx: 0, vy: 0,                         // velocity
-      influence: 0,                          // 0–1: how much mouse matters vs default center
-    };
-
-    // Spring constants — tuned for "water has mass" feel
-    const STIFFNESS = 2.2;   // pull toward target (lower = lazier)
-    const DAMPING = 3.8;     // friction (higher = less overshoot)
-    const INFLUENCE_RATE = 0.6; // how fast mouse influence ramps in/out per second
-
-    // Keep the origin from drifting too far to edges (rings stay readable)
-    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+    // Smoothed mouse position for disruption (finger-in-water effect)
+    const finger = { x: -1, y: -1, strength: 0 };
 
     const draw = () => {
       const dt = 0.016;
       time += dt;
       const c = chaosRef.current;
 
-      // ── Spring physics for calm source position ──
+      // ── Fixed centre — ripples always emanate from the middle ──
+      const cx = CALM_SOURCE.x;
+      const cy = CALM_SOURCE.y;
 
-      // Target: mouse position when available, otherwise canvas center
+      // ── Mouse disruption — "finger in water" blocker ──
       const mouse = mousePosRef?.current;
       const hasTarget = mouse !== null && mouse !== undefined;
-
-      // Smoothly ramp influence — chaos suppresses it, mouse presence enables it
-      // The (1 - c) factor means influence naturally fades during chaos
-      // and only reaches full strength when chaos is fully settled
-      const targetInfluence = hasTarget ? (1 - c) * (1 - c) : 0; // quadratic falloff with chaos
-      const influenceDelta = targetInfluence - spring.influence;
-      spring.influence += influenceDelta * INFLUENCE_RATE * dt * (influenceDelta > 0 ? 1 : 2.5);
-      // Faster ramp-down when mouse leaves — feels like water releasing tension
-
-      // Blend target between mouse and default center based on influence
-      const targetX = hasTarget
-        ? CALM_SOURCE.x + (clamp(mouse!.x, 0.12, 0.88) - CALM_SOURCE.x) * spring.influence
-        : CALM_SOURCE.x;
-      const targetY = hasTarget
-        ? CALM_SOURCE.y + (clamp(mouse!.y, 0.12, 0.88) - CALM_SOURCE.y) * spring.influence
-        : CALM_SOURCE.y;
-
-      // Spring force: F = -k * displacement - damping * velocity
-      const dx = spring.x - targetX;
-      const dy = spring.y - targetY;
-      const ax = -STIFFNESS * dx - DAMPING * spring.vx;
-      const ay = -STIFFNESS * dy - DAMPING * spring.vy;
-
-      spring.vx += ax * dt;
-      spring.vy += ay * dt;
-      spring.x += spring.vx * dt;
-      spring.y += spring.vy * dt;
-
-      // Soft clamp — don't let it escape the visible area even on overshoot
-      spring.x = clamp(spring.x, 0.05, 0.95);
-      spring.y = clamp(spring.y, 0.05, 0.95);
-
-      const cx = spring.x;
-      const cy = spring.y;
+      const targetStrength = hasTarget ? (1 - c) * (1 - c) : 0;
+      // Smoothly ramp disruption in/out
+      finger.strength += (targetStrength - finger.strength) * 3.0 * dt;
+      if (hasTarget) {
+        // Smooth follow for disruption point
+        finger.x += (mouse!.x - finger.x) * 6.0 * dt;
+        finger.y += (mouse!.y - finger.y) * 6.0 * dt;
+      }
 
       for (let py = 0; py < RES_H; py++) {
         for (let px = 0; px < RES_W; px++) {
@@ -176,6 +139,23 @@ export default function WaterSurface({
               intensity *
               attenuation;
             height += h;
+          }
+
+          // ── Finger-in-water disruption ──
+          // Near the mouse: dampen waves (dead zone) + add secondary ripples
+          if (finger.strength > 0.01) {
+            const fdist = Math.hypot(nx - finger.x, ny - finger.y);
+            const radius = 0.08; // disruption radius (normalised)
+            // Smooth falloff: 1 at edge, 0 at center of finger
+            const block = Math.max(0, 1 - fdist / radius);
+            const blockSmooth = block * block; // quadratic for soft edges
+            // Dampen original waves under the finger
+            height *= 1 - blockSmooth * finger.strength * 0.92;
+            // Add secondary scattered ripples radiating from finger
+            const scatter = Math.sin(fdist * 0.06 * RES_W - time * 2.4) *
+              0.35 * finger.strength *
+              Math.max(0, 1 - fdist * 3.0); // fade with distance from finger
+            height += scatter;
           }
 
           // Map height to colour — lime green with alpha from wave height
