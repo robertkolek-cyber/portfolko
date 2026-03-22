@@ -183,8 +183,8 @@ export default function WaterSurface({
             [180, 160, 220],  // lavender
           ];
 
-          // Color rotation — faster during chaos for visible movement
-          const rotSpeed = 0.06 + c * 0.18;
+          // Color rotation — much faster during chaos so drift is clearly visible
+          const rotSpeed = 0.06 + c * 0.6;
           const angle = time * rotSpeed;
           // Fractional offset determines which corner gets which color
           const shift = ((angle % (Math.PI * 2)) / (Math.PI * 2)); // 0–1
@@ -220,10 +220,10 @@ export default function WaterSurface({
           const baseG = topG + (botG - topG) * ny;
           const baseB = topB + (botB - topB) * ny;
 
-          // Chaos deepens colors toward indigo
-          buf[idx]     = Math.round(baseR + (75 - baseR) * c * 0.4);
-          buf[idx + 1] = Math.round(baseG + (90 - baseG) * c * 0.4);
-          buf[idx + 2] = Math.round(baseB + (200 - baseB) * c * 0.4);
+          // Chaos slightly deepens colors but preserves gradient variation
+          buf[idx]     = Math.round(baseR + (75 - baseR) * c * 0.15);
+          buf[idx + 1] = Math.round(baseG + (90 - baseG) * c * 0.15);
+          buf[idx + 2] = Math.round(baseB + (200 - baseB) * c * 0.15);
           buf[idx + 3] = Math.round(ringed * (0.22 + c * 0.095) * 255);
         }
       }
