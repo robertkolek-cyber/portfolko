@@ -174,14 +174,29 @@ export default function WaterSurface({
 
           const idx = (py * RES_W + px) * 4;
 
-          // 5 vivid colours that rotate around the canvas corners
-          const corners = [
+          // Muted palette (clarity / calm)
+          const muted = [
+            [195, 160, 175],  // dusty pink
+            [160, 180, 200],  // soft sky
+            [170, 200, 190],  // pale mint
+            [175, 160, 195],  // gentle purple
+            [200, 180, 165],  // warm sand
+          ];
+          // Vivid palette (complexity / chaos)
+          const vivid = [
             [240, 100, 160],  // vibrant pink
             [100, 180, 255],  // bright sky blue
             [130, 230, 200],  // teal / mint
             [160, 100, 240],  // electric purple
             [255, 170, 100],  // warm orange
           ];
+          // Smoothstep blend: muted at c=0, vivid at c=1
+          const blend = c * c * (3 - 2 * c);
+          const corners = muted.map((m, i) => [
+            m[0] + (vivid[i][0] - m[0]) * blend,
+            m[1] + (vivid[i][1] - m[1]) * blend,
+            m[2] + (vivid[i][2] - m[2]) * blend,
+          ]);
 
           // Color rotation — much faster during chaos so drift is clearly visible
           const rotSpeed = 0.06 + c * 0.6;

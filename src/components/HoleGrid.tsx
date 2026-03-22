@@ -10,8 +10,26 @@ import { useEffect, useRef } from "react";
  * chaos → 0   → smooth settle back to uniform accent color, then grey (clarity)
  */
 
-// Vibrant palette for chaos fills
-const VIBRANT_COLORS = [
+// Muted palette (low chaos / clarity) — same hues, desaturated
+const MUTED_COLORS = [
+  [200, 160, 155],  // dusty coral
+  [200, 190, 155],  // warm sand
+  [155, 190, 165],  // sage
+  [155, 180, 200],  // soft sky
+  [180, 155, 185],  // light plum
+  [195, 160, 175],  // dusty rose
+  [155, 195, 175],  // pale mint
+  [200, 175, 155],  // tan
+  [160, 195, 185],  // grey-teal
+  [170, 160, 200],  // soft violet
+  [200, 195, 155],  // pale gold
+  [195, 160, 155],  // muted brick
+  [160, 175, 195],  // steel blue
+  [165, 185, 170],  // sage green
+  [195, 155, 170],  // dusty pink
+];
+// Vivid palette (high chaos / complexity) — full saturation
+const VIVID_COLORS = [
   [255, 87, 51],   // coral red
   [255, 195, 0],   // amber
   [0, 200, 83],    // green
@@ -28,6 +46,17 @@ const VIBRANT_COLORS = [
   [76, 175, 80],   // forest green
   [233, 30, 99],   // magenta
 ];
+// Blend between muted and vivid based on chaos (smoothstep)
+function blendColor(chaos: number, idx: number): number[] {
+  const t = chaos * chaos * (3 - 2 * chaos);
+  const m = MUTED_COLORS[idx];
+  const v = VIVID_COLORS[idx];
+  return [
+    m[0] + (v[0] - m[0]) * t,
+    m[1] + (v[1] - m[1]) * t,
+    m[2] + (v[2] - m[2]) * t,
+  ];
+}
 
 interface Hole {
   // Grid position (pixels, center)
@@ -161,11 +190,11 @@ export default function HoleGrid({
             hole.targetFill = 0.5 + seededRandom(hole.seed + 99) * 0.5;
             hole.targetScale = 1 + seededRandom(hole.seed + 50) * 0.3;
 
-            // Assign random vibrant color, change periodically
+            // Assign color blended between muted↔vivid based on chaos
             const changeInterval = 0.3 + seededRandom(hole.seed + 33) * 0.6;
             if (t - hole.lastColorChange > changeInterval) {
-              const colorIdx = Math.floor(seededRandom(hole.seed + Math.floor(t * 3)) * VIBRANT_COLORS.length);
-              const color = VIBRANT_COLORS[colorIdx];
+              const colorIdx = Math.floor(seededRandom(hole.seed + Math.floor(t * 3)) * MUTED_COLORS.length);
+              const color = blendColor(c, colorIdx);
               hole.tr = color[0];
               hole.tg = color[1];
               hole.tb = color[2];
