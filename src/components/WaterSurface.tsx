@@ -174,13 +174,13 @@ export default function WaterSurface({
 
           const idx = (py * RES_W + px) * 4;
 
-          // Muted palette (clarity / calm)
+          // Muted palette (clarity / calm) — light sky-blue tint
           const muted = [
-            [195, 160, 175],  // dusty pink
-            [160, 180, 200],  // soft sky
-            [170, 200, 190],  // pale mint
-            [175, 160, 195],  // gentle purple
-            [200, 180, 165],  // warm sand
+            [185, 170, 195],  // dusty pink + blue tint
+            [165, 190, 215],  // soft sky
+            [170, 200, 205],  // pale mint + blue
+            [175, 175, 210],  // gentle purple + blue
+            [190, 190, 195],  // warm sand + blue tint
           ];
           // Vivid palette (complexity / chaos)
           const vivid = [

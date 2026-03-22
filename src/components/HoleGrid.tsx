@@ -10,23 +10,23 @@ import { useEffect, useRef } from "react";
  * chaos → 0   → smooth settle back to uniform accent color, then grey (clarity)
  */
 
-// Muted palette (low chaos / clarity) — same hues, desaturated
+// Muted palette (low chaos / clarity) — same hues, desaturated, sky-blue tint
 const MUTED_COLORS = [
-  [200, 160, 155],  // dusty coral
-  [200, 190, 155],  // warm sand
-  [155, 190, 165],  // sage
-  [155, 180, 200],  // soft sky
-  [180, 155, 185],  // light plum
-  [195, 160, 175],  // dusty rose
-  [155, 195, 175],  // pale mint
-  [200, 175, 155],  // tan
-  [160, 195, 185],  // grey-teal
-  [170, 160, 200],  // soft violet
-  [200, 195, 155],  // pale gold
-  [195, 160, 155],  // muted brick
-  [160, 175, 195],  // steel blue
-  [165, 185, 170],  // sage green
-  [195, 155, 170],  // dusty pink
+  [190, 170, 180],  // dusty coral + blue
+  [190, 190, 180],  // warm sand + blue
+  [160, 190, 185],  // sage + blue
+  [160, 185, 210],  // soft sky
+  [175, 165, 200],  // light plum + blue
+  [185, 170, 195],  // dusty rose + blue
+  [160, 195, 190],  // pale mint + blue
+  [190, 180, 180],  // tan + blue
+  [165, 195, 200],  // grey-teal + blue
+  [170, 170, 210],  // soft violet + blue
+  [190, 195, 175],  // pale gold + blue
+  [185, 170, 180],  // muted brick + blue
+  [165, 180, 205],  // steel blue
+  [165, 185, 185],  // sage green + blue
+  [185, 165, 190],  // dusty pink + blue
 ];
 // Vivid palette (high chaos / complexity) — full saturation
 const VIVID_COLORS = [
