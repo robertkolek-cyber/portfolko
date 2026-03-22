@@ -203,12 +203,13 @@ export default function WaterSurface({
             [168, 175, 220],
             [182, 188, 210],
           ];
+          // Storm palette (complexity / chaos) — dark navy sea
           const vivid = [
-            [240, 100, 160],
-            [100, 180, 255],
-            [130, 230, 200],
-            [160, 100, 240],
-            [255, 170, 100],
+            [18, 25, 55],     // deep navy
+            [25, 40, 72],     // dark steel blue
+            [15, 35, 60],     // midnight blue
+            [30, 28, 65],     // dark indigo
+            [20, 45, 58],     // stormy teal
           ];
           const blend = c * c * (3 - 2 * c);
           const corners = muted.map((m, i) => [
