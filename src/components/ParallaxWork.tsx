@@ -142,13 +142,13 @@ export default function ParallaxWork() {
         const opOut   = end   - (end - center)   * 0.2;
         const opacity = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
 
-        // Tiles enter from off-screen, drift slightly at center, then fly out
+        // On compact screens (13"), tiles drift sideways sooner with a mid-point kick
         const midOut  = center + (end - center) * (isCompact ? 0.25 : 0.5);
         const xVw     = isCompact
           ? interpolate(progress, [start, center, midOut, end],
-              isEven ? [-80, -12, -120, -250] : [80, 12, 120, 250])
+              isEven ? [-3, -12, -120, -250] : [3, 12, 120, 250])
           : interpolate(progress, [start, center, end],
-              isEven ? [-70, -20, -250] : [70, 20, 250]);
+              isEven ? [-5, -20, -250] : [5, 20, 250]);
 
         el.style.opacity   = String(opacity);
         el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
@@ -264,7 +264,7 @@ export default function ParallaxWork() {
         {/* Soft white fog behind heading — tiles disappear behind it */}
         <div
           ref={headingRef}
-          className="absolute inset-x-0 bottom-12 z-[400] pointer-events-none"
+          className="absolute inset-x-0 bottom-0 z-[400] pointer-events-none"
           style={{ opacity: 0 }}
         >
           {/* Blurry gradient backdrop */}
