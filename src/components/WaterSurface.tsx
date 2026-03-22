@@ -174,28 +174,14 @@ export default function WaterSurface({
 
           const idx = (py * RES_W + px) * 4;
 
-          // Calm palette (soft pastels)
-          const calm = [
-            [220, 160, 200],  // dusty pink
-            [170, 190, 230],  // pale grey-blue
-            [150, 210, 245],  // light blue
-            [75,  90,  200],  // deep indigo
-            [180, 160, 220],  // lavender
-          ];
-          // Chaos palette (neon, ultra-saturated)
-          const vivid = [
+          // 5 neon colours that rotate around the canvas corners
+          const corners = [
             [255, 30, 120],   // neon magenta
             [0, 200, 255],    // electric cyan
             [0, 255, 160],    // neon green-mint
             [200, 50, 255],   // bright violet
             [255, 220, 0],    // blazing yellow
           ];
-          // Blend between palettes based on chaos
-          const corners = calm.map((col, i) => [
-            col[0] + (vivid[i][0] - col[0]) * c,
-            col[1] + (vivid[i][1] - col[1]) * c,
-            col[2] + (vivid[i][2] - col[2]) * c,
-          ]);
 
           // Color rotation — much faster during chaos so drift is clearly visible
           const rotSpeed = 0.06 + c * 0.6;
