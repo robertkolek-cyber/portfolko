@@ -154,43 +154,62 @@ export default function WaterSurface({
             height += scatter;
           }
 
-          // Map height to colour — lime green with alpha from wave height
-          const normalised = (height + 1.5) / 3.0; // 0–1 range (rough)
+          // ── Layer 1: Ring pattern (existing, refined) ──
+          const normalised = (height + 1.5) / 3.0;
           const clamped = Math.max(0, Math.min(1, normalised));
 
-          // During calm: thin bright rings on dark bg (high contrast)
-          // During chaos: dense bright soup
           const ringSharpness = 1 - c * 0.5;
-          // Rings blur with distance from centre — sharp core, soft edges
           const distFromCenter = Math.hypot(nx - cx, ny - cy);
-          const distBlur = Math.max(0, 1 - distFromCenter * 1.8); // 1 at centre, 0 at ~0.55
+          const distBlur = Math.max(0, 1 - distFromCenter * 1.8);
           const effectiveSharpness = ringSharpness * (0.15 + distBlur * 0.85);
-          // Sharpen to rings by applying a soft threshold
           const ringed =
             Math.pow(
               Math.abs(Math.sin(clamped * Math.PI * (4 + c * 3.5))),
               0.5 + effectiveSharpness * 1.5
             );
 
+          // ── Layer 2: Caustic light focusing ──
+          // Two wave fields at offset frequencies — where both align, light concentrates
+          const caustic1 = Math.sin(clamped * Math.PI * 6.5 + time * 0.3);
+          const caustic2 = Math.sin(clamped * Math.PI * 4.2 - time * 0.2 + nx * 3.0 + ny * 2.0);
+          // Product creates the classic "net" / web pattern of real caustics
+          const causticRaw = (caustic1 * caustic2 + 1) * 0.5; // 0–1
+          // Sharp bright lines, broad dark areas — like real refracted light
+          const caustic = Math.pow(causticRaw, 0.4) * 0.35;
+
+          // ── Layer 3: Specular highlights on wave crests ──
+          // "Light source" from upper-right — bright where wave peaks face the light
+          // Approximate surface normal from height gradient
+          // Cheap gradient: re-use height with small offset via sin perturbation
+          const dhdx = Math.cos(clamped * Math.PI * 5.0 + nx * 8.0) * height * 0.3;
+          const dhdy = Math.cos(clamped * Math.PI * 4.3 + ny * 7.0) * height * 0.25;
+          // Dot product with light direction (upper-right, slightly toward viewer)
+          const lightX = 0.4, lightY = -0.3;
+          const spec = Math.max(0, dhdx * lightX + dhdy * lightY);
+          // Raise to power for tight, bright highlights
+          const specular = Math.pow(spec, 3.0) * 0.6;
+
+          // ── Layer 4: Depth glow — subtle light-from-above brightness ──
+          // Brighter at top, dimmer at bottom — like light entering water
+          const depthGlow = (1 - ny * 0.3) * 0.08 * (1 + c * 0.5);
+
           const idx = (py * RES_W + px) * 4;
 
-          // Muted palette (clarity / calm) — sky-blue tint
+          // ── Color palette (unchanged) ──
           const muted = [
-            [178, 172, 210],  // dusty pink + blue
-            [158, 190, 225],  // soft sky
-            [165, 198, 215],  // pale mint + blue
-            [168, 175, 220],  // gentle purple + blue
-            [182, 188, 210],  // warm sand + blue
+            [178, 172, 210],
+            [158, 190, 225],
+            [165, 198, 215],
+            [168, 175, 220],
+            [182, 188, 210],
           ];
-          // Vivid palette (complexity / chaos)
           const vivid = [
-            [240, 100, 160],  // vibrant pink
-            [100, 180, 255],  // bright sky blue
-            [130, 230, 200],  // teal / mint
-            [160, 100, 240],  // electric purple
-            [255, 170, 100],  // warm orange
+            [240, 100, 160],
+            [100, 180, 255],
+            [130, 230, 200],
+            [160, 100, 240],
+            [255, 170, 100],
           ];
-          // Smoothstep blend: muted at c=0, vivid at c=1
           const blend = c * c * (3 - 2 * c);
           const corners = muted.map((m, i) => [
             m[0] + (vivid[i][0] - m[0]) * blend,
@@ -198,13 +217,10 @@ export default function WaterSurface({
             m[2] + (vivid[i][2] - m[2]) * blend,
           ]);
 
-          // Color rotation — much faster during chaos so drift is clearly visible
           const rotSpeed = 0.06 + c * 0.6;
           const angle = time * rotSpeed;
-          // Fractional offset determines which corner gets which color
-          const shift = ((angle % (Math.PI * 2)) / (Math.PI * 2)); // 0–1
+          const shift = ((angle % (Math.PI * 2)) / (Math.PI * 2));
 
-          // Pick interpolated corner colors based on shift
           const nColors = corners.length;
           const pick = (idx0: number) => {
             const f = (idx0 + shift * nColors) % nColors;
@@ -218,12 +234,11 @@ export default function WaterSurface({
             ];
           };
 
-          const tl = pick(0); // top-left
-          const tr = pick(1); // top-right
-          const br = pick(2); // bottom-right
-          const bl = pick(3); // bottom-left
+          const tl = pick(0);
+          const tr = pick(1);
+          const br = pick(2);
+          const bl = pick(3);
 
-          // Bilinear interpolation across canvas position
           const topR = tl[0] + (tr[0] - tl[0]) * nx;
           const topG = tl[1] + (tr[1] - tl[1]) * nx;
           const topB = tl[2] + (tr[2] - tl[2]) * nx;
@@ -231,15 +246,24 @@ export default function WaterSurface({
           const botG = bl[1] + (br[1] - bl[1]) * nx;
           const botB = bl[2] + (br[2] - bl[2]) * nx;
 
-          const baseR = topR + (botR - topR) * ny;
-          const baseG = topG + (botG - topG) * ny;
-          const baseB = topB + (botB - topB) * ny;
+          let baseR = topR + (botR - topR) * ny;
+          let baseG = topG + (botG - topG) * ny;
+          let baseB = topB + (botB - topB) * ny;
 
-          // Use gradient colors directly — no indigo crush
-          buf[idx]     = Math.round(baseR);
-          buf[idx + 1] = Math.round(baseG);
-          buf[idx + 2] = Math.round(baseB);
-          buf[idx + 3] = Math.round(ringed * (0.22 + c * 0.095) * 255);
+          // ── Compose: specular + caustic brighten the base color toward white ──
+          const highlight = Math.min(1, specular + caustic * (0.5 + c * 0.5));
+          baseR = baseR + (255 - baseR) * highlight;
+          baseG = baseG + (255 - baseG) * highlight;
+          baseB = baseB + (255 - baseB) * highlight;
+
+          buf[idx]     = Math.round(Math.min(255, baseR));
+          buf[idx + 1] = Math.round(Math.min(255, baseG));
+          buf[idx + 2] = Math.round(Math.min(255, baseB));
+
+          // Alpha: ring pattern + caustic brightening + depth glow
+          const ringAlpha = ringed * (0.22 + c * 0.095);
+          const causticAlpha = caustic * (0.12 + c * 0.08);
+          buf[idx + 3] = Math.round(Math.min(1, ringAlpha + causticAlpha + depthGlow) * 255);
         }
       }
 
