@@ -10,21 +10,21 @@ import { useEffect, useRef } from "react";
  * chaos → 0   → smooth settle back to uniform accent color, then grey (clarity)
  */
 
-// Neon palette for chaos fills
+// Vibrant palette for chaos fills
 const VIBRANT_COLORS = [
-  [255, 0, 60],    // neon red
-  [255, 220, 0],   // blazing yellow
-  [0, 255, 120],   // neon green
-  [0, 180, 255],   // electric blue
-  [200, 0, 255],   // neon purple
-  [255, 0, 180],   // hot magenta
-  [0, 255, 200],   // neon mint
-  [255, 130, 0],   // neon orange
-  [0, 255, 255],   // electric cyan
-  [160, 0, 255],   // bright violet
-  [255, 255, 0],   // pure yellow
-  [255, 40, 40],   // bright red
-  [0, 140, 255],   // vivid blue
+  [255, 87, 51],   // coral red
+  [255, 195, 0],   // amber
+  [0, 200, 83],    // green
+  [0, 176, 255],   // sky blue
+  [156, 39, 176],  // purple
+  [255, 64, 129],  // pink
+  [0, 230, 118],   // mint
+  [255, 145, 0],   // orange
+  [29, 233, 182],  // teal
+  [124, 77, 255],  // violet
+  [255, 214, 0],   // yellow
+  [244, 67, 54],   // red
+  [33, 150, 243],  // blue
   [76, 175, 80],   // forest green
   [233, 30, 99],   // magenta
 ];
