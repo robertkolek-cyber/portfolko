@@ -10,7 +10,7 @@ import { useEffect, useRef } from "react";
  * chaos → 0   → smooth settle back to uniform accent color, then grey (clarity)
  */
 
-// Muted palette (low chaos)
+// Muted palette
 const MUTED_COLORS = [
   [180, 120, 130],  // dusty rose
   [180, 170, 120],  // warm khaki
@@ -28,33 +28,33 @@ const MUTED_COLORS = [
   [130, 155, 140],  // sage green
   [170, 130, 145],  // dusty pink
 ];
-// Neon palette (high chaos)
-const NEON_COLORS = [
-  [255, 0, 60],    // neon red
-  [255, 220, 0],   // blazing yellow
-  [0, 255, 120],   // neon green
-  [0, 180, 255],   // electric blue
-  [200, 0, 255],   // neon purple
-  [255, 0, 180],   // hot magenta
-  [0, 255, 200],   // neon mint
-  [255, 130, 0],   // neon orange
-  [0, 255, 255],   // electric cyan
-  [160, 0, 255],   // bright violet
-  [255, 255, 0],   // pure yellow
-  [255, 40, 40],   // bright red
-  [0, 140, 255],   // vivid blue
-  [76, 175, 80],   // forest green
-  [233, 30, 99],   // magenta
-];
-// Blend between muted and neon based on chaos (smoothstep easing)
+
+// Brighten: same hue, higher saturation + brightness
+function brightenHole(rgb: number[], amount: number): number[] {
+  const max = Math.max(...rgb);
+  const min = Math.min(...rgb);
+  const range = max - min;
+  if (range < 1) return rgb.map(v => Math.min(255, v + amount * 80));
+  return rgb.map(v => {
+    const ratio = (v - min) / range;
+    return Math.min(255, Math.max(0,
+      v + ratio * amount * 90 - (1 - ratio) * amount * 25
+    ));
+  });
+}
+
+// Pre-compute bright versions
+const BRIGHT_COLORS = MUTED_COLORS.map(m => brightenHole(m, 1.0));
+
+// Blend between muted and bright based on chaos (smoothstep easing)
 function blendColor(chaos: number, idx: number): number[] {
   const t = chaos * chaos * (3 - 2 * chaos); // smoothstep
   const m = MUTED_COLORS[idx];
-  const n = NEON_COLORS[idx];
+  const b = BRIGHT_COLORS[idx];
   return [
-    m[0] + (n[0] - m[0]) * t,
-    m[1] + (n[1] - m[1]) * t,
-    m[2] + (n[2] - m[2]) * t,
+    m[0] + (b[0] - m[0]) * t,
+    m[1] + (b[1] - m[1]) * t,
+    m[2] + (b[2] - m[2]) * t,
   ];
 }
 
@@ -193,7 +193,7 @@ export default function HoleGrid({
             // Assign color blended between muted↔neon based on chaos, change periodically
             const changeInterval = 0.3 + seededRandom(hole.seed + 33) * 0.6;
             if (t - hole.lastColorChange > changeInterval) {
-              const colorIdx = Math.floor(seededRandom(hole.seed + Math.floor(t * 3)) * NEON_COLORS.length);
+              const colorIdx = Math.floor(seededRandom(hole.seed + Math.floor(t * 3)) * MUTED_COLORS.length);
               const color = blendColor(c, colorIdx);
               hole.tr = color[0];
               hole.tg = color[1];

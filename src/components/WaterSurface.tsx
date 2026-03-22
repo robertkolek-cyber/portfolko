@@ -37,22 +37,45 @@ const CALM_SOURCE: WaveSource = {
 
 // ── Color blobs that drift across the canvas ──
 // Each has an orbit center, radius, speed, phase, and two color sets (muted / neon)
-const COLOR_BLOBS = [
-  { cx: 0.3,  cy: 0.3,  rx: 0.25, ry: 0.20, speed: 0.13, phase: 0.0,   radius: 0.55,
-    muted: [175, 155, 180], neon: [255, 30, 120] },   // mauve → magenta
-  { cx: 0.7,  cy: 0.25, rx: 0.22, ry: 0.18, speed: 0.09, phase: 2.1,   radius: 0.50,
-    muted: [140, 170, 200], neon: [0, 180, 255] },    // slate → cyan
-  { cx: 0.5,  cy: 0.65, rx: 0.30, ry: 0.22, speed: 0.11, phase: 4.2,   radius: 0.60,
-    muted: [155, 185, 170], neon: [0, 255, 160] },    // sage → mint
-  { cx: 0.2,  cy: 0.7,  rx: 0.18, ry: 0.25, speed: 0.15, phase: 1.0,   radius: 0.45,
-    muted: [160, 140, 185], neon: [200, 50, 255] },   // lavender → violet
-  { cx: 0.8,  cy: 0.7,  rx: 0.20, ry: 0.15, speed: 0.07, phase: 3.3,   radius: 0.50,
-    muted: [185, 175, 150], neon: [255, 220, 0] },    // khaki → yellow
-  { cx: 0.5,  cy: 0.2,  rx: 0.28, ry: 0.16, speed: 0.12, phase: 5.5,   radius: 0.48,
-    muted: [165, 150, 165], neon: [255, 80, 200] },   // grey-pink → hot pink
-  { cx: 0.4,  cy: 0.5,  rx: 0.15, ry: 0.28, speed: 0.10, phase: 0.7,   radius: 0.52,
-    muted: [150, 175, 185], neon: [60, 220, 255] },   // steel → sky blue
+// brighten: boost a muted color toward full saturation + brightness
+// keeps the same hue, just pushes channels apart and lifts the peak
+function brighten(rgb: number[], amount: number): number[] {
+  const max = Math.max(...rgb);
+  const min = Math.min(...rgb);
+  const mid = max - min; // current saturation range
+  if (mid < 1) return rgb.map(v => Math.min(255, v + amount * 80));
+  // Push each channel: dominant channels go up, recessive go slightly down
+  return rgb.map(v => {
+    const ratio = (v - min) / mid; // 0 = recessive, 1 = dominant
+    // Dominant → brighter, recessive → slightly darker for more contrast
+    return Math.min(255, Math.max(0,
+      v + ratio * amount * 90 - (1 - ratio) * amount * 25
+    ));
+  });
+}
+
+const COLOR_BLOBS_BASE = [
+  { cx: 0.3,  cy: 0.3,  rx: 0.25, ry: 0.20, speed: 0.13, phase: 0.0,  radius: 0.55,
+    muted: [175, 155, 180] },   // dusty mauve
+  { cx: 0.7,  cy: 0.25, rx: 0.22, ry: 0.18, speed: 0.09, phase: 2.1,  radius: 0.50,
+    muted: [140, 170, 200] },   // slate blue
+  { cx: 0.5,  cy: 0.65, rx: 0.30, ry: 0.22, speed: 0.11, phase: 4.2,  radius: 0.60,
+    muted: [155, 185, 170] },   // sage green
+  { cx: 0.2,  cy: 0.7,  rx: 0.18, ry: 0.25, speed: 0.15, phase: 1.0,  radius: 0.45,
+    muted: [160, 140, 185] },   // soft lavender
+  { cx: 0.8,  cy: 0.7,  rx: 0.20, ry: 0.15, speed: 0.07, phase: 3.3,  radius: 0.50,
+    muted: [185, 175, 150] },   // warm khaki
+  { cx: 0.5,  cy: 0.2,  rx: 0.28, ry: 0.16, speed: 0.12, phase: 5.5,  radius: 0.48,
+    muted: [165, 150, 165] },   // grey-pink
+  { cx: 0.4,  cy: 0.5,  rx: 0.15, ry: 0.28, speed: 0.10, phase: 0.7,  radius: 0.52,
+    muted: [150, 175, 185] },   // steel blue
 ];
+
+// Pre-compute the bright versions (same hue, higher saturation + brightness)
+const COLOR_BLOBS = COLOR_BLOBS_BASE.map(b => ({
+  ...b,
+  bright: brighten(b.muted, 1.0),
+}));
 
 export default function WaterSurface({
   chaos,
@@ -124,10 +147,10 @@ export default function WaterSurface({
         const bx = blob.cx + Math.cos(t) * blob.rx + wobbleX;
         const by = blob.cy + Math.sin(t * 0.7 + 0.3) * blob.ry + wobbleY;
 
-        // Blend color between muted and neon
-        const r = blob.muted[0] + (blob.neon[0] - blob.muted[0]) * blend;
-        const g = blob.muted[1] + (blob.neon[1] - blob.muted[1]) * blend;
-        const b = blob.muted[2] + (blob.neon[2] - blob.muted[2]) * blend;
+        // Blend color between muted and bright (same hue, just more vivid)
+        const r = blob.muted[0] + (blob.bright[0] - blob.muted[0]) * blend;
+        const g = blob.muted[1] + (blob.bright[1] - blob.muted[1]) * blend;
+        const b = blob.muted[2] + (blob.bright[2] - blob.muted[2]) * blend;
 
         // Blob influence radius — expands slightly during chaos for more overlap
         const rad = blob.radius + c * 0.15;
