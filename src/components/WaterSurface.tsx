@@ -182,13 +182,13 @@ export default function WaterSurface({
             [75,  90,  200],  // deep indigo
             [180, 160, 220],  // lavender
           ];
-          // Chaos palette (vivid, saturated)
+          // Chaos palette (neon, ultra-saturated)
           const vivid = [
-            [240, 100, 160],  // vibrant pink
-            [100, 180, 255],  // bright sky blue
-            [130, 230, 200],  // teal / mint
-            [160, 100, 240],  // electric purple
-            [255, 170, 100],  // warm orange
+            [255, 30, 120],   // neon magenta
+            [0, 200, 255],    // electric cyan
+            [0, 255, 160],    // neon green-mint
+            [200, 50, 255],   // bright violet
+            [255, 220, 0],    // blazing yellow
           ];
           // Blend between palettes based on chaos
           const corners = calm.map((col, i) => [
