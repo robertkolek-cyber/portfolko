@@ -174,13 +174,13 @@ export default function WaterSurface({
 
           const idx = (py * RES_W + px) * 4;
 
-          // 5 vivid colours that rotate around the canvas corners
+          // 5 neon colours that rotate around the canvas corners
           const corners = [
-            [240, 100, 160],  // vibrant pink
-            [100, 180, 255],  // bright sky blue
-            [130, 230, 200],  // teal / mint
-            [160, 100, 240],  // electric purple
-            [255, 170, 100],  // warm orange
+            [255, 30, 120],   // neon magenta
+            [0, 200, 255],    // electric cyan
+            [0, 255, 160],    // neon green-mint
+            [200, 50, 255],   // bright violet
+            [255, 220, 0],    // blazing yellow
           ];
 
           // Color rotation — much faster during chaos so drift is clearly visible
