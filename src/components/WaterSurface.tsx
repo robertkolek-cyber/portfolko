@@ -174,14 +174,29 @@ export default function WaterSurface({
 
           const idx = (py * RES_W + px) * 4;
 
-          // 5 neon colours that rotate around the canvas corners
-          const corners = [
+          // Muted palette (calm / clarity)
+          const muted = [
+            [180, 140, 170],  // dusty mauve
+            [140, 160, 190],  // slate blue
+            [150, 180, 195],  // muted teal
+            [130, 120, 170],  // soft purple
+            [170, 160, 140],  // warm grey
+          ];
+          // Neon palette (chaos / complexity)
+          const neon = [
             [255, 30, 120],   // neon magenta
             [0, 200, 255],    // electric cyan
             [0, 255, 160],    // neon green-mint
             [200, 50, 255],   // bright violet
             [255, 220, 0],    // blazing yellow
           ];
+          // Ease-in-out cubic for smooth non-linear blend
+          const blend = c * c * (3 - 2 * c); // smoothstep 0→1
+          const corners = muted.map((m, i) => [
+            m[0] + (neon[i][0] - m[0]) * blend,
+            m[1] + (neon[i][1] - m[1]) * blend,
+            m[2] + (neon[i][2] - m[2]) * blend,
+          ]);
 
           // Color rotation — much faster during chaos so drift is clearly visible
           const rotSpeed = 0.06 + c * 0.6;
