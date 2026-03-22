@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import WaterSurface from "./WaterSurface";
+import CurtainBreeze from "./CurtainBreeze";
 
 /* ═══════════════════════════════════════════════════════════════
    ONE TIMELINE. ONE rAF LOOP. EVERY VALUE IS A SMOOTH FUNCTION
@@ -38,10 +38,9 @@ interface CharEntry {
 
 function buildTimeline(): { chars: CharEntry[]; totalDuration: number } {
   const tokens: { text: string; type: "normal" | "complexity" | "clarity"; msPerChar: number }[] = [
-    { text: "I turn ", type: "normal", msPerChar: 60 },
-    { text: "complexity", type: "complexity", msPerChar: 80 },
-    { text: " into ", type: "normal", msPerChar: 50 },
-    { text: "clarity", type: "clarity", msPerChar: 155 },
+    { text: "More than ", type: "normal", msPerChar: 60 },
+    { text: "surface", type: "complexity", msPerChar: 100 },
+    { text: ".", type: "clarity", msPerChar: 400 },
   ];
 
   const startDelay = 0.6; // seconds before first char
@@ -86,7 +85,7 @@ const SNAP_DURATION = 0.14;     // brief scale-up on resolve
 interface FrameState {
   visibleCount: number;
   elapsedTime: number;
-  waterChaos: number; // 0–1, drives water surface
+  waterChaos: number; // 0–1, drives curtain breeze
   glowIntensity: number; // 0–1+ (overshoot)
   restOpacity: number;
   restY: number;
@@ -164,23 +163,22 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         else break;
       }
 
-      // ── Water chaos: wider arc than text noise ──
-      // Starts calm, builds before complexity, peaks during, settles after clarity
-      let waterChaos = 0.15; // base: gentle ripple
+      // ── Breeze intensity: gentle build during typing, settles after ──
+      let waterChaos = 0.2; // base: light constant breeze
       if (t < COMPLEXITY_START) {
-        // Anticipation — slight build before complexity starts typing
-        waterChaos = 0.15 + smoothstep(COMPLEXITY_START - 0.4, COMPLEXITY_START, t) * 0.2;
-      } else if (t <= COMPLEXITY_END + 0.3) {
-        // Full chaos during complexity
-        const ramp = smoothstep(COMPLEXITY_START, COMPLEXITY_START + 0.4, t);
-        waterChaos = 0.35 + easeOutCubic(ramp) * 0.65;
-      } else if (t <= CLARITY_START + 1.8) {
-        // Long smooth settle — begins overlapping end of complexity, finishes deep into clarity
-        const settle = smoothstep(COMPLEXITY_END - 0.2, CLARITY_START + 1.8, t);
-        waterChaos = 1.0 - easeOutCubic(settle);
+        // Gentle anticipation
+        waterChaos = 0.2 + smoothstep(COMPLEXITY_START - 0.3, COMPLEXITY_START, t) * 0.15;
+      } else if (t <= COMPLEXITY_END + 0.2) {
+        // Breeze picks up during "surface"
+        const ramp = smoothstep(COMPLEXITY_START, COMPLEXITY_START + 0.3, t);
+        waterChaos = 0.35 + easeOutCubic(ramp) * 0.45;
+      } else if (t <= CLARITY_END + 1.5) {
+        // Settles back to gentle breeze
+        const settle = smoothstep(COMPLEXITY_END, CLARITY_END + 1.5, t);
+        waterChaos = 0.8 - easeOutCubic(settle) * 0.55;
       } else {
-        // Fully settled — single centred source, perfect rings
-        waterChaos = 0.0;
+        // Resting — gentle constant breeze
+        waterChaos = 0.25;
       }
 
       // ── Glow: slow bloom → hold → fade out ──
@@ -254,24 +252,15 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
 
     const glowShadow = g > 0.01
       ? [
-          `0 0 ${50 * g}px rgba(200, 210, 235, ${0.75 * Math.min(1, g)})`,
-          `0 0 ${130 * g}px rgba(200, 210, 235, ${0.45 * Math.min(1, g)})`,
-          `0 0 ${300 * g}px rgba(200, 210, 235, ${0.2 * Math.min(1, g)})`,
+          `0 0 ${50 * g}px rgba(245, 190, 100, ${0.75 * Math.min(1, g)})`,
+          `0 0 ${130 * g}px rgba(240, 170, 80, ${0.45 * Math.min(1, g)})`,
+          `0 0 ${300 * g}px rgba(235, 160, 60, ${0.2 * Math.min(1, g)})`,
         ].join(", ")
       : "none";
 
-    // Split into two fixed lines so the layout never reflows during typing:
-    // Line 1: "I turn " + "complexity"
-    // Line 2: " into " + "clarity"
-    const line1: CharEntry[] = [];
+    // Single line: "More than surface."
+    const line1: CharEntry[] = [...visible];
     const line2: CharEntry[] = [];
-    let passedComplexity = false;
-    let inLine2 = false;
-    for (const entry of visible) {
-      if (entry.token === "complexity") passedComplexity = true;
-      else if (passedComplexity && entry.token === "normal") inLine2 = true;
-      (inLine2 ? line2 : line1).push(entry);
-    }
 
     // Render complexity chars with scramble
     const renderComplexity = (chars: CharEntry[]) =>
@@ -341,8 +330,8 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
   const waterScale = 1 + scrollProgress * 40; // zooms from 1x → ~4x by 8%
   const waterFade = Math.max(0, 1 - Math.min(1, (scrollProgress - 0.04) / 0.06));
 
-  // Grain opacity: ramps up with chaos, peaks at ~1.0
-  const grainOpacity = Math.min(1.0, frame.waterChaos * 1.4);
+  // Grain opacity: subtle texture on the curtain
+  const grainOpacity = Math.min(0.4, frame.waterChaos * 0.5);
 
   return (
     <div ref={containerRef} className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
@@ -354,7 +343,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         />
       )}
 
-      {/* Water surface — zooms in on scroll like diving into the circle */}
+      {/* Curtain breeze — billows gently on scroll */}
       <div
         ref={waterScrollRef}
         className="absolute inset-0 pointer-events-none"
@@ -364,7 +353,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
           opacity: waterFade,
         }}
       >
-        <WaterSurface chaos={frame.waterChaos} mousePosRef={mousePosRef} />
+        <CurtainBreeze breeze={frame.waterChaos} mousePosRef={mousePosRef} />
       </div>
 
       {/* Ambient glow — royal blue top-right, light blue bottom-left */}
@@ -379,7 +368,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
             width: `${500 * frame.glowIntensity}px`,
             height: `${250 * frame.glowIntensity}px`,
             transform: "translate(-50%, -50%)",
-            background: `radial-gradient(ellipse, rgba(200, 210, 235, ${0.22 * Math.min(1, frame.glowIntensity)}) 0%, rgba(200, 210, 235, ${0.1 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
+            background: `radial-gradient(ellipse, rgba(245, 200, 120, ${0.22 * Math.min(1, frame.glowIntensity)}) 0%, rgba(240, 180, 90, ${0.1 * Math.min(1, frame.glowIntensity)}) 50%, transparent 70%)`,
             filter: `blur(${70 * frame.glowIntensity}px)`,
             opacity: textFade,
           }}
