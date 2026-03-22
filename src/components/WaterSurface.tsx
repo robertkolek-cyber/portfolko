@@ -20,10 +20,12 @@ interface WaveSource {
 
 // Fewer, gentler interference sources — active at high chaos
 const CHAOS_SOURCES: WaveSource[] = [
-  { x: 0.20, y: 0.25, frequency: 0.032, amplitude: 0.55, speed: 1.4, phase: 0.0 },
-  { x: 0.80, y: 0.20, frequency: 0.028, amplitude: 0.50, speed: 1.7, phase: 1.8 },
-  { x: 0.25, y: 0.75, frequency: 0.035, amplitude: 0.45, speed: 1.2, phase: 3.2 },
-  { x: 0.75, y: 0.70, frequency: 0.030, amplitude: 0.50, speed: 1.5, phase: 4.8 },
+  { x: 0.18, y: 0.25, frequency: 0.038, amplitude: 0.70, speed: 1.6, phase: 0.0 },
+  { x: 0.78, y: 0.18, frequency: 0.032, amplitude: 0.65, speed: 1.9, phase: 1.5 },
+  { x: 0.50, y: 0.80, frequency: 0.042, amplitude: 0.60, speed: 1.3, phase: 2.9 },
+  { x: 0.22, y: 0.72, frequency: 0.030, amplitude: 0.65, speed: 1.8, phase: 0.8 },
+  { x: 0.82, y: 0.62, frequency: 0.048, amplitude: 0.55, speed: 1.4, phase: 3.5 },
+  { x: 0.45, y: 0.35, frequency: 0.036, amplitude: 0.60, speed: 2.0, phase: 4.2 },
 ];
 
 // The one calm source — centre of the canvas
@@ -123,8 +125,8 @@ export default function WaterSurface({
             if (intensity < 0.01) continue;
 
             const dist = Math.hypot(nx - src.x, ny - src.y);
-            // Wave attenuates with distance — stronger falloff for cleaner look
-            const attenuation = Math.max(0.05, 1 - dist * 1.4);
+            // Wave attenuates with distance
+            const attenuation = Math.max(0.08, 1 - dist * 1.1);
             const h =
               Math.sin(
                 dist * src.frequency * RES_W -
@@ -168,7 +170,7 @@ export default function WaterSurface({
           // Sharpen to rings by applying a soft threshold
           const ringed =
             Math.pow(
-              Math.abs(Math.sin(clamped * Math.PI * (4 + c * 3))),
+              Math.abs(Math.sin(clamped * Math.PI * (4 + c * 5))),
               0.5 + effectiveSharpness * 1.5
             );
 
@@ -224,7 +226,7 @@ export default function WaterSurface({
           buf[idx]     = Math.round(baseR + (75 - baseR) * c * 0.4);
           buf[idx + 1] = Math.round(baseG + (90 - baseG) * c * 0.4);
           buf[idx + 2] = Math.round(baseB + (200 - baseB) * c * 0.4);
-          buf[idx + 3] = Math.round(ringed * (0.22 + c * 0.08) * 255);
+          buf[idx + 3] = Math.round(ringed * (0.22 + c * 0.11) * 255);
         }
       }
 
