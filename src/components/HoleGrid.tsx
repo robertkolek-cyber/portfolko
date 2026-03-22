@@ -10,8 +10,26 @@ import { useEffect, useRef } from "react";
  * chaos → 0   → smooth settle back to uniform accent color, then grey (clarity)
  */
 
-// Neon palette for chaos fills
-const VIBRANT_COLORS = [
+// Muted palette (low chaos)
+const MUTED_COLORS = [
+  [180, 120, 130],  // dusty rose
+  [180, 170, 120],  // warm khaki
+  [120, 170, 140],  // sage
+  [120, 150, 180],  // slate blue
+  [160, 120, 180],  // soft plum
+  [180, 130, 160],  // mauve
+  [130, 175, 165],  // muted teal
+  [180, 150, 120],  // tan
+  [140, 170, 175],  // grey-teal
+  [150, 120, 170],  // dusty violet
+  [175, 170, 130],  // soft olive
+  [170, 135, 135],  // muted brick
+  [130, 145, 170],  // steel blue
+  [130, 155, 140],  // sage green
+  [170, 130, 145],  // dusty pink
+];
+// Neon palette (high chaos)
+const NEON_COLORS = [
   [255, 0, 60],    // neon red
   [255, 220, 0],   // blazing yellow
   [0, 255, 120],   // neon green
@@ -28,6 +46,17 @@ const VIBRANT_COLORS = [
   [76, 175, 80],   // forest green
   [233, 30, 99],   // magenta
 ];
+// Blend between muted and neon based on chaos (smoothstep easing)
+function blendColor(chaos: number, idx: number): number[] {
+  const t = chaos * chaos * (3 - 2 * chaos); // smoothstep
+  const m = MUTED_COLORS[idx];
+  const n = NEON_COLORS[idx];
+  return [
+    m[0] + (n[0] - m[0]) * t,
+    m[1] + (n[1] - m[1]) * t,
+    m[2] + (n[2] - m[2]) * t,
+  ];
+}
 
 interface Hole {
   // Grid position (pixels, center)
@@ -161,11 +190,11 @@ export default function HoleGrid({
             hole.targetFill = 0.5 + seededRandom(hole.seed + 99) * 0.5;
             hole.targetScale = 1 + seededRandom(hole.seed + 50) * 0.3;
 
-            // Assign random vibrant color, change periodically
+            // Assign color blended between muted↔neon based on chaos, change periodically
             const changeInterval = 0.3 + seededRandom(hole.seed + 33) * 0.6;
             if (t - hole.lastColorChange > changeInterval) {
-              const colorIdx = Math.floor(seededRandom(hole.seed + Math.floor(t * 3)) * VIBRANT_COLORS.length);
-              const color = VIBRANT_COLORS[colorIdx];
+              const colorIdx = Math.floor(seededRandom(hole.seed + Math.floor(t * 3)) * NEON_COLORS.length);
+              const color = blendColor(c, colorIdx);
               hole.tr = color[0];
               hole.tg = color[1];
               hole.tb = color[2];
