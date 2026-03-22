@@ -28,23 +28,23 @@ const MUTED_COLORS = [
   [160, 182, 200],  // sage green + blue
   [178, 162, 205],  // dusty pink + blue
 ];
-// Vivid palette (high chaos / complexity) — full saturation
+// Vivid palette (high chaos / complexity) — sunrise tones
 const VIVID_COLORS = [
-  [255, 87, 51],   // coral red
-  [255, 195, 0],   // amber
-  [0, 200, 83],    // green
-  [0, 176, 255],   // sky blue
-  [156, 39, 176],  // purple
-  [255, 64, 129],  // pink
-  [0, 230, 118],   // mint
-  [255, 145, 0],   // orange
-  [29, 233, 182],  // teal
-  [124, 77, 255],  // violet
-  [255, 214, 0],   // yellow
-  [244, 67, 54],   // red
-  [33, 150, 243],  // blue
-  [76, 175, 80],   // forest green
-  [233, 30, 99],   // magenta
+  [255, 130, 70],   // warm coral
+  [255, 185, 50],   // golden amber
+  [255, 160, 90],   // peach
+  [255, 110, 80],   // salmon
+  [255, 200, 80],   // sunflower
+  [240, 90, 90],    // warm rose
+  [255, 170, 60],   // marigold
+  [255, 145, 100],  // apricot
+  [250, 120, 110],  // coral pink
+  [255, 210, 100],  // light gold
+  [245, 100, 70],   // burnt orange
+  [255, 155, 80],   // tangerine
+  [255, 190, 110],  // honey
+  [240, 130, 90],   // terracotta
+  [255, 175, 70],   // amber glow
 ];
 // Blend between muted and vivid based on chaos (smoothstep)
 function blendColor(chaos: number, idx: number): number[] {
