@@ -142,13 +142,13 @@ export default function ParallaxWork() {
         const opOut   = end   - (end - center)   * 0.2;
         const opacity = interpolate(progress, [start, opIn, center, opOut, end], [0, 1, 1, 1, 0]);
 
-        // On compact screens (13"), tiles drift sideways sooner with a mid-point kick
+        // Tiles enter from off-screen, drift slightly at center, then fly out
         const midOut  = center + (end - center) * (isCompact ? 0.25 : 0.5);
         const xVw     = isCompact
           ? interpolate(progress, [start, center, midOut, end],
-              isEven ? [-3, -12, -120, -250] : [3, 12, 120, 250])
+              isEven ? [-80, -12, -120, -250] : [80, 12, 120, 250])
           : interpolate(progress, [start, center, end],
-              isEven ? [-5, -20, -250] : [5, 20, 250]);
+              isEven ? [-70, -20, -250] : [70, 20, 250]);
 
         el.style.opacity   = String(opacity);
         el.style.transform = `translateX(${xVw}vw) scale(${scale})`;
