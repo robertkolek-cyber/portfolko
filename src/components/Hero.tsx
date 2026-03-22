@@ -341,8 +341,8 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
   const waterScale = 1 + scrollProgress * 40; // zooms from 1x → ~4x by 8%
   const waterFade = Math.max(0, 1 - Math.min(1, (scrollProgress - 0.04) / 0.06));
 
-  // Grain opacity: ramps up with chaos, peaks at ~0.35 opacity
-  const grainOpacity = Math.min(0.35, frame.waterChaos * 0.45);
+  // Grain opacity: ramps up with chaos, peaks at ~0.7 opacity
+  const grainOpacity = Math.min(0.7, frame.waterChaos * 0.85);
 
   return (
     <div ref={containerRef} className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
