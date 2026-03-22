@@ -49,10 +49,9 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-20">
           <Link
             href="/"
-            className="group relative font-[family-name:var(--font-display)] text-lg font-bold tracking-widest text-slate-100 overflow-hidden"
+            className="font-[family-name:var(--font-display)] text-lg font-bold tracking-widest text-slate-100"
           >
-            <span className="inline-block transition-opacity duration-300 ease-out group-hover:opacity-0">RK<span className="text-lime">.</span></span>
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100">ROBERT KOLEK</span>
+            ROBERT KOLEK
           </Link>
 
           {/* Desktop nav */}
