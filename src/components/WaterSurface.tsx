@@ -174,13 +174,13 @@ export default function WaterSurface({
 
           const idx = (py * RES_W + px) * 4;
 
-          // 5 colours that slowly rotate around the canvas corners
+          // 5 vivid colours that rotate around the canvas corners
           const corners = [
-            [220, 160, 200],  // dusty pink
-            [170, 190, 230],  // pale grey-blue
-            [150, 210, 245],  // light blue
-            [75,  90,  200],  // deep indigo
-            [180, 160, 220],  // lavender
+            [240, 100, 160],  // vibrant pink
+            [100, 180, 255],  // bright sky blue
+            [130, 230, 200],  // teal / mint
+            [160, 100, 240],  // electric purple
+            [255, 170, 100],  // warm orange
           ];
 
           // Color rotation — much faster during chaos so drift is clearly visible
@@ -220,10 +220,10 @@ export default function WaterSurface({
           const baseG = topG + (botG - topG) * ny;
           const baseB = topB + (botB - topB) * ny;
 
-          // Chaos slightly deepens colors but preserves gradient variation
-          buf[idx]     = Math.round(baseR + (75 - baseR) * c * 0.15);
-          buf[idx + 1] = Math.round(baseG + (90 - baseG) * c * 0.15);
-          buf[idx + 2] = Math.round(baseB + (200 - baseB) * c * 0.15);
+          // Use gradient colors directly — no indigo crush
+          buf[idx]     = Math.round(baseR);
+          buf[idx + 1] = Math.round(baseG);
+          buf[idx + 2] = Math.round(baseB);
           buf[idx + 3] = Math.round(ringed * (0.22 + c * 0.095) * 255);
         }
       }
