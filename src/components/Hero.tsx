@@ -163,22 +163,24 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         else break;
       }
 
-      // ── Breeze intensity: gentle build during typing, settles after ──
-      let waterChaos = 0.2; // base: light constant breeze
+      // ── Breeze intensity: strong opening gust → calms → gentle typing breeze ──
+      let waterChaos = 0.15; // resting base
+      // Strong opening breeze that exponentially decays
+      const openingBreeze = Math.exp(-t * 0.7) * 0.7;
       if (t < COMPLEXITY_START) {
-        // Gentle anticipation
-        waterChaos = 0.2 + smoothstep(COMPLEXITY_START - 0.3, COMPLEXITY_START, t) * 0.15;
+        // Gentle anticipation builds on top of fading opening gust
+        waterChaos = 0.15 + openingBreeze + smoothstep(COMPLEXITY_START - 0.3, COMPLEXITY_START, t) * 0.1;
       } else if (t <= COMPLEXITY_END + 0.2) {
         // Breeze picks up during "surface"
         const ramp = smoothstep(COMPLEXITY_START, COMPLEXITY_START + 0.3, t);
-        waterChaos = 0.35 + easeOutCubic(ramp) * 0.45;
+        waterChaos = 0.3 + openingBreeze + easeOutCubic(ramp) * 0.4;
       } else if (t <= CLARITY_END + 1.5) {
         // Settles back to gentle breeze
         const settle = smoothstep(COMPLEXITY_END, CLARITY_END + 1.5, t);
-        waterChaos = 0.8 - easeOutCubic(settle) * 0.55;
+        waterChaos = 0.7 + openingBreeze - easeOutCubic(settle) * 0.55;
       } else {
-        // Resting — gentle constant breeze
-        waterChaos = 0.25;
+        // Resting — light constant breeze
+        waterChaos = 0.15 + openingBreeze;
       }
 
       // ── Glow: slow bloom → hold → fade out ──
