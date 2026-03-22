@@ -264,7 +264,7 @@ export default function ParallaxWork() {
         {/* Soft white fog behind heading — tiles disappear behind it */}
         <div
           ref={headingRef}
-          className="absolute inset-x-0 bottom-0 z-[400] pointer-events-none"
+          className="absolute inset-x-0 bottom-12 z-[400] pointer-events-none"
           style={{ opacity: 0 }}
         >
           {/* Blurry gradient backdrop */}
