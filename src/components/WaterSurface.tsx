@@ -20,11 +20,10 @@ interface WaveSource {
 
 // Fewer, gentler interference sources — active at high chaos
 const CHAOS_SOURCES: WaveSource[] = [
-  { x: 0.19, y: 0.25, frequency: 0.035, amplitude: 0.62, speed: 1.5, phase: 0.0 },
-  { x: 0.79, y: 0.19, frequency: 0.030, amplitude: 0.58, speed: 1.8, phase: 1.6 },
-  { x: 0.48, y: 0.80, frequency: 0.038, amplitude: 0.52, speed: 1.25, phase: 3.0 },
-  { x: 0.23, y: 0.73, frequency: 0.032, amplitude: 0.58, speed: 1.5, phase: 0.8 },
-  { x: 0.80, y: 0.65, frequency: 0.042, amplitude: 0.50, speed: 1.3, phase: 3.5 },
+  { x: 0.19, y: 0.25, frequency: 0.035, amplitude: 0.58, speed: 1.5, phase: 0.0 },
+  { x: 0.79, y: 0.19, frequency: 0.030, amplitude: 0.52, speed: 1.8, phase: 1.6 },
+  { x: 0.23, y: 0.73, frequency: 0.032, amplitude: 0.50, speed: 1.3, phase: 0.8 },
+  { x: 0.80, y: 0.65, frequency: 0.038, amplitude: 0.48, speed: 1.4, phase: 3.5 },
 ];
 
 // The one calm source — centre of the canvas
@@ -169,7 +168,7 @@ export default function WaterSurface({
           // Sharpen to rings by applying a soft threshold
           const ringed =
             Math.pow(
-              Math.abs(Math.sin(clamped * Math.PI * (4 + c * 4))),
+              Math.abs(Math.sin(clamped * Math.PI * (4 + c * 3.5))),
               0.5 + effectiveSharpness * 1.5
             );
 
@@ -184,8 +183,8 @@ export default function WaterSurface({
             [180, 160, 220],  // lavender
           ];
 
-          // Slow rotation angle — colors drift around corners over time
-          const rotSpeed = 0.06;
+          // Color rotation — faster during chaos for visible movement
+          const rotSpeed = 0.06 + c * 0.18;
           const angle = time * rotSpeed;
           // Fractional offset determines which corner gets which color
           const shift = ((angle % (Math.PI * 2)) / (Math.PI * 2)); // 0–1
