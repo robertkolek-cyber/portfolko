@@ -3,11 +3,12 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
 
 /**
- * Sheer linen curtain billowing in an asymmetric morning breeze.
- * Golden-hour sunlight pours through from the right, casting
- * warm caustics and volumetric glow through the translucent fabric.
+ * Sheer curtain billowing in a morning breeze.
+ * - Starts with a strong gust that calms down
+ * - Mouse swipes trigger new breeze bursts
+ * - Edges peek open to reveal what's behind
  *
- * breeze: 0 = still, 1 = strong gust
+ * breeze: 0 = still, 1 = strong wind
  */
 
 export default function CurtainBreeze({
@@ -24,14 +25,23 @@ export default function CurtainBreeze({
   const breezeRef = useRef(breeze);
   breezeRef.current = breeze;
 
+  // Swipe detection — track mouse velocity
+  const swipeRef = useRef({
+    lastX: 0,
+    lastY: 0,
+    lastTime: 0,
+    // Active gusts triggered by swipes
+    gusts: [] as { startTime: number; strength: number; dirX: number; originY: number }[],
+  });
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const W = 480;
-    const H = 320;
+    const W = 400;
+    const H = 280;
     canvas.width = W;
     canvas.height = H;
     ctx.imageSmoothingEnabled = true;
@@ -41,13 +51,9 @@ export default function CurtainBreeze({
 
     let time = 0;
 
-    // ── Noise primitives ─────────────────────────────────────────
+    // ── Noise ────────────────────────────────────────────────────
     const hash = (x: number, y: number) => {
       const h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
-      return h - Math.floor(h);
-    };
-    const hash2 = (x: number, y: number) => {
-      const h = Math.sin(x * 269.5 + y * 183.3) * 28947.7139;
       return h - Math.floor(h);
     };
 
@@ -68,239 +74,210 @@ export default function CurtainBreeze({
       let v = 0, a = 0.5, f = 1;
       for (let i = 0; i < oct; i++) {
         v += smoothNoise(x * f, y * f) * a;
-        a *= 0.5; f *= 2.1;
+        a *= 0.5; f *= 2;
       }
       return v;
     };
 
-    // ── Per-fold personality (computed once) ──────────────────────
-    // Asymmetric: each fold has its own width, phase offset, stiffness
-    const FOLDS = 11;
-    const foldCenter: number[] = [];
-    const foldWidth: number[] = [];
-    const foldPhaseOff: number[] = [];
-    const foldStiffness: number[] = []; // how much it resists the wind
-    const foldDepthBias: number[] = [];
+    // ── Swipe listener ───────────────────────────────────────────
+    const onMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const now = performance.now();
+      const mx = (e.clientX - rect.left) / rect.width;
+      const my = (e.clientY - rect.top) / rect.height;
+      const sw = swipeRef.current;
 
-    // Irregular fold positions — wider on left (near light), bunched on right
-    {
-      let cursor = 0;
-      for (let i = 0; i < FOLDS; i++) {
-        const baseW = 1.0 / FOLDS;
-        // Vary width: left folds wider, right folds narrower + noise
-        const widthVar = baseW * (0.7 + hash(i * 17.3, 42.1) * 0.65);
-        foldWidth.push(widthVar);
-        foldCenter.push(cursor + widthVar * 0.5);
-        cursor += widthVar;
-        foldPhaseOff.push(hash(i * 31.7, 88.3) * Math.PI * 2);
-        foldStiffness.push(0.6 + hash(i * 53.1, 19.7) * 0.8);
-        foldDepthBias.push(hash2(i * 7.3, 61.9) * 0.3 - 0.15);
-      }
-      // Normalize so they span 0–1
-      const total = cursor;
-      let c2 = 0;
-      for (let i = 0; i < FOLDS; i++) {
-        foldWidth[i] /= total;
-        foldCenter[i] = c2 + foldWidth[i] * 0.5;
-        c2 += foldWidth[i];
-      }
-    }
+      if (sw.lastTime > 0) {
+        const dt = (now - sw.lastTime) / 1000;
+        if (dt > 0 && dt < 0.1) {
+          const vx = (mx - sw.lastX) / dt;
+          const vy = (my - sw.lastY) / dt;
+          const speed = Math.sqrt(vx * vx + vy * vy);
 
-    // ── Sun direction (morning light from upper-right) ───────────
-    const SUN_DIR_X = 0.65;
-    const SUN_DIR_Y = -0.45;
-    const SUN_NORM = Math.sqrt(SUN_DIR_X * SUN_DIR_X + SUN_DIR_Y * SUN_DIR_Y);
+          // Trigger gust if swipe is fast enough
+          if (speed > 1.5) {
+            const strength = Math.min(1, (speed - 1.5) / 4);
+            sw.gusts.push({
+              startTime: time,
+              strength,
+              dirX: Math.sign(vx),
+              originY: my,
+            });
+            // Keep max 4 active gusts
+            if (sw.gusts.length > 4) sw.gusts.shift();
+          }
+        }
+      }
+
+      sw.lastX = mx;
+      sw.lastY = my;
+      sw.lastTime = now;
+    };
+
+    canvas.addEventListener("mousemove", onMouseMove);
+
+    // ── Fold config (8 folds, similar to original) ───────────────
+    const FOLDS = 8;
+    const foldW = 1.0 / FOLDS;
 
     const draw = () => {
       const dt = 0.016;
       time += dt;
       const b = breezeRef.current;
       const mouse = mousePosRef?.current;
+      const sw = swipeRef.current;
 
-      // ── Wind field: asymmetric, directional (from left-ish) ────
-      // Two overlapping wave systems + noise gusts
-      const windTime = time * (0.5 + b * 1.6);
-      const gustPhase = Math.sin(time * 0.37) * 0.5 + 0.5; // slow gust cycle
-      const gustStrength = gustPhase * gustPhase * b * 0.6;
+      // ── Opening gust: strong at start, exponential decay ───────
+      // Peaks around 0.8, fully calm by ~4s
+      const openGust = Math.exp(-time * 0.8) * 0.9;
+
+      // Effective breeze = base + opening gust
+      const effBreeze = b + openGust;
+
+      // ── Prune expired gusts ────────────────────────────────────
+      sw.gusts = sw.gusts.filter(g => time - g.startTime < 2.5);
 
       for (let py = 0; py < H; py++) {
         const ny = py / H;
-        // Hang factor — top is pinned, bottom flows freely
-        // Cubic for more dramatic bottom billow
-        const hang = ny * ny * ny;
-        const hangMid = ny * ny; // less extreme version for some effects
+        const hang = ny * ny; // top pinned, bottom free
 
         for (let ppx = 0; ppx < W; ppx++) {
           const nx = ppx / W;
 
-          // ── Asymmetric wind displacement ───────────────────────
-          // Primary wave — slow, broad sweep from left
-          const w1 = Math.sin(windTime * 0.8 + ny * 1.8 + nx * 0.4 + 0.0) * (0.04 + b * 0.14);
-          // Secondary — faster, tighter, phase-shifted
-          const w2 = Math.sin(windTime * 1.3 + ny * 3.2 - nx * 1.1 + 2.1) * (0.02 + b * 0.07);
-          // Tertiary — very fast ripple, mostly at bottom
-          const w3 = Math.sin(windTime * 2.1 + ny * 5.0 + nx * 2.8 + 4.7) * (0.01 + b * 0.04) * hang;
-          // Gust — sudden, localized push
-          const gustLocal = Math.sin(windTime * 0.6 + ny * 1.2 + nx * 3.0) * gustStrength * 0.08;
+          // ── Edge peek: curtain doesn't cover full width ────────
+          // Left and right edges pull back, revealing background
+          // The amount varies with breeze — stronger wind = more peek
+          const edgeLeft = 0.06 + effBreeze * 0.04 + Math.sin(time * 0.5 + ny * 2) * 0.02 * hang;
+          const edgeRight = 0.06 + effBreeze * 0.03 + Math.sin(time * 0.4 + ny * 1.7 + 1.5) * 0.025 * hang;
 
-          // Noise turbulence — organic chaos
-          const turb = (fbm(
-            nx * 3.5 + time * 0.12 * (1 + b),
-            ny * 2.5 + time * 0.07,
+          // Soft edge alpha mask — fade to transparent at sides
+          let edgeAlpha = 1.0;
+          if (nx < edgeLeft) {
+            edgeAlpha = Math.pow(nx / edgeLeft, 1.5);
+          } else if (nx > 1 - edgeRight) {
+            edgeAlpha = Math.pow((1 - nx) / edgeRight, 1.5);
+          }
+
+          // Bottom edge also flutters and peeks
+          const hemLine = 0.92 + Math.sin(time * 0.6 + nx * 4) * 0.03 * effBreeze - effBreeze * 0.02;
+          if (ny > hemLine) {
+            edgeAlpha *= Math.max(0, 1 - (ny - hemLine) / (1 - hemLine));
+          }
+
+          if (edgeAlpha < 0.005) {
+            const idx = (py * W + ppx) * 4;
+            px[idx] = px[idx + 1] = px[idx + 2] = px[idx + 3] = 0;
+            continue;
+          }
+
+          // ── Wind displacement ──────────────────────────────────
+          const breezeSpeed = 0.6 + effBreeze * 1.8;
+          const breezeAmp = (0.03 + effBreeze * 0.12) * hang;
+
+          const wind1 = Math.sin(time * breezeSpeed + ny * 2.0) * breezeAmp;
+          const wind2 = Math.sin(time * breezeSpeed * 0.7 + ny * 3.5 + 1.3) * breezeAmp * 0.5;
+          const wind3 = Math.sin(time * breezeSpeed * 1.4 + ny * 1.2 + nx * 2.0) * breezeAmp * 0.3;
+
+          // Noise turbulence
+          const turb = fbm(
+            nx * 3.0 + time * 0.15 * (1 + effBreeze),
+            ny * 2.0 + time * 0.08,
             3
-          ) - 0.35) * 0.06 * (1 + b * 2.5) * hangMid;
+          ) * 0.04 * (1 + effBreeze * 2) * hang;
 
-          let totalWind = (w1 + w2 + w3 + gustLocal + turb) * hang;
+          let totalDisp = wind1 + wind2 + wind3 + turb;
 
-          // ── Mouse push (asymmetric — fabric flows away) ────────
+          // ── Swipe gusts ────────────────────────────────────────
+          for (const gust of sw.gusts) {
+            const age = time - gust.startTime;
+            // Quick rise (0.2s), slow decay (2s)
+            const envelope = age < 0.2
+              ? age / 0.2
+              : Math.exp(-(age - 0.2) * 1.8);
+            // Gust spreads vertically from swipe origin
+            const yDist = Math.abs(ny - gust.originY);
+            const yFalloff = Math.exp(-yDist * yDist * 8);
+            // Propagation wave
+            const wave = Math.sin(age * 6 - ny * 4) * 0.5 + 0.5;
+            totalDisp += gust.dirX * gust.strength * envelope * yFalloff * wave * 0.15 * hang;
+          }
+
+          // ── Mouse proximity push ──────────────────────────────
           if (mouse) {
             const mdx = nx - mouse.x;
             const mdy = ny - mouse.y;
             const dist = Math.sqrt(mdx * mdx + mdy * mdy);
-            const radius = 0.18;
-            if (dist < radius) {
-              const strength = (1 - dist / radius);
-              const push = strength * strength * strength * 0.12 * hang;
-              // Push in the direction away from mouse, with downward bias
-              totalWind += push * Math.sign(mdx || 0.01);
+            if (dist < 0.15) {
+              const push = Math.pow(1 - dist / 0.15, 2) * 0.08 * hang;
+              totalDisp += push;
             }
           }
 
-          // ── Vertical displacement (fabric lifts in gusts) ──────
-          const liftWind = Math.sin(windTime * 0.7 + nx * 2.5) * gustStrength * 0.03 * hang;
+          // ── Fold shape ─────────────────────────────────────────
+          const displacedX = nx + totalDisp;
+          const foldPhase = displacedX / foldW * Math.PI * 2;
+          const foldVal = Math.sin(foldPhase);
+          const foldDepth = (foldVal + 1) * 0.5;
 
-          // ── Find which fold we're in and compute fold shape ─────
-          const displacedX = nx + totalWind;
-          let foldVal = 0;
-          let foldIdx = 0;
-          let localPos = 0; // 0-1 within the fold
+          // ── Shading ────────────────────────────────────────────
+          const foldShading = 0.5 + foldDepth * 0.5;
+          const vertGrad = 1.0 - ny * 0.15;
 
-          {
-            let acc = 0;
-            for (let fi = 0; fi < FOLDS; fi++) {
-              if (displacedX < acc + foldWidth[fi] || fi === FOLDS - 1) {
-                foldIdx = fi;
-                localPos = (displacedX - acc) / foldWidth[fi];
-                // Fold shape: not a pure sine — asymmetric curve
-                // Left side of fold is steeper (facing sun), right is gentler
-                const phase = localPos * Math.PI;
-                const skew = 0.15 * Math.sin(foldPhaseOff[fi]); // each fold skews differently
-                foldVal = Math.sin(phase + skew) * (0.8 + foldDepthBias[fi]);
-                break;
-              }
-              acc += foldWidth[fi];
-            }
-          }
+          // Light through fabric (stretch = thin = bright)
+          const stretch = Math.abs(Math.cos(foldPhase));
+          const translucency = stretch * stretch * 0.3;
 
-          const stiff = foldStiffness[foldIdx];
-          // Dampen fold displacement by stiffness
-          const dampedWind = totalWind * (1.0 / stiff);
+          // ── Morning sunlight color ─────────────────────────────
+          // Warm cream base
+          let r = 245, g = 235, bv = 220;
 
-          // ── Fabric surface normal (for lighting) ───────────────
-          // Approximate normal from fold curvature + wind tilt
-          const normalX = -foldVal * 0.6 - dampedWind * 3.0;
-          const normalY = -0.3 + liftWind * 2.0;
-          const normalZ = 1.0;
-          const nLen = Math.sqrt(normalX * normalX + normalY * normalY + normalZ * normalZ);
+          // Warm tint variation
+          const warmN = fbm(nx * 2 + time * 0.05, ny * 1.5 - time * 0.03, 2);
 
-          // ── Lighting ───────────────────────────────────────────
-          // Dot product with sun direction
-          const dot = (normalX * SUN_DIR_X + normalY * SUN_DIR_Y + normalZ * 0.6) / (nLen * SUN_NORM);
-          const diffuse = Math.max(0, dot);
+          // Golden sun tint — stronger on right side (sun source)
+          const sunFactor = (0.3 + nx * 0.7);
+          r += 15 * warmN + 12 * sunFactor;
+          g += 6 * warmN + 4 * sunFactor;
+          bv += -12 * warmN - 10 * sunFactor;
 
-          // Fold depth shading — valleys are darker
-          const foldDepth = (foldVal + 1) * 0.5; // 0-1
-          const foldShade = 0.4 + foldDepth * 0.6;
+          // Combine shading
+          const shade = foldShading * vertGrad;
+          r *= shade;
+          g *= shade;
+          bv *= shade;
 
-          // ── Translucency / backlight ───────────────────────────
-          // Where fabric is thin (stretched), morning light pours through
-          const stretch = 1.0 - Math.abs(foldVal);
-          const backlight = stretch * stretch * (0.15 + b * 0.15) * (0.5 + nx * 0.8);
-          // Stronger on the right side (facing the sun source)
+          // Backlight glow (golden light through thin fabric)
+          r += translucency * 50 * sunFactor;
+          g += translucency * 30 * sunFactor;
+          bv += translucency * 10;
 
-          // ── Subsurface scatter (warm glow through fabric) ──────
-          const sss = Math.pow(stretch, 3) * 0.25 * (0.6 + nx * 0.6);
+          // Specular on fold peaks
+          const spec = Math.pow(Math.max(0, foldDepth - 0.6) / 0.4, 3) * 0.15;
+          r += spec * 70;
+          g += spec * 50;
+          bv += spec * 25;
 
-          // ── Specular — sharp glint on fold peaks ───────────────
-          const halfVec = dot; // simplified
-          const spec = Math.pow(Math.max(0, halfVec), 12) * 0.35 * foldDepth;
+          // Caustic dancing light
+          const caustic = fbm(nx * 5 + time * 0.15 + totalDisp * 6, ny * 3.5 + time * 0.1, 2);
+          const causticVal = Math.pow(Math.max(0, caustic - 0.38) * 2.5, 2) * sunFactor * stretch * 0.3;
+          r += causticVal * 45;
+          g += causticVal * 30;
+          bv += causticVal * 8;
 
-          // ── Color: warm linen base + golden sunlight ───────────
-          // Base linen — slightly varies per fold for realism
-          const linenVar = hash(foldIdx * 13.7 + 5.1, 0) * 6;
-          let baseR = 242 + linenVar;
-          let baseG = 233 + linenVar * 0.7;
-          let baseB = 218 - linenVar * 0.3;
+          // Fine texture
+          const tex = (hash(ppx * 0.7 + time * 0.5, py * 0.7) - 0.5) * 5;
+          r += tex; g += tex; bv += tex;
 
-          // Warm color shift from noise (subtle life in the fabric)
-          const warmN = fbm(nx * 2.5 + time * 0.04, ny * 1.8 - time * 0.025, 2);
-
-          // Morning sun tint — golden/amber, stronger on right side
-          const sunTintStrength = (0.3 + nx * 0.7) * (0.6 + diffuse * 0.4);
-          const sunR = 30 * sunTintStrength;
-          const sunG = 12 * sunTintStrength;
-          const sunB = -15 * sunTintStrength;
-
-          // Combine all lighting
-          const shade = foldShade * (0.7 + diffuse * 0.5);
-
-          let r = (baseR + warmN * 8 + sunR) * shade;
-          let g = (baseG + warmN * 4 + sunG) * shade;
-          let bv = (baseB - warmN * 6 + sunB) * shade;
-
-          // Add backlight (golden light through fabric)
-          r += backlight * 90;
-          g += backlight * 55;
-          bv += backlight * 15;
-
-          // Add SSS (warm orange glow)
-          r += sss * 60;
-          g += sss * 30;
-          bv += sss * 5;
-
-          // Specular highlight (bright warm)
-          r += spec * 80;
-          g += spec * 65;
-          bv += spec * 40;
-
-          // ── Vertical gradient: slight darkening at bottom ──────
-          const vGrad = 1.0 - ny * 0.12;
-          r *= vGrad;
-          g *= vGrad;
-          bv *= vGrad;
-
-          // ── Sunbeam caustics — dancing light patches ───────────
-          // Simulates refracted light patterns on the fabric
-          const caustic = fbm(
-            nx * 6.0 + time * 0.18 + totalWind * 8,
-            ny * 4.0 + time * 0.12,
-            2
-          );
-          const causticMask = Math.pow(Math.max(0, caustic - 0.35) * 2.5, 2);
-          const causticStrength = causticMask * (0.2 + nx * 0.4) * (0.5 + b * 0.5) * stretch;
-          r += causticStrength * 55;
-          g += causticStrength * 40;
-          bv += causticStrength * 12;
-
-          // ── Fine fabric texture ────────────────────────────────
-          const tex = (hash(ppx * 0.8 + time * 0.3, py * 0.8) - 0.5) * 4;
-          r += tex;
-          g += tex;
-          bv += tex;
-
-          // ── Alpha: sheer fabric, more see-through when stretched ─
-          const baseAlpha = 0.55 + foldDepth * 0.4;
-          const stretchAlpha = 1.0 - stretch * stretch * 0.35;
-          // Edges are softer (feathered hem at bottom)
-          const hemFade = ny > 0.88 ? 1.0 - (ny - 0.88) / 0.12 : 1.0;
-          const topFade = ny < 0.04 ? ny / 0.04 : 1.0;
-          const alpha = baseAlpha * stretchAlpha * hemFade * topFade * (0.7 + b * 0.2);
+          // ── Alpha ──────────────────────────────────────────────
+          const baseAlpha = 0.6 + foldDepth * 0.35;
+          const sheerAlpha = 1.0 - translucency * 0.5;
+          const alpha = baseAlpha * sheerAlpha * edgeAlpha * (0.75 + effBreeze * 0.15);
 
           const idx = (py * W + ppx) * 4;
-          px[idx]     = Math.max(0, Math.min(255, r + 0.5)) | 0;
-          px[idx + 1] = Math.max(0, Math.min(255, g + 0.5)) | 0;
-          px[idx + 2] = Math.max(0, Math.min(255, bv + 0.5)) | 0;
-          px[idx + 3] = Math.max(0, Math.min(255, alpha * 255 + 0.5)) | 0;
+          px[idx]     = Math.max(0, Math.min(255, r)) | 0;
+          px[idx + 1] = Math.max(0, Math.min(255, g)) | 0;
+          px[idx + 2] = Math.max(0, Math.min(255, bv)) | 0;
+          px[idx + 3] = Math.max(0, Math.min(255, alpha * 255)) | 0;
         }
       }
 
@@ -309,7 +286,10 @@ export default function CurtainBreeze({
     };
 
     frameRef.current = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(frameRef.current);
+    return () => {
+      cancelAnimationFrame(frameRef.current);
+      canvas.removeEventListener("mousemove", onMouseMove);
+    };
   }, []);
 
   return (
