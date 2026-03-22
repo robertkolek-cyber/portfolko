@@ -203,13 +203,12 @@ export default function WaterSurface({
             [168, 175, 220],
             [182, 188, 210],
           ];
-          // Storm palette (complexity / chaos) — dark navy sea
           const vivid = [
-            [18, 25, 55],     // deep navy
-            [25, 40, 72],     // dark steel blue
-            [15, 35, 60],     // midnight blue
-            [30, 28, 65],     // dark indigo
-            [20, 45, 58],     // stormy teal
+            [240, 100, 160],
+            [100, 180, 255],
+            [130, 230, 200],
+            [160, 100, 240],
+            [255, 170, 100],
           ];
           const blend = c * c * (3 - 2 * c);
           const corners = muted.map((m, i) => [
@@ -251,28 +250,20 @@ export default function WaterSurface({
           let baseG = topG + (botG - topG) * ny;
           let baseB = topB + (botB - topB) * ny;
 
-          // ── Compose highlights ──
-          // During storm: tighter, rarer specular — dramatic flashes, not wash
-          const highlightScale = 1 - blend * 0.6; // dim highlights as storm builds
-          const highlight = Math.min(1, (specular + caustic * (0.5 + c * 0.5)) * highlightScale);
-          // During storm: highlights tint toward cool white-blue, not pure white
-          const hlR = 200 + (255 - 200) * (1 - blend);
-          const hlG = 220 + (255 - 220) * (1 - blend);
-          const hlB = 255;
-          baseR = baseR + (hlR - baseR) * highlight;
-          baseG = baseG + (hlG - baseG) * highlight;
-          baseB = baseB + (hlB - baseB) * highlight;
+          // ── Compose: specular + caustic brighten the base color toward white ──
+          const highlight = Math.min(1, specular + caustic * (0.5 + c * 0.5));
+          baseR = baseR + (255 - baseR) * highlight;
+          baseG = baseG + (255 - baseG) * highlight;
+          baseB = baseB + (255 - baseB) * highlight;
 
           buf[idx]     = Math.round(Math.min(255, baseR));
           buf[idx + 1] = Math.round(Math.min(255, baseG));
           buf[idx + 2] = Math.round(Math.min(255, baseB));
 
-          // Alpha: ramps up dramatically during storm so navy actually reads as navy
-          // calm: ~0.22 (gentle overlay), storm: ~0.75 (opaque dark water)
-          const stormOpacity = blend * 0.55;
+          // Alpha: ring pattern + caustic brightening + depth glow
           const ringAlpha = ringed * (0.22 + c * 0.095);
-          const causticAlpha = caustic * (0.08 + c * 0.04);
-          buf[idx + 3] = Math.round(Math.min(1, ringAlpha + causticAlpha + depthGlow + stormOpacity) * 255);
+          const causticAlpha = caustic * (0.12 + c * 0.08);
+          buf[idx + 3] = Math.round(Math.min(1, ringAlpha + causticAlpha + depthGlow) * 255);
         }
       }
 
