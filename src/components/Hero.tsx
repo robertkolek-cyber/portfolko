@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import WaterSurface from "./WaterSurface";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -344,15 +344,64 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
   // Grain opacity: ramps up with chaos, peaks at ~1.0
   const grainOpacity = Math.min(1.0, frame.waterChaos * 1.4);
 
+  // Canvas grain — truly random every frame, no tiling
+  const grainCanvasRef = useRef<HTMLCanvasElement>(null);
+  const grainRafRef = useRef(0);
+  const grainActiveRef = useRef(false);
+
+  const drawGrain = useCallback(() => {
+    const canvas = grainCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+
+    // Low-res canvas scaled up for chunky grain (each "pixel" = ~4px on screen)
+    const scale = 0.25;
+    const w = Math.ceil(window.innerWidth * scale);
+    const h = Math.ceil(window.innerHeight * scale);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+
+    const imageData = ctx.createImageData(w, h);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const v = Math.random() * 255;
+      data[i] = v;
+      data[i + 1] = v;
+      data[i + 2] = v;
+      data[i + 3] = 255;
+    }
+    ctx.putImageData(imageData, 0, 0);
+
+    if (grainActiveRef.current) {
+      grainRafRef.current = requestAnimationFrame(drawGrain);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (grainOpacity > 0.01) {
+      grainActiveRef.current = true;
+      grainRafRef.current = requestAnimationFrame(drawGrain);
+    } else {
+      grainActiveRef.current = false;
+      cancelAnimationFrame(grainRafRef.current);
+    }
+    return () => {
+      grainActiveRef.current = false;
+      cancelAnimationFrame(grainRafRef.current);
+    };
+  }, [grainOpacity > 0.01, drawGrain]);
+
   return (
     <div ref={containerRef} className="absolute inset-0 flex items-center justify-center overflow-hidden px-6">
-      {/* Animated grain — intensifies during complexity */}
-      {grainOpacity > 0.01 && (
-        <div
-          className="chaos-grain"
-          style={{ "--grain-opacity": grainOpacity } as React.CSSProperties}
-        />
-      )}
+      {/* Canvas grain — random noise every frame, no tiling */}
+      <canvas
+        ref={grainCanvasRef}
+        className="chaos-grain-canvas"
+        style={{ opacity: grainOpacity * 0.5 }}
+      />
 
       {/* Water surface — zooms in on scroll like diving into the circle */}
       <div
