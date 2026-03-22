@@ -108,24 +108,24 @@
 
 /* Animated grain overlay — driven by JS via --grain-opacity */
 @keyframes grain-shift {
-  0%   { transform: translate(0, 0); }
-  10%  { transform: translate(-2%, -3%); }
-  20%  { transform: translate(3%, 1%); }
-  30%  { transform: translate(-1%, 4%); }
-  40%  { transform: translate(4%, -2%); }
-  50%  { transform: translate(-3%, 2%); }
-  60%  { transform: translate(2%, -4%); }
-  70%  { transform: translate(-4%, 3%); }
-  80%  { transform: translate(1%, -1%); }
-  90%  { transform: translate(3%, -3%); }
-  100% { transform: translate(0, 0); }
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  10%  { transform: translate(-3%, -4%) rotate(0.5deg); }
+  20%  { transform: translate(4%, 2%) rotate(-0.3deg); }
+  30%  { transform: translate(-2%, 5%) rotate(0.7deg); }
+  40%  { transform: translate(5%, -3%) rotate(-0.5deg); }
+  50%  { transform: translate(-4%, 3%) rotate(0.4deg); }
+  60%  { transform: translate(3%, -5%) rotate(-0.6deg); }
+  70%  { transform: translate(-5%, 4%) rotate(0.3deg); }
+  80%  { transform: translate(2%, -2%) rotate(-0.4deg); }
+  90%  { transform: translate(4%, -4%) rotate(0.6deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
 }
 .chaos-grain {
   position: fixed; inset: -10%; /* oversize to hide translation edges */
   opacity: var(--grain-opacity, 0);
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='6' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='2.5' intercept='-0.5'/%3E%3CfeFuncG type='linear' slope='2.5' intercept='-0.5'/%3E%3CfeFuncB type='linear' slope='2.5' intercept='-0.5'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-  background-size: 150px 150px;
-  animation: grain-shift 0.6s steps(10) infinite;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='3' intercept='-0.6'/%3E%3CfeFuncG type='linear' slope='3' intercept='-0.6'/%3E%3CfeFuncB type='linear' slope='3' intercept='-0.6'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+  animation: grain-shift 0.9s steps(8) infinite;
   pointer-events: none;
   z-index: 45;
   mix-blend-mode: multiply;
