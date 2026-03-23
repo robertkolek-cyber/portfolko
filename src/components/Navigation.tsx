@@ -51,7 +51,7 @@ export default function Navigation() {
             href="/"
             className="font-[family-name:var(--font-display)] text-lg font-bold tracking-widest text-slate-100"
           >
-            ROBERT KOLEK<span className="text-lime">.</span>
+            ROBERT KOLEK
           </Link>
 
           {/* Desktop nav */}
