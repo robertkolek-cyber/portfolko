@@ -279,7 +279,7 @@ export default function ParallaxWork() {
             }}
           />
           {/* Text content */}
-          <div className="relative z-10 text-center pb-2 md:pb-3 lg:pb-2 2xl:pb-3 pt-10 md:pt-20 lg:pt-12 2xl:pt-20">
+          <div className="relative z-10 text-center pb-10 md:pb-12 lg:pb-10 2xl:pb-12 pt-10 md:pt-20 lg:pt-12 2xl:pt-20">
             <p className="text-[10px] md:text-xs lg:text-[8px] xl:text-[10px] 2xl:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium">
               Selected Work
             </p>
