@@ -322,35 +322,32 @@ export default function ParallaxWork() {
             <div style={{ pointerEvents: "auto" }}>
               <Link href={`/projects/${project.slug}`} className="group block">
                 <article className="w-[80vw] sm:w-[65vw] md:w-[55vw] lg:w-[38vw] xl:w-[40vw] 2xl:w-[55vw] max-w-2xl">
-                  <div
-                    className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-3 md:mb-6 border border-dark-700/50"
-                    style={{ backgroundColor: project.color }}
-                  >
-                    {project.thumbnail ? (
-                      <img
-                        src={project.thumbnail}
-                        alt={project.title}
-                        className="absolute inset-0 w-full h-full object-cover object-right-bottom"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="font-[family-name:var(--font-display)] text-white/80 text-5xl md:text-7xl font-bold select-none">
-                          {project.title}
-                        </span>
+                  {(() => {
+                    const pastelGradients = [
+                      "linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)",
+                      "linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)",
+                      "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
+                      "linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)",
+                    ];
+                    return (
+                      <div
+                        className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-3 md:mb-6 border border-slate-200/60"
+                        style={{ background: pastelGradients[i % pastelGradients.length] }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
+                          <span className="text-lime text-sm font-medium tracking-wide">View case study</span>
+                          <svg className="w-5 h-5 text-lime" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                          </svg>
+                        </div>
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
-                      <span className="text-lime text-sm font-medium tracking-wide">View case study</span>
-                      <svg className="w-5 h-5 text-lime" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-                      </svg>
-                    </div>
-                  </div>
+                    );
+                  })()}
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h3 className="font-[family-name:var(--font-display)] text-lg sm:text-xl md:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-semibold text-slate-800 group-hover:text-lime transition-colors duration-300">
-                        {project.title}
+                        Project {i + 1}
                       </h3>
                       <p className="mt-1 md:mt-1.5 text-slate-500 text-xs sm:text-sm md:text-base lg:text-xs xl:text-sm 2xl:text-base leading-relaxed">
                         {project.tagline}
