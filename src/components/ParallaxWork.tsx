@@ -264,7 +264,7 @@ export default function ParallaxWork() {
         {/* Soft white fog behind heading — tiles disappear behind it */}
         <div
           ref={headingRef}
-          className="absolute inset-x-0 bottom-12 z-[400] pointer-events-none"
+          className="absolute inset-x-0 bottom-6 z-[400] pointer-events-none"
           style={{ opacity: 0 }}
         >
           {/* Blurry gradient backdrop */}
@@ -279,7 +279,7 @@ export default function ParallaxWork() {
             }}
           />
           {/* Text content */}
-          <div className="relative z-10 text-center pb-8 md:pb-14 lg:pb-8 2xl:pb-14 pt-10 md:pt-20 lg:pt-12 2xl:pt-20">
+          <div className="relative z-10 text-center pb-2 md:pb-3 lg:pb-2 2xl:pb-3 pt-10 md:pt-20 lg:pt-12 2xl:pt-20">
             <p className="text-[10px] md:text-xs lg:text-[8px] xl:text-[10px] 2xl:text-xs tracking-[0.3em] uppercase text-slate-400 font-medium">
               Selected Work
             </p>
@@ -324,8 +324,8 @@ export default function ParallaxWork() {
                 <article className="w-[80vw] sm:w-[65vw] md:w-[55vw] lg:w-[38vw] xl:w-[40vw] 2xl:w-[55vw] max-w-2xl">
                   {(() => {
                     const pastelGradients = [
-                      "linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)",
-                      "linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)",
+                      "linear-gradient(135deg, #ffdab9 0%, #f8a978 50%, #f4845f 100%)",
+                      "linear-gradient(135deg, #a8e6cf 0%, #55b89a 50%, #2d8f6f 100%)",
                       "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
                       "linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)",
                     ];
