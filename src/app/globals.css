@@ -21,11 +21,11 @@
   --color-slate-400: #475569;
   --color-slate-500: #64748b;
 
-  /* Accent — royal blue */
-  --color-lime:       #2563eb;
-  --color-lime-light: #3b82f6;
-  --color-lime-dark:  #1d4ed8;
-  --color-lime-dim:   #1e40af;
+  /* Accent — red */
+  --color-lime:       #dc2626;
+  --color-lime-light: #ef4444;
+  --color-lime-dark:  #b91c1c;
+  --color-lime-dim:   #991b1b;
 
   --font-display: "Lexend Giga", system-ui, sans-serif;
   --font-claim: "Lexend Giga", system-ui, sans-serif;
@@ -133,10 +133,10 @@
 
 /* Glow */
 .glow-lime {
-  box-shadow: 0 0 40px rgba(37, 99, 235, 0.3), 0 0 80px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 0 40px rgba(220, 38, 38, 0.3), 0 0 80px rgba(220, 38, 38, 0.15);
 }
 .glow-lime-sm {
-  box-shadow: 0 0 20px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.25);
 }
 
 /* Grid background */
