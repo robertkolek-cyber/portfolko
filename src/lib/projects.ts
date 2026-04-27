@@ -44,22 +44,86 @@ export const projects: Project[] = [
   {
     slug: "codebridge-college",
     title: "CodeBridge College",
-    tagline: "Reimagining digital banking for a new generation",
-    category: "Product Design",
+    tagline: "Redesign of a data school website",
+    category: "UX/UI · AI-assisted build",
     year: "2025",
-    color: "#0040ff",
+    color: "#1a1a2e",
     thumbnail: "/portfolko/images/projects/codebridge-college.png",
     heroImage: "/portfolko/images/projects/codebridge-college.png",
     overview:
-      "Meridian is a next-generation digital banking platform designed for millennials and Gen Z. The goal was to create an experience that feels less like a bank and more like a trusted financial companion.",
+      "When the school started, its first website did exactly what it needed to. It felt underground, personal, made by people who taught small cohorts of curious students. That voice built the early community. The school is now entering a new stage — the audience is wider: career-changers, corporate L&D buyers, PhD candidates comparing programs. The old site, which served the early phase well, had started to hold the next phase back. The redesign is about that transition. Keep the warmth. Sharpen the credibility. Show confidence.",
     challenge:
-      "Traditional banking apps feel cold, transactional, and overwhelming. Young users wanted a platform that understood their financial goals, simplified complex concepts, and celebrated their progress.",
+      "Translate an underground, founder-voiced site into something credible for institutions and approachable for learners — without losing the warmth that built the early community.",
     approach:
-      "I led the end-to-end design process — from user research and journey mapping to high-fidelity prototypes. We introduced a conversational UI layer, goal-based savings visualizations, and a warm, approachable visual language.",
+      "I led the UX/UI redesign and AI-assisted website build: positioning, content structure, visual direction, and the desktop and mobile experience. I started with founder discussions to understand where the company wanted to go, who the website needed to convince, and what level of trust it had to communicate.",
     outcome:
-      "The redesign led to a 47% increase in daily active users and a 62% improvement in task completion rates. The app received recognition at the European Design Awards.",
-    tools: ["Figma", "Protopie", "Maze", "Lottie"],
+      "A site that introduces proof points early — stats, partner logos, testimonials, lecturer profiles — backed by real photography from actual trainings. Modern, clear, and credible without feeling too formal.",
+    tools: ["Figma", "Gemini AI Studio", "Claude Code"],
     images: [],
+    sections: [
+      {
+        title: "My role",
+        content:
+          "I was responsible for the UX/UI redesign and AI-assisted website build. I worked on positioning, content structure, visual direction, and adapting the experience for desktop and mobile.",
+        layout: "text",
+      },
+      {
+        title: "Leveraging AI",
+        content:
+          "I used AI tools to quickly translate early stakeholder discussions into visual prototypes. This made different positioning directions easier to compare, while keeping design judgment focused on quality, credibility, and brand fit. Tools: Gemini AI Studio, Claude Code.",
+        layout: "highlight",
+      },
+      {
+        title: "From discussion to direction",
+        content:
+          "Stakeholders knew the website needed to evolve, but the direction was open. Comparing three approaches clarified the goal: credible for institutions, approachable for learners.",
+        layout: "text",
+      },
+      {
+        title: "1. Institutional & refined",
+        content:
+          "Built for trust, headers, and senior decision-makers. Risk: too conservative for young professionals.",
+        layout: "text-image",
+        image: "/portfolko/images/projects/codebridge-college.png",
+      },
+      {
+        title: "2. Bold & contemporary",
+        content:
+          "More distinctive and appealing to younger audiences. Risk: too narrow for academic and business audiences.",
+        layout: "image-text",
+        image: "/portfolko/images/projects/codebridge-college-alt.png",
+      },
+      {
+        title: "3. Approachable & professional",
+        content:
+          "Modern, clear, and credible without feeling too formal. Risk: the direction could become too neutral unless reinforced with clean hierarchy, proof points, and high-quality imagery.",
+        layout: "text-image",
+        image: "/portfolko/images/projects/codebridge-college.png",
+      },
+      {
+        title: "Decision point — 3rd approach",
+        content:
+          "After discussion, the approachable-professional direction became the preferred route because it supported the widest audience range without diluting trust. It avoided the extremes of feeling too institutional for learners or too experimental for decision-makers.",
+        layout: "dark-block",
+        bgDark: true,
+      },
+      {
+        title: "Content strategy",
+        content: "",
+        layout: "two-column",
+        items: [
+          "Real photography — Used photos from actual trainings and workshops instead of stock imagery. Each image had to reinforce the page message by showing real people, active participation, diverse learners, and professional learning environments.",
+          "Trust before commitment — The page introduced proof points early, including stats, partner logos, testimonials, and lecturer profiles, so visitors could assess credibility before investing more attention.",
+        ],
+      },
+      {
+        title: "Adjustments for mobile",
+        content:
+          "Simplified navigation. Hero with a single, clear message. Content stays accessible across breakpoints, with extra emphasis on hierarchy and tap targets so the same proof points still land on small screens.",
+        layout: "image-text",
+        image: "/portfolko/images/projects/codebridge-college-alt.png",
+      },
+    ],
   },
   {
     slug: "skoda-app",
