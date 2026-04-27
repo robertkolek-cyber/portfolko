@@ -258,24 +258,88 @@ export const projects: Project[] = [
     ],
   },
   {
-    slug: "sonor-music",
-    title: "Sonor",
-    tagline: "Where sound meets visual expression",
-    category: "Creative Direction",
+    slug: "cloud-security",
+    title: "Cloud Security Integration",
+    tagline: "Evolving enterprise security for dynamic cloud environments",
+    category: "UX · Enterprise",
     year: "2024",
-    color: "#1e2a3a",
+    color: "#1a2e1f",
     thumbnail: "",
     heroImage: "",
     overview:
-      "Sonor is an experimental music platform that generates unique visual identities for artists based on their sonic DNA — tempo, mood, instrumentation, and lyrical themes.",
+      "Extend an enterprise security product to support cloud workload protection in a system originally built for local machines and static environments.",
     challenge:
-      "Independent musicians struggle to create a cohesive visual brand. Album artwork, social media assets, and promotional materials often feel disconnected from their actual sound.",
+      "Three core challenges shaped the work: handling asynchronous processes, designing for different levels of cloud environment complexity, and supporting Azure, AWS and GCP without creating three separate experiences.",
     approach:
-      "I developed a generative design system that translates audio features into visual parameters — color palettes, typography choices, layout compositions, and motion patterns. Each artist gets a living visual identity that evolves with their music.",
+      "Owned the UX for the cloud integration experience end to end, from setup to protection. Partnered closely with product and engineering to define flows that balanced technical feasibility, user clarity and business impact.",
     outcome:
-      "Over 5,000 artists generated visual identities in the beta period. The platform was featured in It's Nice That and Communication Arts.",
-    tools: ["Figma", "TouchDesigner", "Processing", "Cinema 4D"],
+      "A guided in-product setup flow with staged adoption, natural checkpoints, and explicit re-entry points — supporting both simple and complex cloud setups while preserving a clear default path.",
+    tools: ["Figma", "FigJam"],
     images: [],
+    sections: [
+      {
+        title: "Note on scope",
+        content:
+          "This case study stays intentionally high-level. Detailed tradeoffs and internal discussions are omitted while the feature remains in active iteration.",
+        layout: "text",
+      },
+      {
+        title: "My role",
+        content:
+          "Owned the UX for the cloud integration experience end to end, from setup to protection. Partnered closely with product and engineering to define flows that balanced technical feasibility, user clarity and business impact.",
+        layout: "text",
+      },
+      {
+        title: "List of challenges",
+        content: "",
+        layout: "two-column",
+        items: [
+          "Handling asynchronous processes.",
+          "Designing for different levels of cloud environment complexity.",
+          "Supporting Azure, AWS and GCP without creating three separate experiences.",
+        ],
+      },
+      {
+        title: "Design principle",
+        content:
+          "Reduce setup effort by guiding users through a clear in-product integration flow for Azure, AWS and GCP. The goal was to minimise cognitive load, reduce reliance on manuals and CLI steps, and help users complete the core setup with confidence inside the product within 5 minutes.",
+        layout: "highlight",
+      },
+      {
+        title: "Why it matters",
+        content:
+          "At the time, a guided in-product setup was not the market standard. Competing solutions often relied on CLI steps or manual configuration in the cloud provider environment.",
+        layout: "text",
+      },
+      {
+        title: "Flexibility",
+        content:
+          "Support a wide range of cloud environments, from simpler to more complex setups, while preserving a clear default path for the most common journeys.",
+        layout: "text",
+      },
+      {
+        title: "Progressive disclosure",
+        content:
+          "Don't show everything at once. Keep the flow simple, but make more detailed information available for users who want to dig into more detail when they need it.",
+        layout: "highlight",
+      },
+      {
+        title: "Usability testing findings",
+        content:
+          "At first, I assumed a single linear flow from setup to completion would feel most intuitive. Testing revealed that users were more comfortable taking an incremental approach: starting with a limited setup, validating it, and then expanding further. That insight changed the structure of the experience. I designed the flow to support staged adoption, with natural checkpoints and explicit re-entry points for users who wanted to continue later.",
+        layout: "text",
+      },
+      {
+        title: "Reflection",
+        content: "",
+        layout: "two-column",
+        items: [
+          "Testing shifted the direction of the design — users preferred to start small, validate, and commit later.",
+          "Not every decision is the hill to die on. The project required constant prioritisation of which decisions were worth defending and where trade-offs with other stakeholders were necessary.",
+          "Documentation supports continuity. Clear documentation made it easier to revisit decisions and continue the work later.",
+        ],
+      },
+    ],
   },
   {
     slug: "atlas-wayfinding",
