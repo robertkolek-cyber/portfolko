@@ -183,7 +183,7 @@ export default function ParallaxWork() {
           const dotInactive = isCompact ? "6px" : "8px";
           dot.style.width           = isActive ? dotActive : dotInactive;
           dot.style.height          = isCompact ? "6px" : "8px";
-          dot.style.backgroundColor = isActive ? "#2563eb" : "#94a3b8";
+          dot.style.backgroundColor = isActive ? "#dc2626" : "#94a3b8";
           dot.style.opacity         = isActive ? "1" : "0.45";
         }
       }

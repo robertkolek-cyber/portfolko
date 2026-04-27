@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  /* Light blue base — very light sky bg, deep navy text */
-  --color-dark-950: #f0f6ff;   /* main background */
-  --color-dark-900: #dbeafe;
-  --color-dark-800: #bfdbfe;
-  --color-dark-700: #93c5fd;
-  --color-dark-600: #60a5fa;
-  --color-dark-500: #3b82f6;
-  --color-dark-400: #2563eb;
-  --color-dark-300: #1d4ed8;
-  --color-dark-200: #1e3a8a;
-  --color-dark-100: #1e2766;
-  --color-dark-50:  #0f1540;
+  /* Light red base — very light rose bg, deep burgundy text */
+  --color-dark-950: #fff1f2;   /* main background */
+  --color-dark-900: #ffe4e6;
+  --color-dark-800: #fecdd3;
+  --color-dark-700: #fda4af;
+  --color-dark-600: #fb7185;
+  --color-dark-500: #f43f5e;
+  --color-dark-400: #e11d48;
+  --color-dark-300: #be123c;
+  --color-dark-200: #881337;
+  --color-dark-100: #4c0519;
+  --color-dark-50:  #27030f;
 
   /* Text scale — dark navy on light bg */
   --color-slate-100: #0f172a;
@@ -142,7 +142,7 @@
 /* Grid background */
 .grid-bg {
   background-image:
-    linear-gradient(rgba(37, 99, 235, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px);
+    linear-gradient(rgba(220, 38, 38, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(220, 38, 38, 0.08) 1px, transparent 1px);
   background-size: 60px 60px;
 }

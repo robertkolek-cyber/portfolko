@@ -85,7 +85,7 @@ interface Hole {
 }
 
 const GREY = { r: 200, g: 210, b: 225 }; // light grey matching the theme
-const ACCENT = { r: 37, g: 99, b: 235 };  // royal blue accent
+const ACCENT = { r: 220, g: 38, b: 38 };  // red accent
 
 // Deterministic pseudo-random from seed
 function seededRandom(seed: number): number {
@@ -208,7 +208,7 @@ export default function HoleGrid({
             hole.targetScale = 1;
           }
         } else if (c <= 0.01) {
-          // Full clarity — settle to accent blue, then fade
+          // Full clarity — settle to accent red, then fade
           hole.tr = ACCENT.r;
           hole.tg = ACCENT.g;
           hole.tb = ACCENT.b;
