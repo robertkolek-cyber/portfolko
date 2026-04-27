@@ -65,7 +65,7 @@ function Card({ exp }: { exp: (typeof experiences)[0] }) {
       <h3 className="font-[family-name:var(--font-display)] text-xl font-bold leading-snug mb-1" style={{ color: "#e2e8f0" }}>
         {exp.role}
       </h3>
-      <p className="text-sm font-semibold mb-4" style={{ color: "#60a5fa" }}>{exp.company}</p>
+      <p className="text-sm font-semibold mb-4" style={{ color: "#ef4444" }}>{exp.company}</p>
       <p className="text-sm leading-relaxed mb-5" style={{ color: "#94a3b8" }}>{exp.description}</p>
       <div className="flex flex-wrap gap-2">
         {exp.tags.map((tag) => (

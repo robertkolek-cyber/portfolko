@@ -43,7 +43,7 @@ export default function UploadPage() {
     <div className="min-h-screen bg-gray-950 text-white p-12 font-mono">
       <h1 className="text-2xl font-bold mb-2">Image Uploader</h1>
       <p className="text-gray-400 mb-8 text-sm">
-        Drop images here → saved to <code className="text-blue-400">public/images/projects/</code>
+        Drop images here → saved to <code className="text-red-500">public/images/projects/</code>
       </p>
 
       <div
@@ -51,7 +51,7 @@ export default function UploadPage() {
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         className={`border-2 border-dashed rounded-xl p-16 text-center transition-colors cursor-pointer ${
-          dragging ? "border-blue-400 bg-blue-400/10" : "border-gray-700 hover:border-gray-500"
+          dragging ? "border-red-500 bg-red-500/10" : "border-gray-700 hover:border-gray-500"
         }`}
         onClick={() => document.getElementById("file-input")?.click()}
       >
@@ -75,7 +75,7 @@ export default function UploadPage() {
               <img src={f.path} alt={f.name} className="w-16 h-16 object-cover rounded" />
               <div>
                 <p className="text-white font-medium">{f.name}</p>
-                <code className="text-blue-400 text-sm">{f.path}</code>
+                <code className="text-red-500 text-sm">{f.path}</code>
               </div>
             </div>
           ))}
