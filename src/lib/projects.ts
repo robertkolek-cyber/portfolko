@@ -55,75 +55,12 @@ export const projects: Project[] = [
     challenge:
       "Translate an underground, founder-voiced site into something credible for institutions and approachable for learners — without losing the warmth that built the early community.",
     approach:
-      "I led the UX/UI redesign and AI-assisted website build: positioning, content structure, visual direction, and the desktop and mobile experience. I started with founder discussions to understand where the company wanted to go, who the website needed to convince, and what level of trust it had to communicate.",
+      "I led the UX/UI redesign and AI-assisted website build: positioning, content structure, visual direction, and the desktop and mobile experience.",
     outcome:
       "A site that introduces proof points early — stats, partner logos, testimonials, lecturer profiles — backed by real photography from actual trainings. Modern, clear, and credible without feeling too formal.",
     tools: ["Figma", "Gemini AI Studio", "Claude Code"],
     images: [],
-    sections: [
-      {
-        title: "My role",
-        content:
-          "I was responsible for the UX/UI redesign and AI-assisted website build. I worked on positioning, content structure, visual direction, and adapting the experience for desktop and mobile.",
-        layout: "text",
-      },
-      {
-        title: "Leveraging AI",
-        content:
-          "I used AI tools to quickly translate early stakeholder discussions into visual prototypes. This made different positioning directions easier to compare, while keeping design judgment focused on quality, credibility, and brand fit. Tools: Gemini AI Studio, Claude Code.",
-        layout: "highlight",
-      },
-      {
-        title: "From discussion to direction",
-        content:
-          "Stakeholders knew the website needed to evolve, but the direction was open. Comparing three approaches clarified the goal: credible for institutions, approachable for learners.",
-        layout: "text",
-      },
-      {
-        title: "1. Institutional & refined",
-        content:
-          "Built for trust, headers, and senior decision-makers. Risk: too conservative for young professionals.",
-        layout: "text-image",
-        image: "/portfolko/images/projects/codebridge-college.png",
-      },
-      {
-        title: "2. Bold & contemporary",
-        content:
-          "More distinctive and appealing to younger audiences. Risk: too narrow for academic and business audiences.",
-        layout: "image-text",
-        image: "/portfolko/images/projects/codebridge-college-alt.png",
-      },
-      {
-        title: "3. Approachable & professional",
-        content:
-          "Modern, clear, and credible without feeling too formal. Risk: the direction could become too neutral unless reinforced with clean hierarchy, proof points, and high-quality imagery.",
-        layout: "text-image",
-        image: "/portfolko/images/projects/codebridge-college.png",
-      },
-      {
-        title: "Decision point — 3rd approach",
-        content:
-          "After discussion, the approachable-professional direction became the preferred route because it supported the widest audience range without diluting trust. It avoided the extremes of feeling too institutional for learners or too experimental for decision-makers.",
-        layout: "dark-block",
-        bgDark: true,
-      },
-      {
-        title: "Content strategy",
-        content: "",
-        layout: "two-column",
-        items: [
-          "Real photography — Used photos from actual trainings and workshops instead of stock imagery. Each image had to reinforce the page message by showing real people, active participation, diverse learners, and professional learning environments.",
-          "Trust before commitment — The page introduced proof points early, including stats, partner logos, testimonials, and lecturer profiles, so visitors could assess credibility before investing more attention.",
-        ],
-      },
-      {
-        title: "Adjustments for mobile",
-        content:
-          "Simplified navigation. Hero with a single, clear message. Content stays accessible across breakpoints, with extra emphasis on hierarchy and tap targets so the same proof points still land on small screens.",
-        layout: "image-text",
-        image: "/portfolko/images/projects/codebridge-college-alt.png",
-      },
-    ],
+    presentationImage: "/portfolko/images/projects/codebridge-case-study.png",
   },
   {
     slug: "skoda-app",
@@ -276,70 +213,7 @@ export const projects: Project[] = [
       "A guided in-product setup flow with staged adoption, natural checkpoints, and explicit re-entry points — supporting both simple and complex cloud setups while preserving a clear default path.",
     tools: ["Figma", "FigJam"],
     images: [],
-    sections: [
-      {
-        title: "Note on scope",
-        content:
-          "This case study stays intentionally high-level. Detailed tradeoffs and internal discussions are omitted while the feature remains in active iteration.",
-        layout: "text",
-      },
-      {
-        title: "My role",
-        content:
-          "Owned the UX for the cloud integration experience end to end, from setup to protection. Partnered closely with product and engineering to define flows that balanced technical feasibility, user clarity and business impact.",
-        layout: "text",
-      },
-      {
-        title: "List of challenges",
-        content: "",
-        layout: "two-column",
-        items: [
-          "Handling asynchronous processes.",
-          "Designing for different levels of cloud environment complexity.",
-          "Supporting Azure, AWS and GCP without creating three separate experiences.",
-        ],
-      },
-      {
-        title: "Design principle",
-        content:
-          "Reduce setup effort by guiding users through a clear in-product integration flow for Azure, AWS and GCP. The goal was to minimise cognitive load, reduce reliance on manuals and CLI steps, and help users complete the core setup with confidence inside the product within 5 minutes.",
-        layout: "highlight",
-      },
-      {
-        title: "Why it matters",
-        content:
-          "At the time, a guided in-product setup was not the market standard. Competing solutions often relied on CLI steps or manual configuration in the cloud provider environment.",
-        layout: "text",
-      },
-      {
-        title: "Flexibility",
-        content:
-          "Support a wide range of cloud environments, from simpler to more complex setups, while preserving a clear default path for the most common journeys.",
-        layout: "text",
-      },
-      {
-        title: "Progressive disclosure",
-        content:
-          "Don't show everything at once. Keep the flow simple, but make more detailed information available for users who want to dig into more detail when they need it.",
-        layout: "highlight",
-      },
-      {
-        title: "Usability testing findings",
-        content:
-          "At first, I assumed a single linear flow from setup to completion would feel most intuitive. Testing revealed that users were more comfortable taking an incremental approach: starting with a limited setup, validating it, and then expanding further. That insight changed the structure of the experience. I designed the flow to support staged adoption, with natural checkpoints and explicit re-entry points for users who wanted to continue later.",
-        layout: "text",
-      },
-      {
-        title: "Reflection",
-        content: "",
-        layout: "two-column",
-        items: [
-          "Testing shifted the direction of the design — users preferred to start small, validate, and commit later.",
-          "Not every decision is the hill to die on. The project required constant prioritisation of which decisions were worth defending and where trade-offs with other stakeholders were necessary.",
-          "Documentation supports continuity. Clear documentation made it easier to revisit decisions and continue the work later.",
-        ],
-      },
-    ],
+    presentationImage: "/portfolko/images/projects/cloud-security-case-study.png",
   },
   {
     slug: "atlas-wayfinding",
