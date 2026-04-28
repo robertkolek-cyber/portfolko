@@ -434,7 +434,7 @@ export default function ProjectDetail({
               );
             })}
           </div>
-        ) : (
+        ) : project.presentationImage ? null : (
           <>
             <section className="px-6 mb-24">
               <div
