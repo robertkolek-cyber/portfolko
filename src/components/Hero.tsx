@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import WaterSurface from "./WaterSurface";
+import SwarmDots from "./SwarmDots";
 
 /* ═══════════════════════════════════════════════════════════════
    ONE TIMELINE. ONE rAF LOOP. EVERY VALUE IS A SMOOTH FUNCTION
@@ -365,6 +366,7 @@ export default function Hero({ scrollProgress = 0 }: { scrollProgress?: number }
         }}
       >
         <WaterSurface chaos={frame.waterChaos} mousePosRef={mousePosRef} />
+        <SwarmDots chaos={frame.waterChaos} className="absolute inset-0" />
       </div>
 
       {/* Ambient glow — royal blue top-right, light blue bottom-left */}
