@@ -1,65 +1,60 @@
 @import "tailwindcss";
 
 @theme {
-  /* Light blue base — very light sky bg, deep navy text */
-  --color-dark-950: #f0f6ff;   /* main background */
-  --color-dark-900: #dbeafe;
-  --color-dark-800: #bfdbfe;
-  --color-dark-700: #93c5fd;
-  --color-dark-600: #60a5fa;
-  --color-dark-500: #3b82f6;
-  --color-dark-400: #2563eb;
-  --color-dark-300: #1d4ed8;
-  --color-dark-200: #1e3a8a;
-  --color-dark-100: #1e2766;
-  --color-dark-50:  #0f1540;
+  /* Deep dark backgrounds — near-black to dark navy */
+  --color-dark-950: #05080f;   /* main background */
+  --color-dark-900: #080d1a;   /* alt section bg */
+  --color-dark-800: #0e1525;   /* card backgrounds */
+  --color-dark-700: #182133;   /* borders, dividers */
+  --color-dark-600: #213045;   /* muted borders */
+  --color-dark-500: #2d4260;   /* subtle accents */
+  --color-dark-400: #3d5a80;
+  --color-dark-300: #567099;
+  --color-dark-200: #7a93b5;
+  --color-dark-100: #a3bbd0;
+  --color-dark-50:  #c8d8e8;
 
-  /* Text scale — dark navy on light bg */
-  --color-slate-100: #0f172a;
-  --color-slate-200: #1e293b;
-  --color-slate-300: #334155;
-  --color-slate-400: #475569;
-  --color-slate-500: #64748b;
+  /* Text scale — white scale on dark */
+  --color-slate-100: #f7f9fc;   /* headings */
+  --color-slate-200: #e1e8f0;   /* sub-headings */
+  --color-slate-300: #c8d4e0;   /* body */
+  --color-slate-400: #8fa3bb;   /* secondary */
+  --color-slate-500: #607080;   /* muted / captions */
+  --color-slate-600: #445060;   /* very muted */
 
-  /* Accent — royal blue */
-  --color-lime:       #2563eb;
-  --color-lime-light: #3b82f6;
-  --color-lime-dark:  #1d4ed8;
-  --color-lime-dim:   #1e40af;
+  /* Accent — electric lime (now matching the variable name) */
+  --color-lime:       #a3e635;
+  --color-lime-light: #bef264;
+  --color-lime-dark:  #84cc16;
+  --color-lime-dim:   #1a2e00;
 
   --font-display: "Lexend Giga", system-ui, sans-serif;
-  --font-claim: "Lexend Giga", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  --font-claim:   "Lexend Giga", system-ui, sans-serif;
+  --font-body:    "Inter", system-ui, sans-serif;
 
   --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
-  html {
-    /* scroll-behavior: smooth removed — conflicts with scroll-driven animations */
-  }
-
   body {
     font-family: var(--font-body);
     background-color: var(--color-dark-950);
-    color: var(--color-slate-100);
+    color: var(--color-slate-300);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   ::selection {
     background-color: var(--color-lime);
-    color: white;
+    color: #05080f;
   }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  .text-balance { text-wrap: balance; }
 }
 
-/* Smooth reveal animations */
+/* Reveal animations */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(30px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -68,10 +63,8 @@
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-
-.animate-fade-up  { animation: fade-up  0.8s var(--ease-smooth) both; }
-.animate-fade-in  { animation: fade-in  0.6s var(--ease-smooth) both; }
-
+.animate-fade-up { animation: fade-up  0.8s var(--ease-smooth) both; }
+.animate-fade-in { animation: fade-in  0.6s var(--ease-smooth) both; }
 .delay-100 { animation-delay: 100ms; }
 .delay-200 { animation-delay: 200ms; }
 .delay-300 { animation-delay: 300ms; }
@@ -79,7 +72,7 @@
 .delay-500 { animation-delay: 500ms; }
 .delay-600 { animation-delay: 600ms; }
 
-/* Project card hover */
+/* Project card */
 .project-card { transition: transform 0.5s var(--ease-smooth); }
 .project-card:hover { transform: translateY(-8px); }
 .project-card:hover .project-image { transform: scale(1.05); }
@@ -101,12 +94,12 @@
 .noise::before {
   content: "";
   position: fixed; inset: 0;
-  opacity: 0.025;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   pointer-events: none; z-index: 50;
 }
 
-/* Animated grain overlay — driven by JS via --grain-opacity */
+/* Animated chaos grain */
 @keyframes grain-shift {
   0%   { transform: translate(0, 0) rotate(0deg); }
   10%  { transform: translate(-3%, -4%) rotate(0.5deg); }
@@ -121,28 +114,28 @@
   100% { transform: translate(0, 0) rotate(0deg); }
 }
 .chaos-grain {
-  position: fixed; inset: -10%; /* oversize to hide translation edges */
+  position: fixed; inset: -10%;
   opacity: var(--grain-opacity, 0);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='3' intercept='-0.6'/%3E%3CfeFuncG type='linear' slope='3' intercept='-0.6'/%3E%3CfeFuncB type='linear' slope='3' intercept='-0.6'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
   background-size: 300px 300px;
   animation: grain-shift 0.9s steps(8) infinite;
   pointer-events: none;
   z-index: 45;
-  mix-blend-mode: multiply;
+  mix-blend-mode: overlay;
 }
 
-/* Glow */
+/* Glow utilities — lime accent */
 .glow-lime {
-  box-shadow: 0 0 40px rgba(37, 99, 235, 0.3), 0 0 80px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 0 40px rgba(163, 230, 53, 0.3), 0 0 80px rgba(163, 230, 53, 0.12);
 }
 .glow-lime-sm {
-  box-shadow: 0 0 20px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 0 20px rgba(163, 230, 53, 0.25), 0 0 40px rgba(163, 230, 53, 0.08);
 }
 
-/* Grid background */
+/* Subtle lime-tinted grid */
 .grid-bg {
   background-image:
-    linear-gradient(rgba(37, 99, 235, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px);
+    linear-gradient(rgba(163, 230, 53, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(163, 230, 53, 0.05) 1px, transparent 1px);
   background-size: 60px 60px;
 }

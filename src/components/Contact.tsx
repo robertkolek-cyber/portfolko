@@ -3,6 +3,13 @@
 import { useRef } from "react";
 import { useInView } from "@/lib/useInView";
 
+const SOCIALS = [
+  { label: "LinkedIn",  href: "#" },
+  { label: "Dribbble",  href: "#" },
+  { label: "Behance",   href: "#" },
+  { label: "Instagram", href: "#" },
+];
+
 export default function Contact() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, 0.2);
@@ -11,17 +18,22 @@ export default function Contact() {
     <section
       id="contact"
       ref={ref}
-      className="py-32 md:py-40 px-6 bg-dark-900/60 border-t border-dark-700/60"
+      className="py-32 md:py-40 px-6 relative overflow-hidden border-t border-dark-700/50"
     >
+      {/* Ambient lime glow behind CTA */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] rounded-full bg-lime/[0.06] blur-[160px] pointer-events-none" />
+
       <div
-        className={`max-w-4xl mx-auto text-center transition-all duration-1000 ${
+        className={`max-w-4xl mx-auto text-center relative transition-all duration-1000 ${
           inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         }`}
       >
-        <p className="text-sm tracking-[0.3em] uppercase text-slate-500 font-medium mb-6">
+        <p className="text-xs tracking-[0.3em] uppercase text-slate-500 font-medium mb-8 inline-flex items-center justify-center gap-3">
+          <span className="w-6 h-px bg-lime/40" />
           Get in touch
+          <span className="w-6 h-px bg-lime/40" />
         </p>
-        <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-6xl lg:text-7xl leading-[1.1] font-bold mb-8">
+        <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-6xl lg:text-7xl leading-[1.05] font-bold text-slate-100 mb-8">
           Let&apos;s create something
           <br />
           <span className="text-lime italic">remarkable</span> together.
@@ -33,7 +45,7 @@ export default function Contact() {
 
         <a
           href="mailto:hello@robertkolek.com"
-          className="group inline-flex items-center gap-3 bg-lime text-dark-950 px-10 py-5 rounded-full text-base font-semibold tracking-wide hover:bg-lime-light transition-colors duration-300 glow-lime"
+          className="group inline-flex items-center gap-3 bg-lime text-dark-950 px-10 py-5 rounded-full text-base font-semibold tracking-wide hover:bg-lime-light transition-all duration-300 glow-lime"
         >
           hello@robertkolek.com
           <svg
@@ -51,13 +63,8 @@ export default function Contact() {
           </svg>
         </a>
 
-        <div className="mt-16 flex items-center justify-center gap-8">
-          {[
-            { label: "LinkedIn", href: "#" },
-            { label: "Dribbble", href: "#" },
-            { label: "Behance", href: "#" },
-            { label: "Instagram", href: "#" },
-          ].map((link) => (
+        <div className="mt-16 flex items-center justify-center gap-6 sm:gap-8 flex-wrap">
+          {SOCIALS.map((link) => (
             <a
               key={link.label}
               href={link.href}

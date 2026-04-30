@@ -16,7 +16,6 @@ export default function Navigation() {
       const y = window.scrollY;
       setScrolled(y > 50);
 
-      // Check if we're inside the #work section
       const workEl = document.getElementById("work");
       if (workEl) {
         const rect = workEl.getBoundingClientRect();
@@ -38,7 +37,7 @@ export default function Navigation() {
       onMouseLeave={() => setHovered(false)}
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
         scrolled
-          ? "bg-dark-950/80 backdrop-blur-xl border-b border-dark-700/50"
+          ? "bg-dark-950/85 backdrop-blur-xl border-b border-dark-700/40"
           : "bg-transparent"
       }`}
       style={{
@@ -47,22 +46,31 @@ export default function Navigation() {
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-12">
         <div className="flex items-center justify-between h-20">
-          <Link
-            href="/"
-            className="font-[family-name:var(--font-display)] text-lg font-bold tracking-widest text-slate-100"
-          >
-            ROBERT KOLEK<span className="text-lime">.</span>
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="font-[family-name:var(--font-display)] text-lg font-bold tracking-widest text-slate-100"
+            >
+              ROBERT KOLEK<span className="text-lime">.</span>
+            </Link>
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] tracking-[0.2em] uppercase font-medium text-lime/90 border border-lime/25 bg-lime/[0.06] px-2.5 py-1 rounded-full">
+              <span className="relative flex w-1.5 h-1.5">
+                <span className="absolute inset-0 rounded-full bg-lime animate-ping opacity-60" />
+                <span className="relative w-1.5 h-1.5 rounded-full bg-lime" />
+              </span>
+              Available
+            </span>
+          </div>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-10">
-            <a href="#work" className="link-underline text-sm tracking-wide uppercase font-medium text-slate-400 hover:text-lime transition-colors">
+            <a href="#work" className="link-underline text-sm tracking-wide uppercase font-medium text-slate-400 hover:text-lime transition-colors duration-300">
               Work
             </a>
-            <a href="#about" className="link-underline text-sm tracking-wide uppercase font-medium text-slate-400 hover:text-lime transition-colors">
+            <a href="#about" className="link-underline text-sm tracking-wide uppercase font-medium text-slate-400 hover:text-lime transition-colors duration-300">
               About
             </a>
-            <a href="#contact" className="link-underline text-sm tracking-wide uppercase font-medium text-slate-400 hover:text-lime transition-colors">
+            <a href="#contact" className="link-underline text-sm tracking-wide uppercase font-medium text-slate-400 hover:text-lime transition-colors duration-300">
               Contact
             </a>
           </div>
@@ -98,25 +106,25 @@ export default function Navigation() {
           menuOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="px-6 pb-8 pt-2 bg-dark-950/95 backdrop-blur-xl space-y-6">
+        <div className="px-6 pb-8 pt-2 bg-dark-950/95 backdrop-blur-xl space-y-6 border-t border-dark-700/40">
           <a
             href="#work"
             onClick={() => setMenuOpen(false)}
-            className="block text-lg font-medium text-slate-200 hover:text-lime transition-colors"
+            className="block text-lg font-medium text-slate-200 hover:text-lime transition-colors duration-300"
           >
             Work
           </a>
           <a
             href="#about"
             onClick={() => setMenuOpen(false)}
-            className="block text-lg font-medium text-slate-200 hover:text-lime transition-colors"
+            className="block text-lg font-medium text-slate-200 hover:text-lime transition-colors duration-300"
           >
             About
           </a>
           <a
             href="#contact"
             onClick={() => setMenuOpen(false)}
-            className="block text-lg font-medium text-slate-200 hover:text-lime transition-colors"
+            className="block text-lg font-medium text-slate-200 hover:text-lime transition-colors duration-300"
           >
             Contact
           </a>
